@@ -19,12 +19,22 @@ export type ClaudeAiProviderOptions = {
   /** For tests: serve recorded responses instead of calling the network. */
   readonly fetch?: typeof globalThis.fetch;
   readonly maxRetries?: number;
+  readonly timeoutMs?: number;
 };
 
 /** AiProvider over the Anthropic Messages API with the user's key (ADR 0002). */
 export function createClaudeAiProvider(options: ClaudeAiProviderOptions): AiProvider {
   const model = options.model ?? DEFAULT_MODEL;
   const effort = options.effort ?? DEFAULT_EFFORT;
+  // Never build a client without a key: an empty one would let the SDK look for other credentials.
+  if (options.apiKey.trim() === "") {
+    return {
+      complete: () =>
+        Promise.resolve(
+          err({ code: "AI_AUTH_FAILED", message: "No Anthropic API key was provided." }),
+        ),
+    };
+  }
   const client = new Anthropic({
     apiKey: options.apiKey,
     // Explicit nulls/values so nothing is picked up from the environment or credential files.
@@ -32,6 +42,7 @@ export function createClaudeAiProvider(options: ClaudeAiProviderOptions): AiProv
     baseURL: ANTHROPIC_API_URL,
     ...(options.fetch ? { fetch: options.fetch } : {}),
     ...(options.maxRetries === undefined ? {} : { maxRetries: options.maxRetries }),
+    ...(options.timeoutMs === undefined ? {} : { timeout: options.timeoutMs }),
   });
 
   return {
@@ -78,13 +89,13 @@ export function createClaudeAiProvider(options: ClaudeAiProviderOptions): AiProv
   };
 }
 
-// Typed SDK errors, most specific first; anything that is not an API error is a bug and is rethrown.
+// Typed SDK errors, most specific first; anything that is not an API error is a bug and is rethrown. Messages stay
+// neutral (no CLI flags or env names): the desktop app shows them too, and each caller adds its own hint.
 function translate(e: unknown, model: string): AiError {
+  // AutoAI never aborts a request itself, so an abort is a bug, not an expected failure.
+  if (e instanceof Anthropic.APIUserAbortError) throw e;
   if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) {
-    return {
-      code: "AI_AUTH_FAILED",
-      message: "The Anthropic API rejected the API key. Check ANTHROPIC_API_KEY.",
-    };
+    return { code: "AI_AUTH_FAILED", message: "The Anthropic API rejected the API key." };
   }
   if (e instanceof Anthropic.RateLimitError) {
     return {
@@ -95,7 +106,7 @@ function translate(e: unknown, model: string): AiError {
   if (e instanceof Anthropic.NotFoundError) {
     return {
       code: "AI_MODEL_NOT_FOUND",
-      message: `Model "${model}" was not found for this key. Pass another with --model.`,
+      message: `Model "${model}" was not found for this API key.`,
     };
   }
   if (e instanceof Anthropic.APIConnectionError) {
@@ -104,7 +115,7 @@ function translate(e: unknown, model: string): AiError {
       message: "Could not reach api.anthropic.com (network error or timeout).",
     };
   }
-  if (e instanceof Anthropic.APIError && (e.status ?? 0) >= 500) {
+  if (e instanceof Anthropic.APIError && (e.status === 408 || (e.status ?? 0) >= 500)) {
     return {
       code: "AI_UNAVAILABLE",
       message: `The Anthropic API is unavailable right now (${String(e.status)}).`,

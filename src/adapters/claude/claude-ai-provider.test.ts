@@ -196,6 +196,47 @@ describe("createClaudeAiProvider", () => {
     expect(JSON.stringify(result)).not.toContain(KEY);
   });
 
+  it.each([
+    ["an empty key", ""],
+    ["a blank key", "   "],
+  ])("returns AI_AUTH_FAILED for %s without calling anything", async (_name, apiKey) => {
+    const { fetch, sent } = fakeFetch(json(200, message()));
+    const result = await createClaudeAiProvider({ apiKey, fetch }).complete(request);
+    expect(result.ok ? null : result.error.code).toBe("AI_AUTH_FAILED");
+    expect(sent).toHaveLength(0);
+  });
+
+  it.each([
+    ["a request timeout (408)", () => Promise.resolve(json(408, apiError("timeout_error")))],
+    ["a dropped connection", () => Promise.reject(new Error("socket hang up"))],
+  ])("maps %s to AI_UNAVAILABLE", async (_name, reply) => {
+    const fetch = () => reply();
+    const result = await createClaudeAiProvider({ apiKey: KEY, fetch, maxRetries: 0 }).complete(
+      request,
+    );
+    expect(result.ok ? null : result.error.code).toBe("AI_UNAVAILABLE");
+  });
+
+  it("maps a request that times out to AI_UNAVAILABLE", async () => {
+    const hang = (_input: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"));
+        });
+      });
+    const ai = createClaudeAiProvider({ apiKey: KEY, fetch: hang, maxRetries: 0, timeoutMs: 20 });
+    const result = await ai.complete(request);
+    expect(result.ok ? null : result.error.code).toBe("AI_UNAVAILABLE");
+  });
+
+  it("keeps messages free of CLI wording, since the desktop app uses the same adapter", async () => {
+    const { fetch } = fakeFetch(json(401, apiError("authentication_error")));
+    const result = await createClaudeAiProvider({ apiKey: KEY, fetch, maxRetries: 0 }).complete(
+      request,
+    );
+    expect(result.ok ? "" : result.error.message).not.toMatch(/ANTHROPIC_API_KEY|--model|--effort/);
+  });
+
   it("names the model in the not-found message so the user knows what to change", async () => {
     const { fetch } = fakeFetch(json(404, apiError("not_found_error")));
     const result = await createClaudeAiProvider({
@@ -204,6 +245,6 @@ describe("createClaudeAiProvider", () => {
       fetch,
       maxRetries: 0,
     }).complete(request);
-    expect(result.ok ? "" : result.error.message).toMatch(/claude-nope.*--model/);
+    expect(result.ok ? "" : result.error.message).toMatch(/claude-nope/);
   });
 });

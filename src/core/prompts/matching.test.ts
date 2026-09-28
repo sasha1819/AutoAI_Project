@@ -150,6 +150,11 @@ describe("buildMatchingPrompt", () => {
     );
   });
 
+  it("keeps the schema valid with no requirements (no empty enum)", () => {
+    const empty = build({ requirements: [] });
+    expect(JSON.stringify(empty.answerSchema)).not.toContain('"enum":[]');
+  });
+
   it("is deterministic", () => {
     expect(build()).toStrictEqual(prompt);
   });

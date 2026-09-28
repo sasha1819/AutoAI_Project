@@ -99,7 +99,8 @@ function answerSchema(ids: readonly string[]): Readonly<Record<string, unknown>>
     additionalProperties: false,
     required: ["requirement", "type", "severity", "explanation", "evidence", "confidence"],
     properties: {
-      requirement: { type: "string", enum: ids },
+      // An empty enum is not a valid schema; with no requirements there is nothing to restrict.
+      requirement: ids.length > 0 ? { type: "string", enum: ids } : { type: "string" },
       type: { type: "string", enum: FindingType.options },
       severity: { anyOf: [{ type: "string", enum: Severity.options }, { type: "null" }] },
       explanation: { type: "string" },

@@ -38,7 +38,7 @@ The scan engine now has a matching prompt and a parser (`core/prompts/matching.t
 
 6. **Token accounting.** Every call returns `usage` (input and output tokens) and the model. The scan service sums them and the CLI prints the total with an approximate cost.
 
-7. **Testing never calls the live API.** Adapter tests inject recorded HTTP responses through the SDK's custom `fetch` option (to be confirmed against the installed package when building). The recordings go in `fixtures/recorded/claude/`. Real recordings are captured by a separate opt-in command that needs `ANTHROPIC_API_KEY` and is never part of `verify`. `scan-evaluator` stays the only routine live run: manual, and it costs money.
+7. **Testing never calls the live API.** Adapter tests serve API-shaped responses through the SDK's custom `fetch` option (confirmed in SDK 0.129). *Real* recordings (the prompt and Claude's actual answer) are captured by `npm run scan -- ... --record fixtures/recorded/claude`, which needs `ANTHROPIC_API_KEY` and is never part of `verify`; they feed the parser tests. `scan-evaluator` stays the only routine live run: manual, and it costs money. *(Clarified 2026-09-28 after the adapter review: where recordings come from.)*
 
 ## Consequences
 - One new runtime dependency. It goes through `lock:check`, and the npm lockfile bug is handled as before.
