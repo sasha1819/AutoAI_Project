@@ -14,5 +14,5 @@ Run ONE build loop. Do not start a second task. Quality over speed.
 7. **Verify.** Call `verifier`. If prompts/parsing/rules of the scan logic changed, also call `scan-evaluator`.
 8. **Review.** Call `architecture-reviewer`; if src/ui changed also `design-system-reviewer`; then `prd-reviewer`.
 9. **Fix loop.** If anything fails or has blockers, fix and repeat 7-8. Max 3 rounds, then stop and explain what blocks.
-10. **Finish.** Tick the task in `BUILD-LOG.md`; add a line under "Decisions & notes" for real decisions; commit (Conventional Commit).
+10. **Finish.** Tick the task in `BUILD-LOG.md`; add a line under "Decisions & notes" for real decisions; commit (Conventional Commit); then git push (never force push).
 11. **Report in 6 lines:** what was done · where the logic lives · what was verified · reuse you found or created · next task · questions for me.
