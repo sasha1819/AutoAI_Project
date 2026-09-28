@@ -11,7 +11,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 - [x] Shared building blocks: `Result` type, branded ids, error-code convention (in `core/`), with tests
 
 ## M1 — Reference slice + scan logic (CLI only)
-- [ ] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
+- [x] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
 - [ ] Fixtures: tiny sample web app + PRD + `fixtures/expected-findings.json` (3 planted mismatches, 2 correct features)
 - [ ] Relevance rule (`core/rules/relevance`): which files matter for a requirement
 - [ ] Confidence policy rule (`core/rules/confidence`), table-tested
@@ -46,6 +46,10 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 OPEN: a PRD file with no tags and no headings (plain prose .txt) yields 0 requirements; the CLI now names such files. Whether to fall back to one requirement per paragraph is undecided.
+- 2026-09-28 Reference slice shape to copy: core rule/parsing (table tests) -> port type in `core/ports` with a closed error-code union -> service `fn(deps, input): Promise<Result<T, PortCodes | OwnCodes>>` tested with an in-memory fake that records calls -> adapter with `translate()` (expected errno -> code, anything else rethrown) tested on a real temp dir -> `cli/compose.ts` wiring + thin entry (parseArgs + zod, exit 0/1/2) tested by spawning `node`.
+- 2026-09-28 Requirement = {tag, area, text, source{file,line}}; no id until storage. `tag` is "Area 1.2" for tagged items, else the heading title, and is not unique. Parser is generic (no product words). Coverage proof: deleting prd.test.ts drops branches to 71.7%, deleting its tagged-items block to 88.3%; verify fails both times.
+- 2026-09-28 Shared port contract-test suite deferred until a port has a second real implementation (a vitest-importing file in core would break npm-only-zod). CLI entry coverage shows 0% because it runs in a spawned process; its spawn tests cover it.
 - 2026-09-28 ADR 0002 is reserved for the Anthropic SDK decision (with the `AiProvider` + Claude adapter task); ADR numbers are never reused.
 - 2026-09-28 ADR 0003 (accepted): TypeScript runs on Node's built-in type stripping (`node src/cli/x.ts`), no tsx/build step. tsconfig is `NodeNext` + `allowImportingTsExtensions` + `erasableSyntaxOnly`, so every relative import ends in `.ts` (tsc rejects extensionless: TS2835) and `enum`/`namespace` don't compile. `engines: >=22.18`, `.nvmrc` = 24. deps:selftest now uses `.ts`/`.tsx` specifiers. Replaces the earlier `moduleResolution: Bundler` note.
 - 2026-09-28 Coverage (user request): @vitest/coverage-v8 5.0.2; `coverage-thresholds.json` (folders + 90% lines/branches, aggregate per folder) feeds both the Vitest thresholds and `coverage:scope`. Vitest alone passes silently for a folder glob matching no files, so `coverage:scope` fails on a missing folder, an unmeasured or stale file, or a malformed config, and prints a NOTICE for an empty folder. `npm test` stays plain; verify runs `test:coverage` + `coverage:scope`.

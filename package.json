@@ -10,6 +10,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/core",
     "lint": "eslint . --max-warnings 0",
+    "requirements": "node src/cli/extract-requirements.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage:scope": "node scripts/check-coverage-scope.mjs",
