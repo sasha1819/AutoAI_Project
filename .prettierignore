@@ -1,0 +1,9 @@
+package-lock.json
+coverage/
+dist/
+.remember/
+.claude/
+docs/
+*.md
+scripts/
+.dependency-cruiser.cjs
