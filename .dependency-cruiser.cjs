@@ -1,23 +1,26 @@
-/** Enforces docs/ARCHITECTURE.md. Run: npm run deps:check  (depcruise src --config .dependency-cruiser.cjs) */
+/** Enforces docs/ARCHITECTURE.md. Run: npm run deps:check. Every rule is proven by npm run deps:selftest. */
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
+    { name: 'not-to-unresolvable', comment: 'an unresolved import would silently skip every path rule', severity: 'error',
+      from: { path: '^src/' }, to: { couldNotResolve: true } },
+
+    { name: 'no-node-builtins', comment: 'fs/path/child_process etc. only in adapters, app and cli: use a port', severity: 'error',
+      from: { path: '^src/(core|services|contracts|ui)/' }, to: { dependencyTypes: ['core'] } },
+    { name: 'npm-only-zod', comment: 'allowlist: core, services and contracts may import only zod from npm', severity: 'error',
+      from: { path: '^src/(core|services|contracts)/' },
+      to: { path: '^node_modules/', pathNot: '^node_modules/zod/' } },
 
     { name: 'core-is-pure', comment: 'core imports only itself (and zod)', severity: 'error',
       from: { path: '^src/core' },
       to: { path: '^src/(services|adapters|app|ui|cli|contracts)' } },
-    { name: 'core-no-node-builtins', comment: 'no fs/path/child_process etc. in core: use a port', severity: 'error',
-      from: { path: '^src/core' }, to: { dependencyTypes: ['core'] } },
-    { name: 'core-no-io-libraries', severity: 'error',
-      from: { path: '^src/core' },
-      to: { path: 'node_modules/(electron|playwright|@playwright|@anthropic-ai|better-sqlite3|react)(/|$)' } },
 
     { name: 'services-use-core-only', severity: 'error',
-      from: { path: '^src/services' }, to: { path: '^src/(adapters|app|ui|cli)' } },
+      from: { path: '^src/services' }, to: { path: '^src/(adapters|app|ui|cli|contracts)' } },
 
     { name: 'adapters-implement-ports-only', severity: 'error',
-      from: { path: '^src/adapters' }, to: { path: '^src/(services|app|ui|cli)' } },
+      from: { path: '^src/adapters' }, to: { path: '^src/(services|app|ui|cli|contracts)' } },
     { name: 'adapters-are-independent', severity: 'error',
       from: { path: '^src/adapters/([^/]+)/' },
       to: { path: '^src/adapters/', pathNot: '^src/adapters/$1/' } },
@@ -30,6 +33,10 @@ module.exports = {
       from: { path: '^src/ui' }, to: { path: '^src/(services|adapters|app|cli)' } },
     { name: 'ui-reads-domain-types-only', severity: 'error',
       from: { path: '^src/ui' }, to: { path: '^src/core/(?!domain)' } },
+    { name: 'ui-no-electron', comment: 'the renderer reaches the main process only through the preload bridge', severity: 'error',
+      from: { path: '^src/ui/' }, to: { path: '^node_modules/electron/' } },
+    { name: 'app-cli-no-ui', comment: 'nothing points into ui', severity: 'error',
+      from: { path: '^src/(app|cli)/' }, to: { path: '^src/ui/' } },
     { name: 'design-system-knows-no-features', severity: 'error',
       from: { path: '^src/ui/design-system' }, to: { path: '^src/ui/features' } },
     { name: 'tokens-are-a-leaf', severity: 'error',
