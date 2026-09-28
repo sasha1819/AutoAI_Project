@@ -18,7 +18,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
    PR impact comments, Release Readiness score
    Reliability
    Basic retry-on-fail + flaky flag
-   Full flaky-test workflow, confidence scoring, decision log
+   Full flaky-test workflow, confidence popovers and decision log in the UI (the confidence check/threshold itself IS in MVP)
    Extra test types
    None
    Security, accessibility, explore mode
@@ -196,7 +196,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
     [ ] PR impact screen + GitHub PR bot comment
     [ ] Release Readiness score
     [ ] Full flaky-test workflow (dedicated detail screen, quarantine, root-cause pattern detection)
-    [ ] AI decision log / confidence popovers in the UI (the confidence check itself is in MVP’s backend, per Flow 2 — only the visible log is deferred)
+    [ ] AI decision log / confidence popovers in the UI — the confidence check/threshold itself IS in MVP (see Section 4's reliability guardrail; implemented in core/rules/confidence.ts). Only the visible popover UI showing that log to the user is deferred.
     [ ] Security testing tab (access control, exposed data, headers, input validation)
     [ ] Accessibility testing tab (axe-core scan per run)
     [ ] Explore mode (autonomous crawling)
