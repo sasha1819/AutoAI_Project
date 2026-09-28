@@ -84,7 +84,7 @@ Rules:
 - Features are isolated: one feature never imports another. Shared things move down to patterns.
 
 ## 8. Definition of Done (a task is not done until all are true)
-1. `npm run verify` passes (typecheck, lint, tests, `deps:check`, `tokens:check`).
+1. `npm run verify` passes. It runs, in order: `format:check`, `typecheck`, `lint`, `deps:check`, `deps:selftest`, `tokens:check`, `test`. Any new check added to verify must also be added to this list and to the verifier.
 2. New logic has tests; new/changed rules are table-tested.
 3. No rule decided outside `core/rules`; no raw design values in features.
 4. Reused an existing primitive/pattern/port if one existed (searched first).
