@@ -5,7 +5,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## M0 — Foundation (no product code yet)
 - [x] Init repo: `package.json`, TypeScript **5.x**, `tsconfig` (strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes), ESLint (typescript-eslint strict) + Prettier, Vitest, folders from ARCHITECTURE.md (empty, with `.gitkeep`)
-- [ ] Scripts: `typecheck`, `lint`, `test`, `deps:check` (`depcruise src --config .dependency-cruiser.cjs`), `tokens:check` (`node scripts/check-design-tokens.mjs`), `verify` (runs all). Confirm `deps:check` shows a non-zero module count once code exists
+- [x] Scripts: `typecheck`, `lint`, `test`, `deps:check` (`depcruise src --config .dependency-cruiser.cjs`), `tokens:check` (`node scripts/check-design-tokens.mjs`), `verify` (runs all). Confirm `deps:check` shows a non-zero module count once code exists
 - [ ] Prove the guardrails: temporarily add one illegal import, see `deps:check` fail, remove it
 - [ ] Shared building blocks: `Result` type, branded ids, error-code convention (in `core/`), with tests
 
@@ -45,6 +45,9 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 If adding a dev dependency makes vitest fail with "Cannot find native binding" (npm/cli#4828 drops `@rolldown/binding-*` from the lock), delete `node_modules` + `package-lock.json` and `npm install` fresh.
+- 2026-09-28 deps:check has no `tsConfig` option: all imports are relative. If path aliases are ever added, set `options.tsConfig` in `.dependency-cruiser.cjs` or aliased imports go unresolved and skip the layer rules.
+- 2026-09-28 `verify` = format:check, typecheck, lint, deps:check, tokens:check, test (fail-fast). format:check is one step beyond ARCHITECTURE section 8's list, on purpose.
 - 2026-09-28 Core is Node-free and deterministic by tooling: `src/core/tsconfig.json` (`types: []`) is a second typecheck pass; ESLint bans `Date.now`, `Date()`, zero-arg `new Date()`, `Math.random` in core.
 - 2026-09-28 tsc is typecheck-only (`moduleResolution: Bundler`, `noEmit`); CLI/Electron run through a TS runner/bundler later. One root tsconfig, no DOM/JSX until the UI gets its own in M4/M5.
 - 2026-09-28 M0 #1 added `typecheck`/`lint`/`test`/`format` scripts so the tools are runnable; `deps:check`/`tokens:check`/`verify` stay in M0 #2.
