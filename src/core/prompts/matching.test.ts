@@ -84,6 +84,8 @@ describe("buildMatchingPrompt", () => {
       expect(prompt.system).toContain(word);
     }
     expect(prompt.system).toMatch(/missing feature is never a mismatch/i);
+    expect(prompt.system).toMatch(/severity is for a mismatch or a not_implemented feature/i);
+    expect(prompt.system).toMatch(/for a missing feature.*"high".*core flow/is);
   });
 
   it("asks for evidence copied from the code and an honest confidence", () => {

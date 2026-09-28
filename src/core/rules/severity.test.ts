@@ -8,7 +8,8 @@ describe("findingSeverity", () => {
     ["mismatch", "low", "low"],
     ["mismatch", null, null],
     ["match", "high", null],
-    ["not_implemented", "high", null],
+    ["not_implemented", "high", "high"],
+    ["not_implemented", null, null],
   ])("%s claimed %s -> %s", (type, claimed, expected) => {
     expect(findingSeverity(type, claimed)).toBe(expected);
   });

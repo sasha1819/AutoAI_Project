@@ -172,7 +172,11 @@ describe("parseMatchingResponse — valid replies", () => {
 
   it.each<[string, object, string | null]>([
     ["drops severity on a match", { ...r1, type: "match", severity: "high" }, null],
-    ["drops severity on not_implemented", { ...r1, type: "not_implemented", evidence: null }, null],
+    [
+      "keeps severity on not_implemented, so missing features can be prioritised like bugs",
+      { ...r1, type: "not_implemented", evidence: null, severity: "high" },
+      "high",
+    ],
     ["keeps an unknown severity out", { ...r1, severity: "critical" }, null],
     ["leaves a missing severity empty", { ...r1, severity: undefined }, null],
     ["keeps a valid mismatch severity", { ...r1, severity: "low" }, "low"],

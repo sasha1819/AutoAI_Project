@@ -34,6 +34,7 @@ const Finding = z.discriminatedUnion("type", [
   z.strictObject({
     ...base,
     type: z.literal("not_implemented"),
+    severity: z.enum(["high", "medium", "low"]),
     absentTerms: z.array(z.string().min(3)).min(1),
   }),
 ]);
