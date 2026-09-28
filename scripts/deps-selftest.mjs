@@ -46,6 +46,8 @@ const illegal = [
   ["not-to-unresolvable", { "services/c25.ts": uses("./c25-missing.ts") }],
   ["only-claude-adapter-uses-anthropic-sdk", { "cli/c26.ts": uses("@anthropic-ai/sdk") }],
   ["only-claude-adapter-uses-anthropic-sdk", { "adapters/fs/c27.ts": uses("@anthropic-ai/sdk") }],
+  ["test-fakes-only-in-tests", { "services/c28.ts": uses("./testing/c28t.ts"), "services/testing/c28t.ts": leaf }],
+  ["test-fakes-only-in-tests", { "cli/c29.ts": uses("../services/testing/c29t.ts"), "services/testing/c29t.ts": leaf }],
 ];
 
 const legal = {
@@ -54,6 +56,8 @@ const legal = {
   "core/rules/lr.ts": uses("../domain/ld.ts"),
   "core/rules/lr.test.ts": uses("../../adapters/fs/lf.ts", "node:fs", "fake-lib"),
   "services/ls.ts": uses("../core/rules/lr.ts", "../core/ports/lp.ts", "zod"),
+  "services/testing/lfake.ts": uses("../../core/ports/lp.ts"),
+  "services/ls.test.ts": uses("./testing/lfake.ts"),
   "adapters/fs/lf.ts": uses("../../core/ports/lp.ts", "node:path", "fake-lib"),
   "adapters/fs/lf2.ts": uses("./lf.ts"),
   "adapters/claude/lcl.ts": uses("../../core/ports/lp.ts", "@anthropic-ai/sdk"),

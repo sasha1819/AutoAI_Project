@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   indexFiles,
   MAX_SOURCE_CHARS,
+  rankFilesForBatch,
   rankRelevantFiles,
   RELEVANT_FILE_LIMIT,
 } from "./relevance.ts";
@@ -118,5 +119,37 @@ describe("rankRelevantFiles", () => {
 
   it("returns nothing when the requirement has no usable words", () => {
     expect(rank("It", "It is the one.", [file("src/one.ts", "it is the one")])).toStrictEqual([]);
+  });
+});
+
+describe("rankFilesForBatch", () => {
+  const index = indexFiles([
+    file("src/cart/cart.js", "addItem quantity"),
+    file("src/cart/discounts.js", "discount code"),
+    file("src/app.js", "cart empty message discount quantity"),
+    file("src/checkout/shipping.js", "shipping fee"),
+  ]);
+  const cart11 = { area: "Cart", text: "Adding a product raises its quantity." };
+  const cart12 = { area: "Cart", text: "Discount codes are case-insensitive." };
+
+  it("takes each requirement's best file first, then each one's next best, without repeats", () => {
+    expect(rankFilesForBatch([cart11, cart12], index, 8)).toStrictEqual([
+      "src/cart/cart.js",
+      "src/cart/discounts.js",
+      "src/app.js",
+    ]);
+  });
+
+  it("gives every requirement its best file even when the limit is tight", () => {
+    expect(rankFilesForBatch([cart11, cart12], index, 2)).toStrictEqual([
+      "src/cart/cart.js",
+      "src/cart/discounts.js",
+    ]);
+  });
+
+  it("returns nothing when no requirement matches any file", () => {
+    expect(rankFilesForBatch([{ area: "Account", text: "Order history" }], index, 8)).toStrictEqual(
+      [],
+    );
   });
 });

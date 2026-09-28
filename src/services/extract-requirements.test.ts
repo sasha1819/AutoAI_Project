@@ -1,32 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { err, ok } from "../core/domain/result.ts";
-import type { RepoReadError, RepoReader } from "../core/ports/repo-reader.ts";
+import type { RepoReadError } from "../core/ports/repo-reader.ts";
 import { extractRequirements } from "./extract-requirements.ts";
+import { inMemoryRepoReader } from "./testing/in-memory-repo-reader.ts";
 
-type Fake = RepoReader & { readonly calls: string[] };
-
-function fakeReader(
+// Every test here reads a single PRD folder, named "docs/prds" or "p".
+const fakeReader = (
   files: Record<string, string>,
   fail: { list?: RepoReadError; read?: Record<string, RepoReadError> } = {},
-): Fake {
-  const calls: string[] = [];
-  return {
-    calls,
-    listFiles: (root) => {
-      calls.push(`list ${root}`);
-      return Promise.resolve(fail.list ? err(fail.list) : ok(Object.keys(files).sort()));
+) =>
+  inMemoryRepoReader(
+    { "docs/prds": files, p: files },
+    {
+      ...(fail.list ? { list: { "docs/prds": fail.list, p: fail.list } } : {}),
+      ...(fail.read ? { read: fail.read } : {}),
     },
-    readText: (root, path) => {
-      calls.push(`read ${root} ${path}`);
-      const failure = fail.read?.[path];
-      if (failure) return Promise.resolve(err(failure));
-      const text = files[path];
-      return Promise.resolve(
-        text === undefined ? err({ code: "PATH_NOT_FOUND", message: path }) : ok(text),
-      );
-    },
-  };
-}
+  );
 
 describe("extractRequirements", () => {
   it("reads only PRD files and returns their requirements in file, then line order", async () => {

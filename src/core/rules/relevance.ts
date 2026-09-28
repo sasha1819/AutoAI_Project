@@ -78,6 +78,27 @@ export function rankRelevantFiles(
     .slice(0, limit);
 }
 
+/**
+ * The files for one batch of requirements: every requirement's best file first, then every one's second best,
+ * and so on without repeats, so each requirement in the batch gets its most relevant code in.
+ */
+export function rankFilesForBatch(
+  requirements: readonly Pick<Requirement, "area" | "text">[],
+  index: FileIndex,
+  limit: number = RELEVANT_FILE_LIMIT,
+): readonly string[] {
+  const lists = requirements.map((r) => rankRelevantFiles(r, index, limit).map((f) => f.path));
+  const picked: string[] = [];
+  const depth = Math.max(0, ...lists.map((l) => l.length));
+  for (let rank = 0; rank < depth; rank++) {
+    for (const list of lists) {
+      const path = list[rank];
+      if (path !== undefined && !picked.includes(path) && picked.length < limit) picked.push(path);
+    }
+  }
+  return picked;
+}
+
 // "isEmpty", "place-order", "place_order" -> ["is", "empty", "place", "order", ...]. Letters of any script count
 // (PRDs are not always English); words under 3 letters and bare numbers carry no meaning here.
 function tokens(text: string): string[] {

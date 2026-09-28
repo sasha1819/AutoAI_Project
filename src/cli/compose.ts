@@ -1,5 +1,11 @@
+import {
+  type ClaudeAiProviderOptions,
+  createClaudeAiProvider,
+} from "../adapters/claude/claude-ai-provider.ts";
 import { createFsRepoReader } from "../adapters/fs/fs-repo-reader.ts";
 import { extractRequirements } from "../services/extract-requirements.ts";
+import { scanProject } from "../services/scan-project.ts";
+import { recordingAiProvider } from "./recording-ai-provider.ts";
 
 /** Terminal composition root: the only place the CLI creates adapters and hands them to services. */
 export function composeCli() {
@@ -7,5 +13,14 @@ export function composeCli() {
   return {
     extractRequirements: (input: { readonly prdFolder: string }) =>
       extractRequirements({ repoReader }, input),
+    scanProject: (
+      input: { readonly repoRoot: string; readonly prdFolder: string },
+      ai: ClaudeAiProviderOptions,
+      record?: { readonly dir: string; readonly runId: string },
+    ) => {
+      const claude = createClaudeAiProvider(ai);
+      const aiProvider = record ? recordingAiProvider(claude, record.dir, record.runId) : claude;
+      return scanProject({ repoReader, aiProvider }, input);
+    },
   };
 }
