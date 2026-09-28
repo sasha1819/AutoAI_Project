@@ -6,7 +6,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 ## M0 — Foundation (no product code yet)
 - [x] Init repo: `package.json`, TypeScript **5.x**, `tsconfig` (strict + noUncheckedIndexedAccess + exactOptionalPropertyTypes), ESLint (typescript-eslint strict) + Prettier, Vitest, folders from ARCHITECTURE.md (empty, with `.gitkeep`)
 - [x] Scripts: `typecheck`, `lint`, `test`, `deps:check` (`depcruise src --config .dependency-cruiser.cjs`), `tokens:check` (`node scripts/check-design-tokens.mjs`), `verify` (runs all). Confirm `deps:check` shows a non-zero module count once code exists
-- [ ] Prove the guardrails: temporarily add one illegal import, see `deps:check` fail, remove it
+- [x] Prove the guardrails: temporarily add one illegal import, see `deps:check` fail, remove it
+- [ ] Tighten deps:check to match ARCHITECTURE section 1 (NEEDS USER OK): core/services/contracts import only zod from npm (allowlist, no node built-ins in services/contracts); fail on unresolvable imports from src; app/cli must not import ui; services/adapters must not import contracts; ui must not import electron or node built-ins. Re-run the boundary probe
 - [ ] Shared building blocks: `Result` type, branded ids, error-code convention (in `core/`), with tests
 
 ## M1 — Reference slice + scan logic (CLI only)
@@ -45,6 +46,9 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 Gap found: `core-no-io-libraries` is a blocklist of 5 packages, so core can import any other npm package (proved with `semver`: exit 0); review found 5 more rules weaker than ARCHITECTURE. Fix is the new unticked M0 task, pending user OK.
+- 2026-09-28 Guardrails proven: each of the 14 deps:check rules fired alone (exit 1) on a throwaway illegal import; 14 legal modules across all layers passed (exit 0). `npm run verify` fails on a core -> adapter import.
+- 2026-09-28 `depcruise --output-type json` exits 0 even with violations; only the default reporter (used by deps:check) sets the exit code. Test files are excluded from deps:check by config.
 - 2026-09-28 If adding a dev dependency makes vitest fail with "Cannot find native binding" (npm/cli#4828 drops `@rolldown/binding-*` from the lock), delete `node_modules` + `package-lock.json` and `npm install` fresh.
 - 2026-09-28 deps:check has no `tsConfig` option: all imports are relative. If path aliases are ever added, set `options.tsConfig` in `.dependency-cruiser.cjs` or aliased imports go unresolved and skip the layer rules.
 - 2026-09-28 `verify` = format:check, typecheck, lint, deps:check, tokens:check, test (fail-fast). format:check is one step beyond ARCHITECTURE section 8's list, on purpose.
