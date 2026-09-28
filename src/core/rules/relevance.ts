@@ -1,4 +1,5 @@
 import type { Requirement } from "../domain/requirement.ts";
+import type { RepoFile } from "../domain/repo-file.ts";
 import { isSourceFile } from "./source-file.ts";
 
 export const RELEVANT_FILE_LIMIT = 8;
@@ -17,7 +18,6 @@ const STOP_WORDS = new Set(
   ).split(" "),
 );
 
-export type RepoFile = { readonly path: string; readonly text: string };
 type IndexedFile = {
   readonly path: string;
   readonly name: ReadonlySet<string>;

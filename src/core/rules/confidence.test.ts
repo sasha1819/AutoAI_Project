@@ -3,14 +3,10 @@ import {
   Confidence,
   type Evidence,
   type FindingType,
+  type ReviewReason,
   type ReviewStatus,
 } from "../domain/finding.ts";
-import {
-  CONFIDENCE_THRESHOLD,
-  isConfident,
-  reviewFinding,
-  type ReviewReason,
-} from "./confidence.ts";
+import { CONFIDENCE_THRESHOLD, isConfident, reviewFinding } from "./confidence.ts";
 
 const evidence: Evidence = {
   file: "src/cart/discounts.js",
@@ -38,22 +34,27 @@ describe("isConfident", () => {
 });
 
 describe("reviewFinding", () => {
-  it.each<[FindingType, number, Evidence | null, ReviewStatus, readonly ReviewReason[]]>([
-    ["mismatch", 0.9, evidence, "confirmed", []],
-    ["mismatch", 0.7, evidence, "confirmed", []],
-    ["mismatch", 0.69, evidence, "needs_review", ["LOW_CONFIDENCE"]],
-    ["mismatch", 0.9, null, "needs_review", ["MISSING_EVIDENCE"]],
-    ["mismatch", 0.3, null, "needs_review", ["LOW_CONFIDENCE", "MISSING_EVIDENCE"]],
-    ["mismatch", 1, null, "needs_review", ["MISSING_EVIDENCE"]],
-    ["match", 0.9, null, "confirmed", []],
-    ["match", 0.9, evidence, "confirmed", []],
-    ["match", 0.5, evidence, "needs_review", ["LOW_CONFIDENCE"]],
-    ["not_implemented", 0.8, null, "confirmed", []],
-    ["not_implemented", 0, null, "needs_review", ["LOW_CONFIDENCE"]],
-  ])("%s at %d with evidence=%s -> %s %j", (type, confidence, ev, reviewStatus, reasons) => {
-    expect(reviewFinding({ type, confidence: c(confidence), evidence: ev })).toStrictEqual({
-      reviewStatus,
-      reasons,
-    });
-  });
+  it.each<[FindingType, number, Evidence | null, boolean, ReviewStatus, readonly ReviewReason[]]>([
+    ["mismatch", 0.9, evidence, true, "confirmed", []],
+    ["mismatch", 0.7, evidence, true, "confirmed", []],
+    ["mismatch", 0.69, evidence, true, "needs_review", ["LOW_CONFIDENCE"]],
+    ["mismatch", 0.9, null, false, "needs_review", ["MISSING_EVIDENCE"]],
+    ["mismatch", 0.3, null, false, "needs_review", ["LOW_CONFIDENCE", "MISSING_EVIDENCE"]],
+    ["mismatch", 1, null, false, "needs_review", ["MISSING_EVIDENCE"]],
+    ["mismatch", 0.9, evidence, false, "needs_review", ["UNVERIFIED_EVIDENCE"]],
+    ["mismatch", 0.5, evidence, false, "needs_review", ["LOW_CONFIDENCE", "UNVERIFIED_EVIDENCE"]],
+    ["match", 0.9, null, false, "confirmed", []],
+    ["match", 0.9, evidence, true, "confirmed", []],
+    ["match", 0.9, evidence, false, "needs_review", ["UNVERIFIED_EVIDENCE"]],
+    ["match", 0.5, evidence, true, "needs_review", ["LOW_CONFIDENCE"]],
+    ["not_implemented", 0.8, null, false, "confirmed", []],
+    ["not_implemented", 0, null, false, "needs_review", ["LOW_CONFIDENCE"]],
+  ])(
+    "%s at %d, evidence=%j verified=%s -> %s %j",
+    (type, confidence, ev, evidenceVerified, reviewStatus, reasons) => {
+      expect(
+        reviewFinding({ type, confidence: c(confidence), evidence: ev, evidenceVerified }),
+      ).toStrictEqual({ reviewStatus, reasons });
+    },
+  );
 });
