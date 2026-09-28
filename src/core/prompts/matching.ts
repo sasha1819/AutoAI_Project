@@ -1,3 +1,4 @@
+import { FindingType, Severity } from "../domain/finding.ts";
 import { numberLine, type RepoFile, splitLines } from "../domain/repo-file.ts";
 import type { Requirement } from "../domain/requirement.ts";
 import { REPO_FILE_LIST_LIMIT } from "../rules/prompt-budget.ts";
@@ -17,6 +18,8 @@ export type MatchingPrompt = {
   readonly user: string;
   readonly requirements: readonly Requirement[];
   readonly files: readonly RepoFile[];
+  /** JSON schema of the answer, for structured output. The parser still validates what comes back. */
+  readonly answerSchema: Readonly<Record<string, unknown>>;
 };
 
 // Fixed text, identical for every call, so the adapter can cache it; everything project-specific goes in `user`.
@@ -69,7 +72,47 @@ export function buildMatchingPrompt(input: MatchingPromptInput): MatchingPrompt 
     `<code_files>\n${files}\n</code_files>${omitted}`,
     "Classify each requirement. Answer with the JSON object only.",
   ].join("\n\n");
-  return { system: SYSTEM, user, requirements: input.requirements, files: input.files };
+  return {
+    system: SYSTEM,
+    user,
+    requirements: input.requirements,
+    files: input.files,
+    answerSchema: answerSchema(input.requirements.map((_, i) => requirementRef(i))),
+  };
+}
+
+// Structured outputs accept no number or length limits, so ranges (confidence 0..1, [start, end]) are left to
+// the zod parser; enums come from the domain so the schema cannot drift from it.
+function answerSchema(ids: readonly string[]): Readonly<Record<string, unknown>> {
+  const evidence = {
+    type: "object",
+    additionalProperties: false,
+    required: ["file", "lines", "snippet"],
+    properties: {
+      file: { type: "string" },
+      lines: { type: "array", items: { type: "integer" } },
+      snippet: { type: "string" },
+    },
+  };
+  const finding = {
+    type: "object",
+    additionalProperties: false,
+    required: ["requirement", "type", "severity", "explanation", "evidence", "confidence"],
+    properties: {
+      requirement: { type: "string", enum: ids },
+      type: { type: "string", enum: FindingType.options },
+      severity: { anyOf: [{ type: "string", enum: Severity.options }, { type: "null" }] },
+      explanation: { type: "string" },
+      evidence: { anyOf: [evidence, { type: "null" }] },
+      confidence: { type: "number" },
+    },
+  };
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["findings"],
+    properties: { findings: { type: "array", items: finding } },
+  };
 }
 
 function repoFileList(paths: readonly string[]): string {

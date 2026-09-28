@@ -123,6 +123,33 @@ describe("buildMatchingPrompt", () => {
     expect(none.user).toContain("<code_files>\n(no relevant files were found)\n</code_files>");
   });
 
+  it("describes the exact answer shape as a JSON schema, allowing only this prompt's requirement ids", () => {
+    const schema = prompt.answerSchema;
+    expect(schema).toMatchObject({
+      type: "object",
+      required: ["findings"],
+      additionalProperties: false,
+    });
+    const item = (schema as { properties: { findings: { items: Record<string, unknown> } } })
+      .properties.findings.items;
+    expect(item).toMatchObject({
+      additionalProperties: false,
+      required: ["requirement", "type", "severity", "explanation", "evidence", "confidence"],
+      properties: {
+        requirement: { type: "string", enum: ["R1", "R2"] },
+        type: { type: "string", enum: ["match", "mismatch", "not_implemented"] },
+        severity: {
+          anyOf: [{ type: "string", enum: ["high", "medium", "low"] }, { type: "null" }],
+        },
+        explanation: { type: "string" },
+        confidence: { type: "number" },
+      },
+    });
+    expect(JSON.stringify(schema)).not.toMatch(
+      /minimum|maximum|minLength|maxLength|minItems|maxItems/,
+    );
+  });
+
   it("is deterministic", () => {
     expect(build()).toStrictEqual(prompt);
   });

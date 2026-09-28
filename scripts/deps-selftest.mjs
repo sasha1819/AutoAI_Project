@@ -10,7 +10,7 @@ import { dirname, join, resolve } from "node:path";
 const REPO = process.cwd();
 const CONFIG = resolve(process.argv[2] ?? ".dependency-cruiser.cjs");
 const DEPCRUISE = join(REPO, "node_modules", ".bin", "depcruise");
-const FAKE_PACKAGES = ["zod", "electron", "fake-lib"];
+const FAKE_PACKAGES = ["zod", "electron", "fake-lib", "@anthropic-ai/sdk"];
 
 const leaf = "export const v = 1;\n";
 const uses = (...specs) =>
@@ -44,6 +44,8 @@ const illegal = [
   ["app-cli-no-ui", { "app/main/c23.ts": uses("../../ui/design-system/tokens/c23t.ts"), "ui/design-system/tokens/c23t.ts": leaf }],
   ["app-cli-no-ui", { "cli/c24.ts": uses("../ui/design-system/tokens/c24t.ts"), "ui/design-system/tokens/c24t.ts": leaf }],
   ["not-to-unresolvable", { "services/c25.ts": uses("./c25-missing.ts") }],
+  ["only-claude-adapter-uses-anthropic-sdk", { "cli/c26.ts": uses("@anthropic-ai/sdk") }],
+  ["only-claude-adapter-uses-anthropic-sdk", { "adapters/fs/c27.ts": uses("@anthropic-ai/sdk") }],
 ];
 
 const legal = {
@@ -54,6 +56,7 @@ const legal = {
   "services/ls.ts": uses("../core/rules/lr.ts", "../core/ports/lp.ts", "zod"),
   "adapters/fs/lf.ts": uses("../../core/ports/lp.ts", "node:path", "fake-lib"),
   "adapters/fs/lf2.ts": uses("./lf.ts"),
+  "adapters/claude/lcl.ts": uses("../../core/ports/lp.ts", "@anthropic-ai/sdk"),
   "contracts/lc.ts": uses("../core/domain/ld.ts", "zod"),
   "app/main/lm.ts": uses("../../services/ls.ts", "../../adapters/fs/lf.ts", "../../contracts/lc.ts", "electron", "node:path"),
   "app/preload/lpl.ts": uses("../../contracts/lc.ts", "electron"),

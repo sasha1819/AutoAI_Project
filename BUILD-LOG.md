@@ -16,7 +16,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 - [x] Relevance rule (`core/rules/relevance`): which files matter for a requirement
 - [x] Confidence policy rule (`core/rules/confidence`), table-tested
 - [x] Matching prompt + finding parser (`core/prompts`, `core/parsing/finding`) tested with recorded AI responses
-- [ ] `AiProvider` port + Claude adapter (retries, rate limits, token count, `INVALID_AI_OUTPUT`)
+- [x] `AiProvider` port + Claude adapter (retries, rate limits, token count, `INVALID_AI_OUTPUT`)
 - [ ] Service `ScanProject` + CLI `npm run scan`; run `scan-evaluator` on fixtures
 - [ ] Test generation: prompt + acceptance rule + `GenerateTests` service; generated specs compile with tsc
 
@@ -46,6 +46,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 Claude adapter (ADR 0002): `createClaudeAiProvider({apiKey, model?, effort?})`, one non-streaming `messages.create` (max_tokens 16000, adaptive thinking, `output_config` effort + JSON schema from `buildMatchingPrompt().answerSchema`). `authToken: null` and a pinned baseURL so neither `ANTHROPIC_AUTH_TOKEN` nor `ANTHROPIC_BASE_URL` from the environment is used (tested). Retries are the SDK's (tested with a real 429 then 200). New deps rule `only-claude-adapter-uses-anthropic-sdk`. Tests serve API-shaped responses through the SDK's injected fetch; no live calls.
 - 2026-09-28 not_implemented findings now keep a severity on the same scale as mismatches (user), so missing features can be prioritised like bugs; only a match has none. Fixture Account 3.1 expects "medium".
 - 2026-09-28 ADR 0002 accepted (user): `@anthropic-ai/sdk` only in `adapters/claude`; BYOK key passed in, baseURL pinned to api.anthropic.com; model configurable, default `claude-sonnet-5`, effort default high; structured outputs with the zod parser as the gate; seven AI error codes; tests use recorded responses via the SDK's injected fetch.
 - 2026-09-28 For ScanProject: batch requirements per area (scan-engine skill) with no size limit yet; if a big area's prompt gets long, cap requirements per batch. Pass `buildMatchingPrompt(...)` itself to `parseMatchingResponse` (the prompt carries the requirements and files it showed, so they cannot drift). A model or recording is still needed: scan-evaluator needs the Claude adapter (ADR 0002) + ScanProject + `npm run scan`; no numbers until then.
