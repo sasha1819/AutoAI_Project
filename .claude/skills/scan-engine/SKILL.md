@@ -11,7 +11,7 @@ Loads together with the `architecture` skill. Where each piece lives:
 | --- | --- | --- |
 | Requirement/Finding/Evidence types | `core/domain/` | zod schemas + inferred types |
 | PRD text -> requirements | `core/parsing/prd.ts` | pure text parsing, no AI |
-| Which repo files matter for a requirement | `core/rules/relevance.ts` | pure keyword/path scoring over a file list |
+| Which repo files matter for a requirement | `core/rules/relevance.ts` | pure keyword scoring over file paths and local file text |
 | Prompt text for matching / test generation | `core/prompts/` | pure functions returning strings |
 | Validate + normalise Claude's answer | `core/parsing/finding.ts` | zod; invalid => `INVALID_AI_OUTPUT` |
 | Confidence policy (< 0.7 => needs_review, mismatch needs evidence) | `core/rules/confidence.ts` | table-tested |
