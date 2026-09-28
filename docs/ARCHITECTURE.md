@@ -62,7 +62,7 @@ TestCase · Run (status) · Step · Diagnosis · Confidence · ReviewStatus (`co
 ## 6. Testing (logic first)
 | Layer | Test type | Bar |
 | --- | --- | --- |
-| core | unit tests, written BEFORE or with the code; table-driven for rules | >= 90% lines and branches on `core/rules` and `core/parsing` |
+| core | unit tests, written BEFORE or with the code; table-driven for rules | >= 90% lines and branches on `core/rules` and `core/parsing` (enforced in verify, aggregated per folder, not per file; folders and bar live in `coverage-thresholds.json`) |
 | services | tests with in-memory fake ports (no network, no disk) | every use case: happy path + each failure code |
 | adapters | contract tests against the port; Claude adapter tested with recorded responses, never live in CI | each port method |
 | ui | component tests (Testing Library) + a story per state | every primitive and pattern |
@@ -84,7 +84,7 @@ Rules:
 - Features are isolated: one feature never imports another. Shared things move down to patterns.
 
 ## 8. Definition of Done (a task is not done until all are true)
-1. `npm run verify` passes. It runs, in order: `lock:check`, `lock:selftest`, `format:check`, `typecheck`, `lint`, `deps:check`, `deps:selftest`, `tokens:check`, `test`. Any new check added to verify must also be added to this list and to the verifier.
+1. `npm run verify` passes. It runs, in order: `lock:check`, `lock:selftest`, `format:check`, `typecheck`, `lint`, `deps:check`, `deps:selftest`, `tokens:check`, `test:coverage`, `coverage:scope`. Any new check added to verify must also be added to this list and to the verifier.
 2. New logic has tests; new/changed rules are table-tested.
 3. No rule decided outside `core/rules`; no raw design values in features.
 4. Reused an existing primitive/pattern/port if one existed (searched first).
