@@ -1,0 +1,22 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 2rem;
+  max-width: 40rem;
+}
+
+li {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.25rem 1rem;
+}
+
+[hidden] {
+  display: none;
+}

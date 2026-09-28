@@ -4,9 +4,8 @@ import guarded from "./coverage-thresholds.json" with { type: "json" };
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
-    // The repo has no tests until the first core module lands; an empty run must not fail verify.
-    passWithNoTests: true,
+    // fixtures/*.test.mjs sit outside fixtures/sample-repo so the scan engine never reads them.
+    include: ["src/**/*.test.ts", "fixtures/*.test.mjs"],
     coverage: {
       provider: "v8",
       // Listing every source file (not only those a test imports) makes an untested file count as 0%.

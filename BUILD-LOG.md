@@ -12,7 +12,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## M1 — Reference slice + scan logic (CLI only)
 - [x] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
-- [ ] Fixtures: tiny sample web app + PRD + `fixtures/expected-findings.json` (3 planted mismatches, 2 correct features)
+- [x] Fixtures: tiny sample web app + PRD + `fixtures/expected-findings.json` (3 planted mismatches, 2 correct features)
 - [ ] Relevance rule (`core/rules/relevance`): which files matter for a requirement
 - [ ] Confidence policy rule (`core/rules/confidence`), table-tested
 - [ ] Matching prompt + finding parser (`core/prompts`, `core/parsing/finding`) tested with recorded AI responses
@@ -46,6 +46,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 Fixtures: runnable no-dependency shop (`fixtures/sample-repo`), PRDs in two styles (`shop.md` tagged; `checkout.md` written like `docs/PRD.md`, which today's parser extracts 0 from, per user), answer key keyed by PRD location (file + line) with evidence, `parser` status and expected severity. `src/cli/fixtures.test.ts` keeps the key true to the PRDs, parser and cited lines, and blocks answer hints inside sample-repo; `fixtures/sample-repo.test.mjs` proves the planted bugs are real. `passWithNoTests` removed from Vitest (it would hide a broken include).
+- 2026-09-28 CONFIRMED gap: `docs/PRD.md` (a real doc-editor export) yields 0 requirements with the heading/tag parser. Kept in `docs/LATER.md` as validated; the fixture's `checkout.md` makes the accuracy test count it.
 - 2026-09-28 OPEN: a PRD file with no tags and no headings (plain prose .txt) yields 0 requirements; the CLI now names such files. Whether to fall back to one requirement per paragraph is undecided.
 - 2026-09-28 Reference slice shape to copy: core rule/parsing (table tests) -> port type in `core/ports` with a closed error-code union -> service `fn(deps, input): Promise<Result<T, PortCodes | OwnCodes>>` tested with an in-memory fake that records calls -> adapter with `translate()` (expected errno -> code, anything else rethrown) tested on a real temp dir -> `cli/compose.ts` wiring + thin entry (parseArgs + zod, exit 0/1/2) tested by spawning `node`.
 - 2026-09-28 Requirement = {tag, area, text, source{file,line}}; no id until storage. `tag` is "Area 1.2" for tagged items, else the heading title, and is not unique. Parser is generic (no product words). Coverage proof: deleting prd.test.ts drops branches to 71.7%, deleting its tagged-items block to 88.3%; verify fails both times.
