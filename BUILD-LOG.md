@@ -13,7 +13,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 ## M1 — Reference slice + scan logic (CLI only)
 - [x] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
 - [x] Fixtures: tiny sample web app + PRD + `fixtures/expected-findings.json` (3 planted mismatches, 2 correct features)
-- [ ] Relevance rule (`core/rules/relevance`): which files matter for a requirement
+- [x] Relevance rule (`core/rules/relevance`): which files matter for a requirement
 - [ ] Confidence policy rule (`core/rules/confidence`), table-tested
 - [ ] Matching prompt + finding parser (`core/prompts`, `core/parsing/finding`) tested with recorded AI responses
 - [ ] `AiProvider` port + Claude adapter (retries, rate limits, token count, `INVALID_AI_OUTPUT`)
@@ -46,6 +46,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 TODO for ScanProject / matching prompt: a TOTAL character budget for the file contents sent to Claude. The relevance rule caps the file count (8) and skips files over `MAX_SOURCE_CHARS` (200k), but eight 150k files would still be too much.
+- 2026-09-28 Relevance rule: keyword overlap scored filename 3 / folder 2 / file text 1, area words x2, top `RELEVANT_FILE_LIMIT` (8), any script (Unicode letters). Deviates from the scan-engine skill's "path scoring": file text is matched too (lowest weight), because paths alone cannot find `src/app.js` for fixture Cart 1.3. Fixture check: every cited evidence file ranks in the top 3. `isSourceFile` skips tests (so generated `tests/autoai` specs never feed back), build output, hidden paths, `.d.ts`/`.min.js`. Possible later: code stop-words (button, form, return) if ranking gets noisy.
 - 2026-09-28 Fixture gains a not-implemented case (user request): Account 3.1 order history, which the shop never built. Its key entry lists `absentTerms` instead of evidence; tests pin its type and fail if it is relabelled, dropped from key or PRD, or if the feature appears in sample-repo. scan-evaluator now compares by PRD file + line and counts not_implemented reported as mismatch as a false positive.
 - 2026-09-28 Fixtures: runnable no-dependency shop (`fixtures/sample-repo`), PRDs in two styles (`shop.md` tagged; `checkout.md` written like `docs/PRD.md`, which today's parser extracts 0 from, per user), answer key keyed by PRD location (file + line) with evidence, `parser` status and expected severity. `src/cli/fixtures.test.ts` keeps the key true to the PRDs, parser and cited lines, and blocks answer hints inside sample-repo; `fixtures/sample-repo.test.mjs` proves the planted bugs are real. `passWithNoTests` removed from Vitest (it would hide a broken include).
 - 2026-09-28 CONFIRMED gap: `docs/PRD.md` (a real doc-editor export) yields 0 requirements with the heading/tag parser. Kept in `docs/LATER.md` as validated; the fixture's `checkout.md` makes the accuracy test count it.

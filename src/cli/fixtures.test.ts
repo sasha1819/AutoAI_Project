@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { indexFiles, rankRelevantFiles } from "../core/rules/relevance.ts";
 import { composeCli } from "./compose.ts";
 
 // Keeps fixtures/expected-findings.json honest: every entry must match the real PRDs, the real sample repo,
@@ -102,6 +103,25 @@ describe("fixtures/expected-findings.json", () => {
       );
       expect(from).toBeLessThanOrEqual(to);
       expect(lines.slice(from - 1, to).join("\n"), at(f)).toContain(f.evidence.snippet);
+    }
+  });
+
+  it("lets the relevance rule rank each extracted requirement's evidence file in its top 3", async () => {
+    const result = await composeCli().extractRequirements({ prdFolder: PRDS });
+    if (!result.ok) throw new Error(result.error.message);
+    const index = indexFiles(
+      repoFiles.map(({ path, text }) => ({
+        path: relative(REPO, path).split(sep).join("/"),
+        text,
+      })),
+    );
+    for (const f of withEvidence.filter((x) => x.parser === "extracted")) {
+      const requirement = result.value.requirements.find(
+        (r) => `${r.source.file}:${String(r.source.line)}` === at(f),
+      );
+      if (!requirement) throw new Error(`${at(f)} not extracted`);
+      const top = rankRelevantFiles(requirement, index, 3).map((r) => r.path);
+      expect(top, at(f)).toContain(f.evidence.file);
     }
   });
 
