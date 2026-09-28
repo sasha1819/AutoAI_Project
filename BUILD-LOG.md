@@ -14,7 +14,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 - [x] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
 - [x] Fixtures: tiny sample web app + PRD + `fixtures/expected-findings.json` (3 planted mismatches, 2 correct features)
 - [x] Relevance rule (`core/rules/relevance`): which files matter for a requirement
-- [ ] Confidence policy rule (`core/rules/confidence`), table-tested
+- [x] Confidence policy rule (`core/rules/confidence`), table-tested
 - [ ] Matching prompt + finding parser (`core/prompts`, `core/parsing/finding`) tested with recorded AI responses
 - [ ] `AiProvider` port + Claude adapter (retries, rate limits, token count, `INVALID_AI_OUTPUT`)
 - [ ] Service `ScanProject` + CLI `npm run scan`; run `scan-evaluator` on fixtures
@@ -46,6 +46,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 TODO for the matching task: verify cited evidence against the real file (AI may hallucinate lines/snippets). Pure `core/rules/evidence.ts` `verifyEvidence(evidence, fileText)` (the service reads the file via the port), also "unverified" if the cited file was not among the ranked relevant files; `reviewFinding` takes the result as input and adds `UNVERIFIED_EVIDENCE`, staying the only place that sets reviewStatus. The full `Finding` (severity, explanation) arrives with the finding parser.
+- 2026-09-28 Confidence policy: `CONFIDENCE_THRESHOLD` 0.7 (>= is confident; diagnosis reuses `isConfident`). `reviewFinding` returns reviewStatus plus reasons (`LOW_CONFIDENCE`, `MISSING_EVIDENCE`); only a mismatch must cite evidence. Reasons are backend data only; the visible decision log stays in LATER. `Confidence` is a branded 0..1 number, `Evidence` is {file, lines [start,end], snippet}.
 - 2026-09-28 scan-engine skill updated (user): relevance is "keyword scoring over file paths and local file text", matching relevance.ts.
 - 2026-09-28 TODO (user: build with the matching prompt, sized against the real prompt shape): a TOTAL character budget for the file contents sent to Claude. The relevance rule caps the file count (8) and skips files over `MAX_SOURCE_CHARS` (200k), but eight 150k files would still be too much.
 - 2026-09-28 Relevance rule: keyword overlap scored filename 3 / folder 2 / file text 1, area words x2, top `RELEVANT_FILE_LIMIT` (8), any script (Unicode letters). Deviates from the scan-engine skill's "path scoring": file text is matched too (lowest weight), because paths alone cannot find `src/app.js` for fixture Cart 1.3. Fixture check: every cited evidence file ranks in the top 3. `isSourceFile` skips tests (so generated `tests/autoai` specs never feed back), build output, hidden paths, `.d.ts`/`.min.js`. Possible later: code stop-words (button, form, return) if ranking gets noisy.
