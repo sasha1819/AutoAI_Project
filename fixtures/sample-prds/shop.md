@@ -13,3 +13,7 @@ Cart 1.3: When the last item is removed, the cart shows the message "Your cart i
 ## Shipping
 
 Shipping 2.1: Shipping costs $5.00 per order. Orders whose subtotal before discounts is $50.00 or more ship free. An empty cart shows $0.00 shipping.
+
+## Account
+
+Account 3.1: Signed-in customers can open an "Order history" page that lists their past orders with the date and total of each.

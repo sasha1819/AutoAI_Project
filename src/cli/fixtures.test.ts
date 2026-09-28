@@ -10,32 +10,39 @@ const FIXTURES = join(import.meta.dirname, "..", "..", "fixtures");
 const PRDS = join(FIXTURES, "sample-prds");
 const REPO = join(FIXTURES, "sample-repo");
 
-const AnswerKey = z.object({
-  about: z.string(),
-  findings: z.array(
-    z
-      .object({
-        prd: z.object({ file: z.string(), line: z.number().int().positive() }),
-        tag: z.string().nullable(),
-        parser: z.enum(["extracted", "not_extracted"]),
-        type: z.enum(["match", "mismatch", "not_implemented"]),
-        severity: z.enum(["high", "medium", "low"]).optional(),
-        evidence: z.object({
-          file: z.string(),
-          lines: z.tuple([z.number().int().positive(), z.number().int().positive()]),
-          snippet: z.string().min(1),
-        }),
-        why: z.string().min(1),
-      })
-      .refine((f) => (f.type === "mismatch") === (f.severity !== undefined), {
-        message: "a mismatch needs an expected severity; other types must not have one",
-      }),
-  ),
+const base = {
+  prd: z.strictObject({ file: z.string(), line: z.number().int().positive() }),
+  tag: z.string().nullable(),
+  parser: z.enum(["extracted", "not_extracted"]),
+  why: z.string().min(1),
+};
+const Evidence = z.strictObject({
+  file: z.string(),
+  lines: z.tuple([z.number().int().positive(), z.number().int().positive()]),
+  snippet: z.string().min(1),
 });
-const key = AnswerKey.parse(
-  JSON.parse(readFileSync(join(FIXTURES, "expected-findings.json"), "utf8")),
-);
+const Finding = z.discriminatedUnion("type", [
+  z.strictObject({ ...base, type: z.literal("match"), evidence: Evidence }),
+  z.strictObject({
+    ...base,
+    type: z.literal("mismatch"),
+    severity: z.enum(["high", "medium", "low"]),
+    evidence: Evidence,
+  }),
+  // Nothing to cite for a feature that was never built; instead, name what must not exist in the repo.
+  z.strictObject({
+    ...base,
+    type: z.literal("not_implemented"),
+    absentTerms: z.array(z.string().min(3)).min(1),
+  }),
+]);
+const key = z
+  .strictObject({ about: z.string(), findings: z.array(Finding) })
+  .parse(JSON.parse(readFileSync(join(FIXTURES, "expected-findings.json"), "utf8")));
+
 const at = (f: { prd: { file: string; line: number } }) => `${f.prd.file}:${String(f.prd.line)}`;
+const withEvidence = key.findings.flatMap((f) => (f.type === "not_implemented" ? [] : [f]));
+const notImplemented = key.findings.flatMap((f) => (f.type === "not_implemented" ? [f] : []));
 
 function* files(dir: string): Generator<string> {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -44,12 +51,22 @@ function* files(dir: string): Generator<string> {
     else yield p;
   }
 }
+const repoFiles = [...files(REPO)].map((path) => ({ path, text: readFileSync(path, "utf8") }));
 
 describe("fixtures/expected-findings.json", () => {
-  it("plants exactly 3 mismatches and 2 correct features, each at a distinct PRD location", () => {
-    expect(key.findings.filter((f) => f.type === "mismatch")).toHaveLength(3);
-    expect(key.findings.filter((f) => f.type === "match")).toHaveLength(2);
+  it("plants 3 mismatches, 2 correct features and 1 not-implemented feature, each at a distinct PRD location", () => {
+    const count = (type: string) => key.findings.filter((f) => f.type === type).length;
+    expect({
+      mismatch: count("mismatch"),
+      match: count("match"),
+      not_implemented: count("not_implemented"),
+    }).toStrictEqual({ mismatch: 3, match: 2, not_implemented: 1 });
     expect(new Set(key.findings.map(at)).size).toBe(key.findings.length);
+  });
+
+  it("keeps Account 3.1 (order history) categorized as not_implemented, never as a mismatch", () => {
+    const account = key.findings.filter((f) => f.tag === "Account 3.1");
+    expect(account.map((f) => [at(f), f.type])).toStrictEqual([["shop.md:19", "not_implemented"]]);
   });
 
   it("says exactly which requirements today's parser extracts, at the stated location and tag", async () => {
@@ -77,7 +94,7 @@ describe("fixtures/expected-findings.json", () => {
   });
 
   it("cites evidence that really is in the sample repo at the stated lines", () => {
-    for (const f of key.findings) {
+    for (const f of withEvidence) {
       const [from, to] = f.evidence.lines;
       const lines = readFileSync(join(REPO, f.evidence.file), "utf8").split("\n");
       expect(to, `${f.evidence.file} has ${String(lines.length)} lines`).toBeLessThanOrEqual(
@@ -88,14 +105,28 @@ describe("fixtures/expected-findings.json", () => {
     }
   });
 
+  it("has no code for a not-implemented feature anywhere in the sample repo", () => {
+    // "order history", "orderHistory" and "order-history" must all count, so compare without case or separators.
+    const squash = (s: string) => s.toLowerCase().replace(/[\s_-]+/g, "");
+    for (const f of notImplemented) {
+      for (const term of f.absentTerms) {
+        const hit = repoFiles.find((r) => squash(r.text).includes(squash(term)));
+        expect(hit && relative(FIXTURES, hit.path), `${at(f)} "${term}"`).toBeUndefined();
+      }
+    }
+  });
+
   it("leaks no answers into the sample repo the scan engine reads", () => {
-    const tell =
-      /mismatch|planted|answer|expected-findings|fixme|todo|\bbug|\bspec\b|\bprd\b|requirement|should|wrong|case.?(in)?sensitive|Cart \d|Shipping \d/i;
-    for (const file of files(REPO)) {
-      const hit = readFileSync(file, "utf8")
-        .split("\n")
-        .find((l) => tell.test(l));
-      expect(hit, relative(FIXTURES, file)).toBeUndefined();
+    const tags = key.findings.flatMap((f) => (f.tag === null ? [] : [f.tag.replace(".", "\\.")]));
+    const tell = new RegExp(
+      `mismatch|planted|answer|expected-findings|fixme|todo|\\bbug|\\bspec\\b|\\bprd\\b|requirement|should|wrong|case.?(in)?sensitive|${tags.join("|")}`,
+      "i",
+    );
+    for (const { path, text } of repoFiles) {
+      expect(
+        text.split("\n").find((l) => tell.test(l)),
+        relative(FIXTURES, path),
+      ).toBeUndefined();
     }
   });
 });

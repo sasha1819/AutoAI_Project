@@ -48,6 +48,22 @@
       "why": "Free shipping starts above $50.00, so a subtotal of exactly $50.00 is charged $5.00: the customer pays money the spec says they should not."
     },
     {
+      "prd": { "file": "shop.md", "line": 19 },
+      "tag": "Account 3.1",
+      "parser": "extracted",
+      "type": "not_implemented",
+      "absentTerms": [
+        "order history",
+        "past orders",
+        "account",
+        "sign in",
+        "signed-in",
+        "login",
+        "log in"
+      ],
+      "why": "The shop has no accounts or order pages at all. A missing feature is not a mismatch: reporting it as one is a false positive."
+    },
+    {
       "prd": { "file": "checkout.md", "line": 5 },
       "tag": null,
       "parser": "not_extracted",

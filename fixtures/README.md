@@ -4,7 +4,7 @@
 - `sample-prds/`: its spec, in two styles on purpose.
   - `shop.md`: clean markdown with tagged items ("Cart 1.2: ...").
   - `checkout.md`: written like a doc-editor export (title line, numbered sections, indented text, no `#` headings or tags). This is how `docs/PRD.md` is written, and today's parser extracts 0 requirements from it.
-- `expected-findings.json`: the answer key. 3 planted mismatches, 2 correct features. Each entry is keyed by PRD location (`prd.file` + `prd.line`), cites evidence (file, lines, snippet) in `sample-repo`, and records whether today's parser extracts it.
+- `expected-findings.json`: the answer key. 3 planted mismatches, 2 correct features, 1 not-implemented feature (Account 3.1, order history: the shop has no accounts). A not-implemented entry has no evidence; it lists `absentTerms` that must not appear anywhere in `sample-repo`, and reporting it as a mismatch is a false positive. Each entry is keyed by PRD location (`prd.file` + `prd.line`) and records whether today's parser extracts it; each match and mismatch entry also cites evidence (file, lines, snippet) in `sample-repo`.
   - `prd.line` is the line where the requirement starts: the tag line for a tagged item, the section heading line for a heading or numbered section (`checkout.md` line 5, "1. Placing an order", not the body on line 6). This matches `Requirement.source.line`.
   - `type` is lowercase `match` | `mismatch` | `not_implemented` (the scan-engine skill's spelling; the PRD's "Match/Mismatch/NotImplemented" table is a sketch). Every mismatch carries an expected `severity` (`high` | `medium` | `low`); the key for severity is a judgement, so grade it loosely.
 
