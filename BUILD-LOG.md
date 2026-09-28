@@ -8,7 +8,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 - [x] Scripts: `typecheck`, `lint`, `test`, `deps:check` (`depcruise src --config .dependency-cruiser.cjs`), `tokens:check` (`node scripts/check-design-tokens.mjs`), `verify` (runs all). Confirm `deps:check` shows a non-zero module count once code exists
 - [x] Prove the guardrails: temporarily add one illegal import, see `deps:check` fail, remove it
 - [x] Tighten deps:check to match ARCHITECTURE section 1 (approved by user in chat 2026-09-28): core/services/contracts import only zod from npm (allowlist, no node built-ins in services/contracts); fail on unresolvable imports from src; app/cli must not import ui; services/adapters must not import contracts; ui must not import electron or node built-ins. Re-run the boundary probe
-- [ ] Shared building blocks: `Result` type, branded ids, error-code convention (in `core/`), with tests
+- [x] Shared building blocks: `Result` type, branded ids, error-code convention (in `core/`), with tests
 
 ## M1 — Reference slice + scan logic (CLI only)
 - [ ] REFERENCE SLICE: "PRD text -> Requirement[]" through core (`parsing/prd`, domain types) -> service `ExtractRequirements` -> `RepoReader`/fs adapter -> CLI command. Full tests. All later code copies this shape
@@ -46,6 +46,10 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 Type-level rules are pinned with `// @ts-expect-error` in tests (enforced by `npm run typecheck`) and mutation-checked. Use this for every future compile-time rule.
+- 2026-09-28 Ids are zod-branded strings (1-128 chars, no whitespace) for the 7 PRD entities in `core/domain/ids.ts`; a branded id only comes from parsing, so no `as` casts. Schema const and type share one name.
+- 2026-09-28 `Result<T, E extends DomainError>` with `ok`/`err` only (no map/unwrap until needed). `ErrorCode = Uppercase<string>`: lowercase codes don't compile; each use case declares its own closed union of codes, no global registry.
+- 2026-09-28 zod 4.6.5 added (runtime dependency, exact pin). npm/cli#4828 hit again on install; lockfile regenerated per the recipe below.
 - 2026-09-28 `deps:selftest` (scripts/deps-selftest.mjs, in `verify`) builds a fake src/ + fake packages in the OS temp dir and proves each rule: 25 illegal cases trip exactly their rule, 18 legal files (incl. .tsx) stay clean. Mutation-checked. Add a case whenever a rule is added.
 - 2026-09-28 Layer rules are now an allowlist per the user: core/services/contracts import only zod from npm; no Node built-ins in core/services/contracts/ui; services/adapters never import contracts; ui never imports electron; app/cli never import ui; unresolvable imports fail.
 - 2026-09-28 Gap found: `core-no-io-libraries` is a blocklist of 5 packages, so core can import any other npm package (proved with `semver`: exit 0); review found 5 more rules weaker than ARCHITECTURE. Fix is the new unticked M0 task, pending user OK.
