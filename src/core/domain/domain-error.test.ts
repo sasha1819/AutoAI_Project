@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { DomainError, ErrorCode } from "./domain-error";
+import type { DomainError, ErrorCode } from "./domain-error.ts";
 
 describe("DomainError", () => {
   it("accepts SCREAMING_SNAKE codes", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import type { DomainError } from "./domain-error";
-import { err, ok, type Result } from "./result";
+import type { DomainError } from "./domain-error.ts";
+import { err, ok, type Result } from "./result.ts";
 
 type LookupError = DomainError<"NOT_FOUND" | "AMBIGUOUS">;
 

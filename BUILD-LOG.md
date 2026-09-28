@@ -46,6 +46,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 ADR 0002 is reserved for the Anthropic SDK decision (with the `AiProvider` + Claude adapter task); ADR numbers are never reused.
+- 2026-09-28 ADR 0003 (accepted): TypeScript runs on Node's built-in type stripping (`node src/cli/x.ts`), no tsx/build step. tsconfig is `NodeNext` + `allowImportingTsExtensions` + `erasableSyntaxOnly`, so every relative import ends in `.ts` (tsc rejects extensionless: TS2835) and `enum`/`namespace` don't compile. `engines: >=22.18`, `.nvmrc` = 24. deps:selftest now uses `.ts`/`.tsx` specifiers. Replaces the earlier `moduleResolution: Bundler` note.
 - 2026-09-28 Coverage (user request): @vitest/coverage-v8 5.0.2; `coverage-thresholds.json` (folders + 90% lines/branches, aggregate per folder) feeds both the Vitest thresholds and `coverage:scope`. Vitest alone passes silently for a folder glob matching no files, so `coverage:scope` fails on a missing folder, an unmeasured or stale file, or a malformed config, and prints a NOTICE for an empty folder. `npm test` stays plain; verify runs `test:coverage` + `coverage:scope`.
 - 2026-09-28 `lock:check` + `lock:selftest` run first in `verify` (user request): every `optionalDependencies` entry in package-lock.json must resolve to a lock entry, else fail with the rebuild command. Generic, covers rolldown and lightningcss binaries.
 - 2026-09-28 Type-level rules are pinned with `// @ts-expect-error` in tests (enforced by `npm run typecheck`) and mutation-checked. Use this for every future compile-time rule.

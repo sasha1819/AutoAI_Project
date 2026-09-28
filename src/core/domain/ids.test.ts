@@ -1,5 +1,13 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { DiagnosisId, FindingId, ProjectId, RequirementId, RunId, StepId, TestCaseId } from "./ids";
+import {
+  DiagnosisId,
+  FindingId,
+  ProjectId,
+  RequirementId,
+  RunId,
+  StepId,
+  TestCaseId,
+} from "./ids.ts";
 
 const schemas = { ProjectId, RequirementId, FindingId, TestCaseId, RunId, StepId, DiagnosisId };
 
