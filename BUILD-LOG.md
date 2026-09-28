@@ -46,6 +46,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-28 `lock:check` + `lock:selftest` run first in `verify` (user request): every `optionalDependencies` entry in package-lock.json must resolve to a lock entry, else fail with the rebuild command. Generic, covers rolldown and lightningcss binaries.
 - 2026-09-28 Type-level rules are pinned with `// @ts-expect-error` in tests (enforced by `npm run typecheck`) and mutation-checked. Use this for every future compile-time rule.
 - 2026-09-28 Ids are zod-branded strings (1-128 chars, no whitespace) for the 7 PRD entities in `core/domain/ids.ts`; a branded id only comes from parsing, so no `as` casts. Schema const and type share one name.
 - 2026-09-28 `Result<T, E extends DomainError>` with `ok`/`err` only (no map/unwrap until needed). `ErrorCode = Uppercase<string>`: lowercase codes don't compile; each use case declares its own closed union of codes, no global registry.

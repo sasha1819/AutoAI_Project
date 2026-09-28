@@ -16,7 +16,9 @@
     "deps:check": "depcruise src --config .dependency-cruiser.cjs",
     "deps:selftest": "node scripts/deps-selftest.mjs",
     "tokens:check": "node scripts/check-design-tokens.mjs",
-    "verify": "npm run format:check && npm run typecheck && npm run lint && npm run deps:check && npm run deps:selftest && npm run tokens:check && npm run test"
+    "lock:check": "node scripts/check-lockfile.mjs",
+    "lock:selftest": "node scripts/lock-selftest.mjs",
+    "verify": "npm run lock:check && npm run lock:selftest && npm run format:check && npm run typecheck && npm run lint && npm run deps:check && npm run deps:selftest && npm run tokens:check && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
