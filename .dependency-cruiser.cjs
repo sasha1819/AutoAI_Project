@@ -35,6 +35,8 @@ module.exports = {
       from: { path: '^src/ui' }, to: { path: '^src/core/(?!domain)' } },
     { name: 'only-claude-adapter-uses-anthropic-sdk', comment: 'ADR 0002: every Claude call goes through adapters/claude', severity: 'error',
       from: { path: '^src/', pathNot: '^src/adapters/claude/' }, to: { path: '^node_modules/@anthropic-ai/' } },
+    { name: 'only-playwright-adapter-uses-playwright-and-typescript', comment: 'ADR 0004: runtime TypeScript and Playwright stay inside adapters/playwright', severity: 'error',
+      from: { path: '^src/', pathNot: '^src/adapters/playwright/' }, to: { path: '^node_modules/(typescript|@playwright|playwright|playwright-core)/' } },
     { name: 'test-fakes-only-in-tests', comment: 'services/testing holds fake ports; only *.test.ts files (excluded from this cruise) may use them', severity: 'error',
       from: { path: '^src/', pathNot: '^src/services/testing/' }, to: { path: '^src/services/testing/' } },
     { name: 'ui-no-electron', comment: 'the renderer reaches the main process only through the preload bridge', severity: 'error',
