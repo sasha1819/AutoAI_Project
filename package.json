@@ -12,6 +12,7 @@
     "lint": "eslint . --max-warnings 0",
     "requirements": "node src/cli/extract-requirements.ts",
     "scan": "node src/cli/scan.ts",
+    "generate-tests": "node src/cli/generate-tests.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage:scope": "node scripts/check-coverage-scope.mjs",

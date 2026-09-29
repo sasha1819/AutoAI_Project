@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { Confidence, type Finding } from "../domain/finding.ts";
 import type { Requirement } from "../domain/requirement.ts";
+import type { PackageDependencies } from "../parsing/package-json.ts";
 import {
   checkGeneratedTest,
+  existingTestPath,
   GENERATED_TEST_DIR,
   generatedTestFileNames,
+  PLAYWRIGHT_NOTICE,
+  playwrightNotice,
   shouldGenerateTest,
 } from "./generated-test.ts";
 
@@ -141,6 +145,17 @@ describe("checkGeneratedTest", () => {
     ],
     ["a require call", edit("", "") + '\nconst fs = require("node:fs");', /Imports "node:fs"/],
     [
+      "a dynamic import with a template literal",
+      `${good}\nawait import(\`node:fs\`);`,
+      /Imports "node:fs"/,
+    ],
+    [
+      "a type-only import from the app",
+      `${good}\nimport type { Cart } from "../../src/cart.js";`,
+      /Imports "..\/..\/src\/cart.js"/,
+    ],
+    ["a re-export", `${good}\nexport { helper } from "./helpers";`, /Imports ".\/helpers"/],
+    [
       "no Playwright import",
       edit('import { expect, test } from "@playwright/test";\n', ""),
       /Does not import from "@playwright\/test"/,
@@ -148,5 +163,48 @@ describe("checkGeneratedTest", () => {
   ])("rejects %s", (_name, code, problem) => {
     const problems = checkGeneratedTest(code, "Cart 1.2");
     expect(problems.join("\n")).toMatch(problem);
+  });
+});
+
+describe("existingTestPath", () => {
+  const existing = [
+    {
+      path: "tests/autoai/cart-1-2-old-name.spec.ts",
+      firstLine: "// AutoAI requirement: Cart 1.2",
+    },
+    {
+      path: "tests/autoai/handwritten.spec.ts",
+      firstLine: 'import { test } from "@playwright/test";',
+    },
+    { path: "tests/autoai/checkout-guests.spec.ts", firstLine: "// AutoAI requirement: Checkout" },
+  ];
+
+  it.each<[string, string, string | null]>([
+    ["Cart 1.2", "cart-1-2-new-name.spec.ts", "tests/autoai/cart-1-2-old-name.spec.ts"],
+    ["Cart 1.3", "handwritten.spec.ts", "tests/autoai/handwritten.spec.ts"],
+    ["Checkout", "checkout-pay.spec.ts", "tests/autoai/checkout-guests.spec.ts"],
+    ["Cart 1.3", "cart-1-3.spec.ts", null],
+    ["Cart 1.20", "cart-1-20.spec.ts", null],
+  ])("tag %s / file %s -> %s", (tag, fileName, path) => {
+    expect(existingTestPath(tag, fileName, existing)).toBe(path);
+  });
+
+  it("ignores trailing spaces in the header", () => {
+    expect(
+      existingTestPath("Cart 1.2", "x.spec.ts", [
+        { path: "tests/autoai/a.spec.ts", firstLine: "  // AutoAI requirement: Cart 1.2  " },
+      ]),
+    ).toBe("tests/autoai/a.spec.ts");
+  });
+});
+
+describe("playwrightNotice", () => {
+  it.each<[string, PackageDependencies | null, string | null]>([
+    ["a dev dependency", { names: ["@playwright/test", "vite"] }, null],
+    ["a dependency", { names: ["@playwright/test"] }, null],
+    ["no Playwright", { names: ["react"] }, PLAYWRIGHT_NOTICE],
+    ["no package.json, or one that cannot be read", null, PLAYWRIGHT_NOTICE],
+  ])("%s -> %s", (_name, pkg, notice) => {
+    expect(playwrightNotice(pkg)).toBe(notice);
   });
 });

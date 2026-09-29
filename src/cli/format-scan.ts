@@ -1,14 +1,7 @@
 import type { Finding, ReviewReason } from "../core/domain/finding.ts";
 import type { Requirement } from "../core/domain/requirement.ts";
-import type { AiErrorCode } from "../core/ports/ai-provider.ts";
 import type { ScanResult } from "../services/scan-project.ts";
-
-// Terminal-only advice; the adapter's messages stay neutral because the desktop app shows them too.
-const HINT: Partial<Record<AiErrorCode, string>> = {
-  AI_AUTH_FAILED: "Check ANTHROPIC_API_KEY.",
-  AI_MODEL_NOT_FOUND: "Pass another with --model or AUTOAI_MODEL.",
-  AI_OUTPUT_TRUNCATED: "Try --effort medium, which leaves more room for the answer.",
-};
+import { aiUsageLine, stoppedLine } from "./format-ai.ts";
 
 /** Terminal view of a scan: problems first (mismatches, missing features, items to review), then the rest. */
 export function formatScan(scan: ScanResult, costUsd: number | null): string {
@@ -49,15 +42,10 @@ export function formatScan(scan: ScanResult, costUsd: number | null): string {
     scan.warnings.length > 0
       ? ["Warnings", ...scan.warnings.map((w) => `  ${w.code}: ${w.message}`)].join("\n")
       : "",
-    scan.stoppedBy ? stopped(scan.stoppedBy.code, scan.stoppedBy.message) : "",
-    aiLine(scan, costUsd),
+    scan.stoppedBy ? stoppedLine(scan.stoppedBy) : "",
+    aiUsageLine(scan.usage, costUsd),
   ];
   return [header, ...sections.filter((s) => s !== "")].join("\n\n");
-}
-
-function stopped(code: AiErrorCode, message: string): string {
-  const hint = HINT[code];
-  return `Stopped early: ${code} - ${message}${hint === undefined ? "" : ` ${hint}`}`;
 }
 
 function section(title: string, lines: readonly string[]): string {
@@ -86,12 +74,4 @@ const REASON: Record<ReviewReason, (f: Finding) => string> = {
 
 function reasons(f: Finding): string {
   return f.reviewReasons.map((r) => REASON[r](f)).join(", ");
-}
-
-function aiLine(scan: ScanResult, costUsd: number | null): string {
-  const { aiCalls, inputTokens, outputTokens } = scan.usage;
-  if (aiCalls === 0) return "AI: 0 calls";
-  const tokens = `${inputTokens.toLocaleString("en-US")} input + ${outputTokens.toLocaleString("en-US")} output tokens`;
-  const cost = costUsd === null ? "" : `, about $${costUsd.toFixed(2)}`;
-  return `AI: ${String(aiCalls)} calls, ${tokens}${cost}`;
 }

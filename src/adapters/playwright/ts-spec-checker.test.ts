@@ -49,4 +49,15 @@ describe("TsSpecChecker", { timeout: 30_000 }, () => {
     await checker.check("a.spec.ts", "const broken: number = 'x';");
     expect(await checker.check("b.spec.ts", good)).toStrictEqual({ errors: [] });
   });
+
+  it("reports a clear error, instead of crashing, when AutoAI's Playwright types cannot be found", async () => {
+    const broken = createTsSpecChecker(() => {
+      throw new Error("Cannot find module '@playwright/test'");
+    });
+    expect(await broken.check("cart.spec.ts", good)).toStrictEqual({
+      errors: [
+        "Cannot type-check: AutoAI's bundled @playwright/test could not be loaded (Cannot find module '@playwright/test')",
+      ],
+    });
+  });
 });

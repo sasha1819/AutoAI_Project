@@ -25,7 +25,8 @@ afterAll(() => {
   rmSync(base, { recursive: true, force: true });
 });
 
-describe("npm run requirements", () => {
+// Spawning a real node process is slow while the rest of the suite runs in parallel, hence the longer timeout.
+describe("npm run requirements", { timeout: 20_000 }, () => {
   it("prints the requirements it found", () => {
     const r = run("--prds", join(base, "prds"));
     expect(r.code).toBe(0);

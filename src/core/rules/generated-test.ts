@@ -1,5 +1,6 @@
 import type { Finding } from "../domain/finding.ts";
 import type { Requirement } from "../domain/requirement.ts";
+import type { PackageDependencies } from "../parsing/package-json.ts";
 
 /** The only folder generated tests are written to (ADR 0004); the TestWriter port enforces it as well. */
 export const GENERATED_TEST_DIR = "tests/autoai";
@@ -59,8 +60,10 @@ function shorten(name: string): string {
   return (lastDash > 0 ? cut.slice(0, lastDash) : cut).replace(/-+$/, "");
 }
 
+// Every way a module can be named: import/export ... from, bare import, dynamic import() and require(), with
+// single, double or backtick quotes.
 const IMPORT_SPECIFIER =
-  /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)["']([^"']+)["']/gm;
+  /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)["'`]([^"'`]+)["'`]/gm;
 
 /**
  * The playwright-generation rules a test must follow before it may be written (ADR 0004). Returns the problems,
@@ -69,8 +72,7 @@ const IMPORT_SPECIFIER =
 export function checkGeneratedTest(code: string, tag: string): readonly string[] {
   const problems: string[] = [];
   const firstLine = code.split(/\r?\n/, 1)[0]?.trim() ?? "";
-  const header = `// AutoAI requirement: ${tag}`;
-  if (firstLine !== header) problems.push(`First line must be "${header}"`);
+  if (firstLine !== header(tag)) problems.push(`First line must be "${header(tag)}"`);
   if (!code.includes("expect("))
     problems.push("No expect( assertion: assert the outcome the requirement asks for");
   if (/\bwaitForTimeout\s*\(/.test(code))
@@ -88,4 +90,31 @@ export function checkGeneratedTest(code: string, tag: string): readonly string[]
   if (!imports.includes("@playwright/test"))
     problems.push('Does not import from "@playwright/test"');
   return problems;
+}
+
+/** The requirement header every generated test starts with; it links the file back to its requirement. */
+function header(tag: string): string {
+  return `// AutoAI requirement: ${tag}`;
+}
+
+/**
+ * The existing test for a requirement, if any: a file in tests/autoai whose first line names the same tag (file
+ * names can change when PRD text changes; the header does not), or else a file with the planned name.
+ */
+export function existingTestPath(
+  tag: string,
+  fileName: string,
+  existing: readonly { readonly path: string; readonly firstLine: string }[],
+): string | null {
+  const byHeader = existing.find((f) => f.firstLine.trim() === header(tag));
+  if (byHeader) return byHeader.path;
+  return existing.find((f) => f.path === `${GENERATED_TEST_DIR}/${fileName}`)?.path ?? null;
+}
+
+export const PLAYWRIGHT_NOTICE =
+  "This repo has no @playwright/test dependency in package.json. To run these tests, add @playwright/test and a playwright.config with a baseURL.";
+
+/** The notice shown when the target repo cannot run the generated tests yet (ADR 0004); null when it can. */
+export function playwrightNotice(pkg: PackageDependencies | null): string | null {
+  return pkg?.names.includes("@playwright/test") ? null : PLAYWRIGHT_NOTICE;
 }

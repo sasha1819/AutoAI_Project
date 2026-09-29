@@ -18,7 +18,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 - [x] Matching prompt + finding parser (`core/prompts`, `core/parsing/finding`) tested with recorded AI responses
 - [x] `AiProvider` port + Claude adapter (retries, rate limits, token count, `INVALID_AI_OUTPUT`)
 - [x] Service `ScanProject` + CLI `npm run scan`; run `scan-evaluator` on fixtures (evaluator run pending: needs the user's ANTHROPIC_API_KEY)
-- [ ] Test generation: prompt + acceptance rule + `GenerateTests` service; generated specs compile with tsc
+- [x] Test generation: prompt + acceptance rule + `GenerateTests` service; generated specs compile with tsc (ADR 0004)
 
 ## M2 — Runner (CLI only)
 - [ ] `run-status` rule (retry-once, flaky vs failed), table-tested
@@ -46,6 +46,8 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## Decisions & notes
 - (one line per decision, newest first; structural decisions also get an ADR)
+- 2026-09-29 TODO (M6 packaging): smoke-test that TsSpecChecker finds the bundled `@playwright/test` and `lib.dom.d.ts` inside the packaged Electron app (ADR 0004 clarification). Known limit: two requirements with the same tag (duplicate PRD headings) map to one existing test.
+- 2026-09-29 Test generation (ADR 0004): `npm run generate-tests -- --repo <dir> --from <scan.json>`. Tests only for confirmed match/mismatch; one prompt per requirement; an existing test (matched by its `// AutoAI requirement: <tag>` header, else by file name) is skipped with no AI call and never overwritten; parse/rule/compile problems get one retry with the problems fed back, then `needs_review` and nothing is written; the Playwright notice comes from `playwrightNotice` over the parsed package.json. TypeScript is loaded on the first compile check only, so scan/requirements start fast. Shared: `services/source-files.ts`, `core/parsing/json.ts`, `core/prompts/escape.ts`, `cli/{ai-options,output,format-ai}.ts`.
 - 2026-09-29 Test fakes for ports live in `src/services/testing/` (in-memory RepoReader, scripted AiProvider), shared instead of copied; deps rule `test-fakes-only-in-tests` keeps production code from importing them.
 - 2026-09-29 ScanProject: batches by area (`batchRequirements`), picks files per batch round-robin (`rankFilesForBatch`), fits the budget, prompts, parses. An invalid answer is retried once (`INVALID_AI_OUTPUT_ATTEMPTS`); still invalid → the batch is `notScanned` with a warning. After an AI error, `aiErrorAction` decides: auth/model/rate-limit/outage stop the scan (findings so far kept, `stoppedBy` set, exit 1), one-prompt problems (truncated/refused/bad request) skip just that batch. No PRD files → warning and 0 AI calls. `sourceFiles` = source files found in the repo.
 - 2026-09-29 `npm run scan -- --repo --prds [--out] [--model] [--effort] [--record] [--json]`: key from `ANTHROPIC_API_KEY` only (exit 2 with a BYOK message otherwise); model = `--model` ?? `AUTOAI_MODEL` ?? `claude-sonnet-5`; prints tokens and an approximate cost (list prices in `adapters/claude/pricing.ts`); a failed `--out`/`--record` write is reported but never loses the paid-for result. CLI tests spawn node only on paths that never reach the network.

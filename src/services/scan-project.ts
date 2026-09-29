@@ -1,6 +1,5 @@
 import type { DomainError } from "../core/domain/domain-error.ts";
 import type { Finding } from "../core/domain/finding.ts";
-import type { RepoFile } from "../core/domain/repo-file.ts";
 import type { Requirement } from "../core/domain/requirement.ts";
 import { err, ok, type Result } from "../core/domain/result.ts";
 import { parseMatchingResponse } from "../core/parsing/finding.ts";
@@ -14,13 +13,12 @@ import {
 } from "../core/rules/batching.ts";
 import { fitFilesToBudget } from "../core/rules/prompt-budget.ts";
 import { indexFiles, rankFilesForBatch } from "../core/rules/relevance.ts";
-import { isSourceFile } from "../core/rules/source-file.ts";
 import { extractRequirements } from "./extract-requirements.ts";
+import { loadSourceFiles, type SourceFileWarning } from "./source-files.ts";
 
-export type ScanWarning = {
-  readonly code: "NO_PRD_FILES" | "SOURCE_FILE_UNREADABLE" | "BATCH_NOT_SCANNED";
-  readonly message: string;
-};
+export type ScanWarning =
+  | SourceFileWarning
+  | { readonly code: "NO_PRD_FILES" | "BATCH_NOT_SCANNED"; readonly message: string };
 export type ScanResult = {
   readonly prdFiles: readonly string[];
   /** Source files found in the repo (unreadable ones are also listed in warnings). */
@@ -54,13 +52,12 @@ export async function scanProject(
     ? extracted.value
     : { prdFiles: [], requirements: [] };
 
-  const listed = await deps.repoReader.listFiles(input.repoRoot);
-  if (!listed.ok) return listed;
-  const sourcePaths = listed.value.filter(isSourceFile);
-  const files =
-    requirements.length === 0
-      ? []
-      : await readAll(deps.repoReader, input.repoRoot, sourcePaths, warnings);
+  const loaded = await loadSourceFiles(deps.repoReader, input.repoRoot, {
+    readContents: requirements.length > 0,
+  });
+  if (!loaded.ok) return loaded;
+  const { sourcePaths, files } = loaded.value;
+  warnings.push(...loaded.value.warnings);
 
   const index = indexFiles(files);
   const byPath = new Map(files.map((f) => [f.path, f]));
@@ -130,20 +127,4 @@ export async function scanProject(
     models: [...models],
     usage,
   });
-}
-
-async function readAll(
-  reader: RepoReader,
-  root: string,
-  paths: readonly string[],
-  warnings: ScanWarning[],
-): Promise<RepoFile[]> {
-  const files: RepoFile[] = [];
-  for (const path of paths) {
-    const read = await reader.readText(root, path);
-    if (read.ok) files.push({ path, text: read.value });
-    else
-      warnings.push({ code: "SOURCE_FILE_UNREADABLE", message: `${path}: ${read.error.message}` });
-  }
-  return files;
 }

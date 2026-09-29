@@ -57,3 +57,9 @@ The retry prompt includes the exact problems: rule violations or compiler errors
 - The runtime install is bigger (`@playwright/test`, `typescript`); the desktop app needs Playwright for M2 regardless.
 - A test that doesn't compile, or that would overwrite a user's file, is never written into the user's repo.
 - Generated tests use relative `page.goto("/...")`. They run only once the user's repo has Playwright and a `baseURL`, which is flagged when missing and handled by the M2 runner.
+
+## Clarifications (2026-09-29, after review; no change to the decisions)
+- "Lint" in PRD §4.4 means the acceptance rule plus the compile check. ESLint is not run on generated files, because the user's lint config is their own and a rule failure there doesn't mean the test is wrong.
+- An existing test is recognised first by its `// AutoAI requirement: <tag>` header, then by file name. This matters because names come from the requirement text, which can change between runs, while the header does not. If two requirements share a tag (heading-style PRDs with duplicate headings), the second one is reported as existing too. This limit is noted in BUILD-LOG.
+- `SpecChecker` resolves AutoAI's `@playwright/test` on its first check, not when it is imported, so a broken install fails the check with a clear message instead of crashing every command. Whether that resolution works inside a packaged Electron app gets a smoke test when packaging is built (M6).
+
