@@ -1,0 +1,168 @@
+{
+  "prdFiles": ["checkout.md", "shop.md"],
+  "sourceFiles": 9,
+  "requirements": [
+    {
+      "tag": "Cart 1.1",
+      "area": "Cart",
+      "text": "Adding a product that is already in the cart increases that line's quantity by one instead of adding a second line.",
+      "source": {
+        "file": "shop.md",
+        "line": 7
+      }
+    },
+    {
+      "tag": "Cart 1.2",
+      "area": "Cart",
+      "text": "Discount codes are case-insensitive: \"SAVE10\", \"save10\" and \"Save10\" all apply the same 10% discount.",
+      "source": {
+        "file": "shop.md",
+        "line": 9
+      }
+    },
+    {
+      "tag": "Cart 1.3",
+      "area": "Cart",
+      "text": "When the last item is removed, the cart shows the message \"Your cart is empty\".",
+      "source": {
+        "file": "shop.md",
+        "line": 11
+      }
+    },
+    {
+      "tag": "Shipping 2.1",
+      "area": "Shipping",
+      "text": "Shipping costs $5.00 per order. Orders whose subtotal before discounts is $50.00 or more ship free. An empty cart shows $0.00 shipping.",
+      "source": {
+        "file": "shop.md",
+        "line": 15
+      }
+    },
+    {
+      "tag": "Account 3.1",
+      "area": "Account",
+      "text": "Signed-in customers can open an \"Order history\" page that lists their past orders with the date and total of each.",
+      "source": {
+        "file": "shop.md",
+        "line": 19
+      }
+    }
+  ],
+  "findings": [
+    {
+      "requirement": {
+        "tag": "Cart 1.1",
+        "area": "Cart",
+        "text": "Adding a product that is already in the cart increases that line's quantity by one instead of adding a second line.",
+        "source": {
+          "file": "shop.md",
+          "line": 7
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "addItem in src/cart/cart.js finds an existing line by productId and increments its quantity instead of adding a new line.",
+      "evidence": {
+        "file": "src/cart/cart.js",
+        "lines": [5, 17],
+        "snippet": "export function addItem(cart, product) {\n  const line = cart.lines.find((l) => l.productId === product.id);\n  if (line) {\n    line.quantity += 1;\n  } else {\n    cart.lines.push({\n      productId: product.id,\n      name: product.name,\n      price: product.price,\n      quantity: 1,\n    });\n  }\n}"
+      },
+      "confidence": 0.95,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Cart 1.2",
+        "area": "Cart",
+        "text": "Discount codes are case-insensitive: \"SAVE10\", \"save10\" and \"Save10\" all apply the same 10% discount.",
+        "source": {
+          "file": "shop.md",
+          "line": 9
+        }
+      },
+      "type": "mismatch",
+      "severity": "medium",
+      "explanation": "discounts.js only stores the code as 'SAVE10' and trims but does not normalize case in findDiscount, so lowercase or mixed-case input like 'save10' or 'Save10' will not match and the discount will not apply.",
+      "evidence": {
+        "file": "src/cart/discounts.js",
+        "lines": [1, 7],
+        "snippet": "const codes = new Map([[\"SAVE10\", 0.1]]);\n\nexport function findDiscount(input) {\n  const code = input.trim();\n  const rate = codes.get(code);\n  return rate === undefined ? null : { code, rate };\n}"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Cart 1.3",
+        "area": "Cart",
+        "text": "When the last item is removed, the cart shows the message \"Your cart is empty\".",
+        "source": {
+          "file": "shop.md",
+          "line": 11
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "index.html contains a #cart-empty element with text 'Your cart is empty' and app.js toggles its hidden attribute based on isEmpty(cart), showing it when the cart has no lines.",
+      "evidence": {
+        "file": "src/app.js",
+        "lines": [36, 38],
+        "snippet": "function render() {\n  $(\"cart-empty\").hidden = !isEmpty(cart);\n  $(\"cart-lines\").replaceChildren("
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Shipping 2.1",
+        "area": "Shipping",
+        "text": "Shipping costs $5.00 per order. Orders whose subtotal before discounts is $50.00 or more ship free. An empty cart shows $0.00 shipping.",
+        "source": {
+          "file": "shop.md",
+          "line": 15
+        }
+      },
+      "type": "mismatch",
+      "severity": "medium",
+      "explanation": "src/checkout/shipping.js uses subtotal > FREE_SHIPPING_FROM (strictly greater than 50) instead of >= 50, so an order with exactly $50.00 subtotal is incorrectly charged $5 shipping instead of being free.",
+      "evidence": {
+        "file": "src/checkout/shipping.js",
+        "lines": [4, 7],
+        "snippet": "export function shippingFee(subtotal) {\n  if (subtotal === 0) return 0;\n  return subtotal > FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;\n}"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Account 3.1",
+        "area": "Account",
+        "text": "Signed-in customers can open an \"Order history\" page that lists their past orders with the date and total of each.",
+        "source": {
+          "file": "shop.md",
+          "line": 19
+        }
+      },
+      "type": "not_implemented",
+      "severity": "high",
+      "explanation": "No order history page, route, or account/sign-in feature exists anywhere in the shown code (index.html, app.js, or server.mjs) to list past orders with dates and totals.",
+      "evidence": null,
+      "confidence": 0.75,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    }
+  ],
+  "notScanned": [],
+  "warnings": [],
+  "stoppedBy": null,
+  "models": ["claude-sonnet-5"],
+  "usage": {
+    "aiCalls": 3,
+    "inputTokens": 13626,
+    "outputTokens": 1278
+  }
+}
