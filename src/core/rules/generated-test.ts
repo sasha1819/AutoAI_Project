@@ -4,8 +4,23 @@ import type { PackageDependencies } from "../parsing/package-json.ts";
 
 /** The only folder generated tests are written to (ADR 0004); the TestWriter port enforces it as well. */
 export const GENERATED_TEST_DIR = "tests/autoai";
+// A plain file name only: no separators, no "..", no leading dot, lower-case kebab-case, ending in .spec.ts.
+const FILE_NAME = /^[a-z0-9][a-z0-9-]*\.spec\.ts$/;
 const MAX_NAME_CHARS = 60;
 const TEXT_WORDS_IN_NAME = 5;
+
+/** Whether a name is a file AutoAI may write or run in GENERATED_TEST_DIR (ADR 0004, 0005). */
+export function isGeneratedTestFileName(name: string): boolean {
+  return FILE_NAME.test(name);
+}
+
+/** The file name of a repo-relative path directly inside GENERATED_TEST_DIR, or null for any other path. */
+export function generatedTestFileOf(path: string): string | null {
+  const prefix = `${GENERATED_TEST_DIR}/`;
+  if (!path.startsWith(prefix)) return null;
+  const name = path.slice(prefix.length);
+  return isGeneratedTestFileName(name) ? name : null;
+}
 
 /**
  * Whether a finding gets a generated test (ADR 0004): only a confirmed match or mismatch. A mismatch test asserts

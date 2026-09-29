@@ -1,6 +1,27 @@
 import { describe, expect, it } from "vitest";
 import type { AttemptResult } from "../domain/run.ts";
-import { decideRun, MAX_RUN_ATTEMPTS, type RunDecision } from "./run-status.ts";
+import {
+  attemptResultOfSpec,
+  decideRun,
+  MAX_RUN_ATTEMPTS,
+  type RunDecision,
+} from "./run-status.ts";
+
+describe("attemptResultOfSpec", () => {
+  it.each<[readonly AttemptResult[], AttemptResult | null]>([
+    [[], null],
+    [["passed"], "passed"],
+    [["failed"], "failed"],
+    [["passed", "passed"], "passed"],
+    [["passed", "failed"], "failed"],
+    [["failed", "passed"], "failed"],
+  ])(
+    "tests %j -> the spec attempt %j (any failed test fails it; none ran -> no result)",
+    (tests, result) => {
+      expect(attemptResultOfSpec(tests)).toBe(result);
+    },
+  );
+});
 
 describe("MAX_RUN_ATTEMPTS", () => {
   it("allows the first run plus one retry", () => {

@@ -2,10 +2,7 @@ import { lstat, mkdir, realpath, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { err, ok } from "../../core/domain/result.ts";
 import type { TestWriteError, TestWriter } from "../../core/ports/test-writer.ts";
-import { GENERATED_TEST_DIR } from "../../core/rules/generated-test.ts";
-
-// A plain file name only: no separators, no "..", no leading dot, lower-case kebab-case, ending in .spec.ts.
-const FILE_NAME = /^[a-z0-9][a-z0-9-]*\.spec\.ts$/;
+import { GENERATED_TEST_DIR, isGeneratedTestFileName } from "../../core/rules/generated-test.ts";
 
 /**
  * TestWriter on the local disk (ADR 0004). Confinement is checked here, not trusted from the caller: every folder
@@ -15,7 +12,7 @@ const FILE_NAME = /^[a-z0-9][a-z0-9-]*\.spec\.ts$/;
 export function createFsTestWriter(): TestWriter {
   return {
     async writeGeneratedTest(repoRoot, fileName, text) {
-      if (!FILE_NAME.test(fileName)) {
+      if (!isGeneratedTestFileName(fileName)) {
         return err(refuse(`"${fileName}" is not a plain *.spec.ts file name`));
       }
 

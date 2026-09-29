@@ -3,6 +3,15 @@ import type { AttemptResult, RunStatus } from "../domain/run.ts";
 /** A failed test is run once more, under the same conditions, before anyone calls it a failure. */
 export const MAX_RUN_ATTEMPTS = 2;
 
+/**
+ * One attempt runs a whole spec file, which may hold several tests: the attempt fails if any of them failed.
+ * No test ran means there is no result to report (the runner reports that as an error, never as a pass).
+ */
+export function attemptResultOfSpec(tests: readonly AttemptResult[]): AttemptResult | null {
+  if (tests.length === 0) return null;
+  return tests.includes("failed") ? "failed" : "passed";
+}
+
 export type RunDecision =
   { readonly kind: "retry" } | { readonly kind: "done"; readonly status: RunStatus };
 

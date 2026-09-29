@@ -37,6 +37,8 @@ module.exports = {
       from: { path: '^src/', pathNot: '^src/adapters/claude/' }, to: { path: '^node_modules/@anthropic-ai/' } },
     { name: 'only-playwright-adapter-uses-playwright-and-typescript', comment: 'ADR 0004: runtime TypeScript and Playwright stay inside adapters/playwright', severity: 'error',
       from: { path: '^src/', pathNot: '^src/adapters/playwright/' }, to: { path: '^node_modules/(typescript|@playwright|playwright|playwright-core)/' } },
+    { name: 'only-playwright-adapter-spawns-processes', comment: 'ADR 0005: starting other programs (child_process) stays inside adapters/playwright', severity: 'error',
+      from: { path: '^src/', pathNot: '^src/adapters/playwright/' }, to: { dependencyTypes: ['core'], path: '^(node:)?child_process$' } },
     { name: 'test-fakes-only-in-tests', comment: 'services/testing holds fake ports; only *.test.ts files (excluded from this cruise) may use them', severity: 'error',
       from: { path: '^src/', pathNot: '^src/services/testing/' }, to: { path: '^src/services/testing/' } },
     { name: 'ui-no-electron', comment: 'the renderer reaches the main process only through the preload bridge', severity: 'error',

@@ -7,6 +7,8 @@ import {
   existingTestPath,
   GENERATED_TEST_DIR,
   generatedTestFileNames,
+  generatedTestFileOf,
+  isGeneratedTestFileName,
   PLAYWRIGHT_NOTICE,
   playwrightNotice,
   shouldGenerateTest,
@@ -33,6 +35,42 @@ const finding = (over: Partial<Finding>): Finding => ({
 describe("GENERATED_TEST_DIR", () => {
   it("is tests/autoai (ADR 0004)", () => {
     expect(GENERATED_TEST_DIR).toBe("tests/autoai");
+  });
+});
+
+describe("isGeneratedTestFileName", () => {
+  it.each<[string, boolean]>([
+    ["cart-1-2-codes.spec.ts", true],
+    ["1-2.spec.ts", true],
+    ["Cart.spec.ts", false],
+    ["-cart.spec.ts", false],
+    [".hidden.spec.ts", false],
+    ["cart.test.ts", false],
+    ["cart.spec.js", false],
+    ["../cart.spec.ts", false],
+    ["sub/cart.spec.ts", false],
+    ["/abs/cart.spec.ts", false],
+    ["cart .spec.ts", false],
+    ["", false],
+  ])("%j -> %s (a plain kebab-case *.spec.ts name, nothing else)", (name, expected) => {
+    expect(isGeneratedTestFileName(name)).toBe(expected);
+  });
+});
+
+describe("generatedTestFileOf", () => {
+  it.each<[string, string | null]>([
+    ["tests/autoai/cart-codes.spec.ts", "cart-codes.spec.ts"],
+    ["tests/autoai/sub/cart-codes.spec.ts", null],
+    ["tests/cart-codes.spec.ts", null],
+    ["tests/autoai/../cart-codes.spec.ts", null],
+    ["tests/autoai/../../etc/x.spec.ts", null],
+    ["./tests/autoai/cart-codes.spec.ts", null],
+    ["/repo/tests/autoai/cart-codes.spec.ts", null],
+    ["tests\\autoai\\cart-codes.spec.ts", null],
+    ["tests/autoai/", null],
+    ["tests/autoai/Cart.spec.ts", null],
+  ])("%j -> %j (only a spec directly inside tests/autoai)", (path, name) => {
+    expect(generatedTestFileOf(path)).toBe(name);
   });
 });
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { StepEvent } from "./step.ts";
 
 /** The outcome of a whole run of one test, after any retry (ARCHITECTURE §4). */
 export const RunStatus = z.enum(["passed", "failed", "flaky", "not_run"]);
@@ -7,3 +8,32 @@ export type RunStatus = z.infer<typeof RunStatus>;
 /** One execution of a test, exactly as Playwright reported it. Only a run, never an attempt, can be flaky. */
 export const AttemptResult = z.enum(["passed", "failed"]);
 export type AttemptResult = z.infer<typeof AttemptResult>;
+
+/**
+ * What was captured when an attempt failed, before any AI sees it (PRD Flow 4 step 15). `step` is null when the
+ * failure happened outside any step (e.g. the test timed out between steps). `pageSnapshot` is Playwright's text
+ * snapshot of the page, the "DOM state"; older Playwright versions don't produce one.
+ */
+export const FailureCapture = z.object({
+  step: z.string().min(1).nullable(),
+  error: z.string().min(1),
+  screenshotPath: z.string().min(1).optional(),
+  pageSnapshot: z.string().optional(),
+});
+export type FailureCapture = z.infer<typeof FailureCapture>;
+
+/** Everything one attempt produced. A failed attempt always carries its capture; a passed one never does. */
+export const AttemptReport = z.discriminatedUnion("result", [
+  z.strictObject({
+    result: z.literal("passed"),
+    durationMs: z.number().int().nonnegative(),
+    steps: z.array(StepEvent).readonly(),
+  }),
+  z.strictObject({
+    result: z.literal("failed"),
+    durationMs: z.number().int().nonnegative(),
+    steps: z.array(StepEvent).readonly(),
+    failure: FailureCapture,
+  }),
+]);
+export type AttemptReport = z.infer<typeof AttemptReport>;
