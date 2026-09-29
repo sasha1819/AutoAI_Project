@@ -1,4 +1,5 @@
 import { FindingType, Severity } from "../domain/finding.ts";
+import { escapeAttr, escapeText } from "./escape.ts";
 import { numberLine, type RepoFile, splitLines } from "../domain/repo-file.ts";
 import type { Requirement } from "../domain/requirement.ts";
 import { REPO_FILE_LIST_LIMIT } from "../rules/prompt-budget.ts";
@@ -52,7 +53,7 @@ export function buildMatchingPrompt(input: MatchingPromptInput): MatchingPrompt 
   const requirements = input.requirements
     .map(
       (r, i) =>
-        `<requirement id="${requirementRef(i)}" tag="${attr(r.tag)}" area="${attr(r.area)}" source="${attr(`${r.source.file}:${String(r.source.line)}`)}">\n${text(r.text)}\n</requirement>`,
+        `<requirement id="${requirementRef(i)}" tag="${escapeAttr(r.tag)}" area="${escapeAttr(r.area)}" source="${escapeAttr(`${r.source.file}:${String(r.source.line)}`)}">\n${escapeText(r.text)}\n</requirement>`,
     )
     .join("\n");
   // Code needs no escaping: every line starts with its number, so no line can open or close a tag.
@@ -60,12 +61,12 @@ export function buildMatchingPrompt(input: MatchingPromptInput): MatchingPrompt 
     input.files.length === 0
       ? "(no relevant files were found)"
       : input.files
-          .map((f) => `<file path="${attr(f.path)}">\n${numbered(f.text)}\n</file>`)
+          .map((f) => `<file path="${escapeAttr(f.path)}">\n${numbered(f.text)}\n</file>`)
           .join("\n");
   const omitted =
     input.omittedFiles.length === 0
       ? ""
-      : `\n\n<omitted_files>\n${input.omittedFiles.map(text).join("\n")}\n</omitted_files>`;
+      : `\n\n<omitted_files>\n${input.omittedFiles.map(escapeText).join("\n")}\n</omitted_files>`;
   const user = [
     `<requirements>\n${requirements}\n</requirements>`,
     `<repo_files>\n${repoFileList(input.repoFiles)}\n</repo_files>`,
@@ -117,7 +118,7 @@ function answerSchema(ids: readonly string[]): Readonly<Record<string, unknown>>
 }
 
 function repoFileList(paths: readonly string[]): string {
-  const shown = paths.slice(0, REPO_FILE_LIST_LIMIT).map(text);
+  const shown = paths.slice(0, REPO_FILE_LIST_LIMIT).map(escapeText);
   const more = paths.length - shown.length;
   return [...shown, ...(more > 0 ? [`(and ${String(more)} more)`] : [])].join("\n");
 }
@@ -126,13 +127,4 @@ function numbered(code: string): string {
   return splitLines(code)
     .map((line, i) => numberLine(i + 1, line))
     .join("\n");
-}
-
-// Project text must not be able to close one of the prompt's tags and pose as instructions.
-function text(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
-}
-
-function attr(value: string): string {
-  return text(value).replaceAll('"', "&quot;");
 }

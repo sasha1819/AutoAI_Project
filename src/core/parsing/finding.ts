@@ -1,14 +1,14 @@
 import { z } from "zod";
-import type { DomainError } from "../domain/domain-error.ts";
 import { Confidence, Evidence, type Finding, FindingType, Severity } from "../domain/finding.ts";
 import type { Requirement } from "../domain/requirement.ts";
-import { err, ok, type Result } from "../domain/result.ts";
+import { ok, type Result } from "../domain/result.ts";
 import { type MatchingPrompt, requirementRef } from "../prompts/matching.ts";
 import { reviewFinding } from "../rules/confidence.ts";
 import { verifyEvidence } from "../rules/evidence.ts";
+import { extractJson, type InvalidAiOutput, invalid } from "./json.ts";
 import { findingSeverity } from "../rules/severity.ts";
 
-export type ParseFindingsError = DomainError<"INVALID_AI_OUTPUT">;
+export type ParseFindingsError = InvalidAiOutput;
 
 // Strict where a wrong value would change the verdict (which requirement, type, confidence). Lenient where the
 // review rule already downgrades a bad value: broken evidence counts as missing, an odd severity as none.
@@ -86,25 +86,4 @@ function toFinding(
     reviewStatus: decision.reviewStatus,
     reviewReasons: decision.reasons,
   };
-}
-
-// Claude sometimes wraps the object in prose or a ```json fence. A fence wins, so braces in the prose around it
-// cannot corrupt the object; otherwise take the outermost {...}.
-const FENCE = /```(?:json)?\s*\n([\s\S]*?)\n\s*```/;
-
-function extractJson(raw: string): Result<unknown, ParseFindingsError> {
-  const body = FENCE.exec(raw)?.[1] ?? raw;
-  const start = body.indexOf("{");
-  const end = body.lastIndexOf("}");
-  if (start === -1 || end < start) return invalid("no JSON object in the answer");
-  try {
-    const value: unknown = JSON.parse(body.slice(start, end + 1));
-    return ok(value);
-  } catch (e) {
-    return invalid(`the answer is not valid JSON (${e instanceof Error ? e.message : String(e)})`);
-  }
-}
-
-function invalid(message: string): { readonly ok: false; readonly error: ParseFindingsError } {
-  return err({ code: "INVALID_AI_OUTPUT", message });
 }
