@@ -117,7 +117,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
     Runner captures a screenshot + the DOM state + the error at the point of failure
     Deterministic — no AI yet, just data capture
 16. Retry (reliability guardrail)
-    Runner automatically retries the failed step once under the same conditions
+    Runner automatically retries the whole failed test once, under the same conditions (Playwright reruns tests, not individual steps, since a test's state can't cleanly reset mid-run)
     If the retry passes → mark the test flaky, not failed, and log both outcomes; if it fails again → real failure
 17. AI diagnosis
     On a confirmed failure, send the failure context (step description, error, screenshot, relevant source snippet) to Claude
@@ -151,7 +151,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
     id, project_id, requirement_id (nullable), file_path, title, target (web, fixed for MVP)
     belongs to Project, optionally to Requirement; has many Runs
     Run
-    id, test_case_id, status (passed/failed/flaky), started_at, duration
+    id, test_case_id, status (not_run/passed/failed/flaky), started_at, duration
     belongs to TestCase; has many Steps
     Step
     id, run_id, description, status, duration, screenshot_path, error_text
