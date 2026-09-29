@@ -33,6 +33,25 @@ describe("isSourceFile", () => {
     ["vendor/jquery.js", false],
     [".next/server/app.js", false],
     ["src/.cache/x.js", false],
+    // Test, lint and format tool configs describe tooling, not app behaviour (same reason tests/ is skipped).
+    ["playwright.config.mjs", false],
+    ["playwright.config.ts", false],
+    ["packages/web/playwright.config.js", false],
+    ["vitest.config.ts", false],
+    ["jest.config.cjs", false],
+    ["cypress.config.ts", false],
+    ["karma.conf.js", false],
+    ["eslint.config.js", false],
+    ["prettier.config.mjs", false],
+    ["stylelint.config.cjs", false],
+    ["commitlint.config.js", false],
+    // Build and framework configs can hold app behaviour (routes, redirects, proxies, base path): kept.
+    ["vite.config.ts", true],
+    ["next.config.js", true],
+    ["svelte.config.js", true],
+    ["webpack.config.js", true],
+    ["src/playwright.config.helpers.ts", true],
+    ["src/eslint-rules.ts", true],
   ])("%s -> %s", (path, expected) => {
     expect(isSourceFile(path)).toBe(expected);
   });
