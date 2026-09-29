@@ -27,6 +27,7 @@ Tick a box only when `npm run verify` is green and reviewers have no blockers. `
 
 ## M3 — Diagnosis
 - [ ] Diagnosis prompt + parser + rule; service `DiagnoseFailure` (only for confirmed failures)
+  - Must: when the repo's playwright.config has setup projects (project `dependencies`) that the runner skipped, the diagnosis says so explicitly ("this test may depend on a setup step, e.g. login, that AutoAI doesn't run yet") instead of a generic explanation. The runner should report the skipped setup projects as data, so the diagnosis (and the UI) can say it deterministically, not by AI guess.
 
 ## M4 — Design system (before any screen)
 - [ ] Storybook set up; tokens extracted from `docs/design/` (dark theme, semantic status colors)
