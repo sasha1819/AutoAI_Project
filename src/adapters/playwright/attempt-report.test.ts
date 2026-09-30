@@ -23,6 +23,7 @@ const run = (over: Partial<FinishedRun>): FinishedRun => ({
   stderr: "",
   signal: null,
   spawnError: null,
+  timedOutAfterMs: null,
   ...over,
 });
 
@@ -51,6 +52,11 @@ describe("attemptReportOf: Playwright's outcome -> an attempt, or an error (neve
     ],
     ["no test at all", { errors: ["Error: No tests found"] }, "RUN_CRASHED"],
     ["a crash with only stderr", { stderr: "SyntaxError: bad config" }, "RUN_CRASHED"],
+    [
+      "an attempt stopped at its time limit (even though it was interrupted too)",
+      { tests: [test({ status: "interrupted" })], signal: "SIGINT", timedOutAfterMs: 300_000 },
+      "RUN_TIMED_OUT",
+    ],
     ["Playwright that could not start", { spawnError: "spawn /x/node ENOENT" }, "RUN_CRASHED"],
     [
       "a missing browser",

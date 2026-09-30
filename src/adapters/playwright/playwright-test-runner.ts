@@ -14,6 +14,9 @@ import { wrapperConfigSource } from "./wrapper-config.ts";
 const REPORTER = fileURLToPath(new URL("./autoai-reporter.mjs", import.meta.url));
 // Kept only to explain a crash; Playwright can print a lot.
 const STDERR_TAIL_CHARS = 4000;
+// After asking Playwright to stop (it then shuts down the browser and the user's webServer), how long to wait
+// before killing it outright.
+const STOP_GRACE_MS = 5000;
 // The run id becomes a folder name under artifactsDir.
 const PLAIN_ID = /^[A-Za-z0-9_-]+$/;
 
@@ -62,11 +65,16 @@ export function createPlaywrightTestRunner(options: PlaywrightRunnerOptions): Te
         );
         const env = withoutAutoAiSecrets(options.env ?? process.env);
         const node = options.nodePath ?? process.execPath;
-        const run = await runPlaywright(located.value, config, { node, env }, (s) => {
-          const event: StepEvent = { ...s, runId: request.runId, attempt: request.attempt };
-          steps.push(event);
-          onStep(event);
-        });
+        const run = await runPlaywright(
+          located.value,
+          config,
+          { node, env, timeLimitMs: request.timeLimitMs },
+          (s) => {
+            const event: StepEvent = { ...s, runId: request.runId, attempt: request.attempt };
+            steps.push(event);
+            onStep(event);
+          },
+        );
         return await attemptReportOf({ ...run, steps });
       } finally {
         await rm(tempDir, { recursive: true, force: true });
@@ -78,7 +86,7 @@ export function createPlaywrightTestRunner(options: PlaywrightRunnerOptions): Te
 function runPlaywright(
   located: LocatedSpec,
   config: string,
-  start: { readonly node: string; readonly env: NodeJS.ProcessEnv },
+  start: { readonly node: string; readonly env: NodeJS.ProcessEnv; readonly timeLimitMs: number },
   onStep: (step: StepFields) => void,
 ): Promise<Omit<FinishedRun, "steps">> {
   const tests: Extract<ReporterEvent, { kind: "test" }>[] = [];
@@ -115,13 +123,28 @@ function runPlaywright(
     child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
       stderr = (stderr + chunk).slice(-STDERR_TAIL_CHARS);
     });
+    // The time limit (core/rules/run-time-limit.ts): ask Playwright to stop, then kill it if it doesn't.
+    let timedOutAfterMs: number | null = null;
+    let kill: NodeJS.Timeout | undefined;
+    const stop = setTimeout(() => {
+      // A test that finished just as the limit hit keeps its real result: only a still-running process times out.
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      timedOutAfterMs = start.timeLimitMs;
+      child.kill("SIGINT");
+      kill = setTimeout(() => child.kill("SIGKILL"), STOP_GRACE_MS);
+    }, start.timeLimitMs);
+    const finish = (signal: NodeJS.Signals | null, spawnError: string | null): void => {
+      clearTimeout(stop);
+      clearTimeout(kill);
+      resolve({ tests, errors, stderr, signal, spawnError, timedOutAfterMs });
+    };
     // A failed start emits "error" and may also emit "close": the first one settles the run.
     child.on("error", (e) => {
-      resolve({ tests, errors, stderr, signal: null, spawnError: e.message });
+      finish(null, e.message);
     });
     child.on("close", (_code, signal) => {
       lines.end();
-      resolve({ tests, errors, stderr, signal, spawnError: null });
+      finish(signal, null);
     });
   });
 }

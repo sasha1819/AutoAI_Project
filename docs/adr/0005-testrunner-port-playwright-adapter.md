@@ -40,7 +40,7 @@ FailureCapture = { step; error; screenshotPath?; pageSnapshot? }
 - `failed` and `timedOut` → `failed`.
 - `interrupted`, a crash, no test found, or no result → a typed error, **never an attempt**.
 - `skipped` → error `TEST_SKIPPED`, because a generated test must not skip; the acceptance rule already bans it.
-- Codes: `REPO_NOT_FOUND`, `PATH_NOT_ALLOWED`, `SPEC_NOT_FOUND`, `PLAYWRIGHT_NOT_INSTALLED` (with "add @playwright/test"), `PLAYWRIGHT_CONFIG_MISSING`, `BROWSER_NOT_INSTALLED` (with "npx playwright install chromium"), `TEST_SKIPPED`, `RUN_INTERRUPTED`, `RUN_CRASHED`.
+- Codes: `REPO_NOT_FOUND`, `PATH_NOT_ALLOWED`, `SPEC_NOT_FOUND`, `PLAYWRIGHT_NOT_INSTALLED` (with "add @playwright/test"), `PLAYWRIGHT_CONFIG_MISSING`, `BROWSER_NOT_INSTALLED` (with "npx playwright install chromium"), `TEST_SKIPPED`, `RUN_INTERRUPTED`, `RUN_TIMED_OUT` (added by the amendment below), `RUN_CRASHED`.
 - AutoAI never installs anything in the user's repo or on their machine.
 
 ### 6. What is captured on failure (no AI)
@@ -72,3 +72,8 @@ FailureCapture = { step; error; screenshotPath?; pageSnapshot? }
 - The page snapshot is only the snapshot part of Playwright's `error-context` file (its YAML blocks). The rest of that file is Playwright's instructions for an AI and the test source, which are not page state.
 - AutoAI's own `ANTHROPIC_*` environment variables are removed before Playwright starts, so the user's config, server and tests never see the key (PRD §19).
 - If Playwright cannot be started at all, the result is `RUN_CRASHED`, not a thrown error.
+
+## Amendment (2026-09-30, RunTest task; the user asked for an overall run time limit as a core rule)
+- `AttemptRequest` gains `timeLimitMs`. The limit comes from `core/rules/run-time-limit.ts`: a whole run may take `RUN_TIME_LIMIT_MS` (10 min), and each attempt gets an equal share, so no clock or new port is needed.
+- Past its limit, the adapter asks Playwright to stop (SIGINT, so the browser and webServer shut down) and kills it 5 s later. An attempt that had already finished keeps its real result.
+- The result is a new error code, `RUN_TIMED_OUT`, never an attempt. Known limit: after the kill, a user's webServer started by Playwright may be left running (BUILD-LOG follow-up).

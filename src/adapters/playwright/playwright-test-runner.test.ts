@@ -62,6 +62,7 @@ const request = (repoRoot: string, over: Partial<AttemptRequest> = {}): AttemptR
   specPath: "tests/autoai/cart.spec.ts",
   runId: RunId.parse(`run-${String((nextId += 1))}`),
   attempt: 1,
+  timeLimitMs: 45_000,
   ...over,
 });
 
@@ -190,7 +191,7 @@ describe.concurrent(
           "tests/autoai/cart.spec.ts": [
             'import { expect, test } from "@playwright/test";',
             'test("home", async ({ page }) => {',
-            '  await page.goto("/");',
+            '  await page.goto("/?token=secret-123#frag");',
             '  await expect(page.getByRole("heading")).toHaveText("Sample Shop");',
             "});",
           ].join("\n"),
@@ -198,6 +199,10 @@ describe.concurrent(
       });
       const result = await runner.runAttempt(request(root), () => undefined);
       expect(result.ok ? result.value.result : result.error).toBe("passed");
+      // A token in a URL never ends up in a step name (logged, stored, later sent for diagnosis).
+      const names = result.ok ? result.value.steps.map((e) => e.step) : [];
+      expect(names).toContain("Navigate /");
+      expect(names.join("\n")).not.toContain("secret-123");
     });
 
     it("keeps each attempt's screenshot in its own folder", async () => {
@@ -323,6 +328,21 @@ describe.concurrent(
         code: "RUN_CRASHED",
         message: expect.stringContaining("could not be started") as unknown,
       });
+    });
+
+    it("stops an attempt that runs past its time limit -> RUN_TIMED_OUT", async () => {
+      // A global setup that never finishes, like a dev server that never comes up.
+      const root = await makeRepo({
+        files: {
+          "setup.mjs": "export default () => new Promise(() => setInterval(() => {}, 1000));\n",
+          "playwright.config.mjs": 'export default { globalSetup: "./setup.mjs" };\n',
+          "tests/autoai/cart.spec.ts": passing,
+        },
+      });
+      const started = Date.now();
+      const result = await runner.runAttempt(request(root, { timeLimitMs: 2000 }), () => undefined);
+      expect(result.ok || result.error.code).toBe("RUN_TIMED_OUT");
+      expect(Date.now() - started).toBeLessThan(15_000);
     });
 
     it("treats a run id that is not a plain folder name as a runner bug", async () => {

@@ -4,10 +4,13 @@ import {
 } from "../adapters/claude/claude-ai-provider.ts";
 import { createFsRepoReader } from "../adapters/fs/fs-repo-reader.ts";
 import { createFsTestWriter } from "../adapters/fs/fs-test-writer.ts";
+import { createPlaywrightTestRunner } from "../adapters/playwright/playwright-test-runner.ts";
 import { createTsSpecChecker } from "../adapters/playwright/ts-spec-checker.ts";
 import type { Finding } from "../core/domain/finding.ts";
+import type { StepEvent } from "../core/domain/step.ts";
 import { extractRequirements } from "../services/extract-requirements.ts";
 import { generateTests } from "../services/generate-tests.ts";
+import { type RunTestInput, runTest } from "../services/run-test.ts";
 import { scanProject } from "../services/scan-project.ts";
 import { recordingAiProvider } from "./recording-ai-provider.ts";
 
@@ -39,5 +42,7 @@ export function composeCli() {
         },
         input,
       ),
+    runTest: (input: RunTestInput, onStep: (event: StepEvent) => void, artifactsDir: string) =>
+      runTest({ testRunner: createPlaywrightTestRunner({ artifactsDir }) }, input, onStep),
   };
 }

@@ -12,6 +12,14 @@ export function attemptResultOfSpec(tests: readonly AttemptResult[]): AttemptRes
   return tests.includes("failed") ? "failed" : "passed";
 }
 
+/**
+ * Whether a finished run counts as a failure (exit code, red status). Only a failure that survived the retry
+ * does: flaky is reported plainly but is not a failure, and a run that never ran has nothing to fail.
+ */
+export function isRunFailure(status: RunStatus): boolean {
+  return status === "failed";
+}
+
 export type RunDecision =
   { readonly kind: "retry" } | { readonly kind: "done"; readonly status: RunStatus };
 

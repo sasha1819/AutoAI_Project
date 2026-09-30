@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RunId } from "./ids.ts";
 import { StepEvent } from "./step.ts";
 
 /** The outcome of a whole run of one test, after any retry (ARCHITECTURE §4). */
@@ -37,3 +38,16 @@ export const AttemptReport = z.discriminatedUnion("result", [
   }),
 ]);
 export type AttemptReport = z.infer<typeof AttemptReport>;
+
+/**
+ * One run of a generated spec, as decided by the run-status rule: its status and every attempt, in order (a flaky
+ * or failed run keeps both). This is what gets stored and shown.
+ */
+export const Run = z.object({
+  runId: RunId,
+  repoRoot: z.string().min(1),
+  specPath: z.string().min(1),
+  status: RunStatus,
+  attempts: z.array(AttemptReport).min(1).readonly(),
+});
+export type Run = z.infer<typeof Run>;

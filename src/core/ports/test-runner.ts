@@ -13,6 +13,7 @@ export type TestRunErrorCode =
   | "BROWSER_NOT_INSTALLED"
   | "TEST_SKIPPED"
   | "RUN_INTERRUPTED"
+  | "RUN_TIMED_OUT"
   | "RUN_CRASHED";
 export type TestRunError = DomainError<TestRunErrorCode>;
 
@@ -23,6 +24,8 @@ export type AttemptRequest = {
   readonly runId: RunId;
   /** 1 for the first run, 2 for the retry. */
   readonly attempt: number;
+  /** Past this the attempt is stopped and reported as RUN_TIMED_OUT (from core/rules/run-time-limit.ts). */
+  readonly timeLimitMs: number;
 };
 
 /**

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { AttemptResult } from "../domain/run.ts";
+import type { AttemptResult, RunStatus } from "../domain/run.ts";
 import {
   attemptResultOfSpec,
   decideRun,
+  isRunFailure,
   MAX_RUN_ATTEMPTS,
   type RunDecision,
 } from "./run-status.ts";
@@ -52,4 +53,18 @@ describe("decideRun", () => {
   ])("treats %j as a runner bug (it retried when it should not have)", (attempts) => {
     expect(() => decideRun(attempts)).toThrow(/runner bug/);
   });
+});
+
+describe("isRunFailure", () => {
+  it.each<[RunStatus, boolean]>([
+    ["passed", false],
+    ["flaky", false],
+    ["failed", true],
+    ["not_run", false],
+  ])(
+    "%s -> %s (only a failure that survived the retry counts; flaky is shown, not failed)",
+    (status, failure) => {
+      expect(isRunFailure(status)).toBe(failure);
+    },
+  );
 });

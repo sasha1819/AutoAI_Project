@@ -17,6 +17,8 @@ export type FinishedRun = {
   readonly signal: string | null;
   /** Set when Playwright could not be started at all (e.g. no Node binary, no permission). */
   readonly spawnError: string | null;
+  /** Set when AutoAI stopped the attempt at its time limit. */
+  readonly timedOutAfterMs: number | null;
 };
 
 // Playwright's message when the browser build it needs was never downloaded.
@@ -33,6 +35,13 @@ export async function attemptReportOf(
 ): Promise<Result<AttemptReport, TestRunError>> {
   if (run.spawnError !== null) {
     return fail("RUN_CRASHED", `Playwright could not be started: ${run.spawnError}`);
+  }
+  // Checked before anything else the stopped process reported: stopping it interrupts the test.
+  if (run.timedOutAfterMs !== null) {
+    return fail(
+      "RUN_TIMED_OUT",
+      `The attempt was stopped after ${String(Math.round(run.timedOutAfterMs / 1000))}s. A dev server (webServer) or global setup that never finishes is the usual cause.`,
+    );
   }
   const messages = [...run.tests.flatMap((t) => t.errors), ...run.errors, run.stderr].map(
     stripAnsi,

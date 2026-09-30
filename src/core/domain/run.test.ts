@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AttemptReport, AttemptResult, RunStatus } from "./run.ts";
+import { AttemptReport, AttemptResult, Run, RunStatus } from "./run.ts";
 
 describe("run vocabulary", () => {
   it("has the RunStatus values from ARCHITECTURE.md", () => {
@@ -45,5 +45,27 @@ describe("AttemptReport", () => {
     const passed = { result: "passed", durationMs: 1, steps: [] };
     expect(AttemptReport.parse(passed)).toStrictEqual(passed);
     expect(AttemptReport.safeParse({ ...passed, failure }).success).toBe(false);
+  });
+});
+
+describe("Run", () => {
+  const passed = { result: "passed", durationMs: 1, steps: [] };
+  const run = {
+    runId: "run-1",
+    repoRoot: "/repo",
+    specPath: "tests/autoai/cart.spec.ts",
+    status: "flaky",
+    attempts: [
+      { result: "failed", durationMs: 2, steps: [], failure: { step: null, error: "boom" } },
+      passed,
+    ],
+  };
+
+  it("keeps the status and every attempt", () => {
+    expect(Run.parse(run)).toStrictEqual(run);
+  });
+
+  it("a finished run has at least one attempt", () => {
+    expect(Run.safeParse({ ...run, attempts: [] }).success).toBe(false);
   });
 });

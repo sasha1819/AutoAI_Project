@@ -20,8 +20,13 @@ function isUserStep(step) {
 }
 
 function stepName(step) {
+  // What the step acted on: the locator, or the address for a navigation. A URL's query and fragment are dropped:
+  // step names are logged, stored and later sent for diagnosis, and a query string can carry a token.
   const locator = step.params?.locator;
-  return typeof locator === "string" ? `${step.title} ${locator}` : step.title;
+  if (typeof locator === "string") return `${step.title} ${locator}`;
+  const url = step.params?.url;
+  if (typeof url === "string") return `${step.title} ${url.split(/[?#]/)[0]}`;
+  return step.title;
 }
 
 function stepTime(step, extraMs) {
