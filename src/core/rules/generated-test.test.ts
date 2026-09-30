@@ -8,6 +8,7 @@ import {
   GENERATED_TEST_DIR,
   generatedTestFileNames,
   generatedTestFileOf,
+  requirementTagOf,
   isGeneratedTestFileName,
   PLAYWRIGHT_NOTICE,
   playwrightNotice,
@@ -244,5 +245,17 @@ describe("playwrightNotice", () => {
     ["no package.json, or one that cannot be read", null, PLAYWRIGHT_NOTICE],
   ])("%s -> %s", (_name, pkg, notice) => {
     expect(playwrightNotice(pkg)).toBe(notice);
+  });
+});
+
+describe("requirementTagOf", () => {
+  it.each<[string, string | null]>([
+    ["// AutoAI requirement: Cart 1.2\nimport x;", "Cart 1.2"],
+    ["// AutoAI requirement:   Sign-Up 3  \r\nrest", "Sign-Up 3"],
+    ["import x;\n// AutoAI requirement: Cart 1.2", null],
+    ["// AutoAI requirement: \nx", null],
+    ["", null],
+  ])("%j -> %j (the first line's header only)", (text, tag) => {
+    expect(requirementTagOf(text)).toBe(tag);
   });
 });

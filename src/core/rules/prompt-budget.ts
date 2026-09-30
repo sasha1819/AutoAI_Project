@@ -34,3 +34,20 @@ export function fitFilesToBudget(
   }
   return { included, omitted };
 }
+
+/** Most characters of one failure text (the error, the page snapshot) in a diagnosis prompt (~5k tokens). */
+export const FAILURE_TEXT_LIMIT_CHARS = 20_000;
+
+/**
+ * Cuts a long failure text to the limit, at a line break when there is one, and says what was cut. Unlike a code
+ * file, the start of an error or snapshot is the useful part, so a cut text beats an omitted one.
+ */
+export function clipFailureText(text: string, limit: number = FAILURE_TEXT_LIMIT_CHARS): string {
+  if (text.length <= limit) return text;
+  const lastBreak = text.lastIndexOf("\n", limit);
+  if (lastBreak > 0) {
+    const cutLines = text.slice(lastBreak + 1).split("\n").length;
+    return `${text.slice(0, lastBreak)}\n[... ${String(cutLines)} more lines cut]`;
+  }
+  return `${text.slice(0, limit)}\n[... ${String(text.length - limit)} more characters cut]`;
+}

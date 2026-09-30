@@ -20,6 +20,7 @@ import {
 } from "../core/rules/generated-test.ts";
 import { fitFilesToBudget } from "../core/rules/prompt-budget.ts";
 import { type FileIndex, indexFiles, rankFilesForBatch } from "../core/rules/relevance.ts";
+import { type AiTally, askAi, newAiTally, usageOf } from "./ask-ai.ts";
 import { loadSourceFiles, type SourceFileWarning } from "./source-files.ts";
 
 export type GeneratedTestStatus = "written" | "exists" | "needs_review" | "not_generated";
@@ -52,8 +53,7 @@ type Deps = {
 };
 type Stats = {
   stoppedBy: AiError | null;
-  readonly models: Set<string>;
-  readonly usage: { aiCalls: number; inputTokens: number; outputTokens: number };
+  readonly tally: AiTally;
 };
 type Context = {
   readonly deps: Deps;
@@ -81,8 +81,7 @@ export async function generateTests(
     eligible.length > 0 ? await readExistingTests(deps.repoReader, input.repoRoot, allPaths) : [];
   const stats: Stats = {
     stoppedBy: null,
-    models: new Set(),
-    usage: { aiCalls: 0, inputTokens: 0, outputTokens: 0 },
+    tally: newAiTally(),
   };
   const context: Context = {
     deps,
@@ -123,8 +122,8 @@ export async function generateTests(
     notices: notice === null ? [] : [notice],
     warnings,
     stoppedBy: stats.stoppedBy,
-    models: [...stats.models],
-    usage: stats.usage,
+    models: [...stats.tally.models],
+    usage: usageOf(stats.tally),
   });
 }
 
@@ -149,11 +148,11 @@ async function generateOne(
       omittedFiles: fitted.omitted,
       previousAttempt,
     });
-    const reply = await ctx.deps.aiProvider.complete({
-      system: prompt.system,
-      user: prompt.user,
-      jsonSchema: prompt.answerSchema,
-    });
+    const reply = await askAi(
+      ctx.deps.aiProvider,
+      { system: prompt.system, user: prompt.user, jsonSchema: prompt.answerSchema },
+      ctx.stats.tally,
+    );
     if (!reply.ok) {
       if (aiErrorAction(reply.error.code) === "stop_scan") ctx.stats.stoppedBy = reply.error;
       return {
@@ -163,10 +162,6 @@ async function generateOne(
         problems: [`${reply.error.code}: ${reply.error.message}`],
       };
     }
-    ctx.stats.usage.aiCalls += 1;
-    ctx.stats.usage.inputTokens += reply.value.usage.inputTokens;
-    ctx.stats.usage.outputTokens += reply.value.usage.outputTokens;
-    ctx.stats.models.add(reply.value.model);
 
     const parsed = parseGeneratedTest(reply.value.text);
     const code = parsed.ok ? parsed.value.code : reply.value.text;

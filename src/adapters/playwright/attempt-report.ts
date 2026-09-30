@@ -19,6 +19,8 @@ export type FinishedRun = {
   readonly spawnError: string | null;
   /** Set when AutoAI stopped the attempt at its time limit. */
   readonly timedOutAfterMs: number | null;
+  /** Setup projects the wrapper config did not run. */
+  readonly skippedSetupProjects: readonly string[];
 };
 
 // Playwright's message when the browser build it needs was never downloaded.
@@ -76,7 +78,12 @@ export async function attemptReportOf(
   const failedTest = run.tests.find((t) => resultOf(t.status) === "failed");
   if (failedTest === undefined)
     throw new Error("runner bug: a failed attempt without a failed test");
-  return ok({ result, durationMs, steps: run.steps, failure: await captureOf(failedTest) });
+  return ok({
+    result,
+    durationMs,
+    steps: run.steps,
+    failure: await captureOf(failedTest, run.skippedSetupProjects),
+  });
 }
 
 function resultOf(status: TestLine["status"]): AttemptResult | null {
@@ -92,7 +99,10 @@ function resultOf(status: TestLine["status"]): AttemptResult | null {
   }
 }
 
-async function captureOf(test: TestLine): Promise<FailureCapture> {
+async function captureOf(
+  test: TestLine,
+  skippedSetupProjects: readonly string[],
+): Promise<FailureCapture> {
   const error = test.errors.map(stripAnsi).join("\n\n").trim();
   const capture: FailureCapture = {
     step: test.failedStep,
@@ -104,6 +114,7 @@ async function captureOf(test: TestLine): Promise<FailureCapture> {
   if (test.screenshotPath !== null) capture.screenshotPath = test.screenshotPath;
   const snapshot = test.errorContextPath === null ? null : await snapshotAt(test.errorContextPath);
   if (snapshot !== null) capture.pageSnapshot = snapshot;
+  if (skippedSetupProjects.length > 0) capture.skippedSetupProjects = [...skippedSetupProjects];
   return capture;
 }
 

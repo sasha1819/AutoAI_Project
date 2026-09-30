@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import { Finding } from "../core/domain/finding.ts";
 import { KEY_HELP, readAiOptions } from "./ai-options.ts";
@@ -6,6 +5,7 @@ import { parseCliArgs } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
 import { runCostUsd } from "./format-ai.ts";
 import { formatGenerate } from "./format-generate.ts";
+import { readJsonFile } from "./json-file.ts";
 import { writeJsonFile } from "./output.ts";
 
 const USAGE =
@@ -31,31 +31,6 @@ const OPTIONS = {
   json: { type: "boolean", default: false },
 } as const;
 
-// The scan file is outside data (disk), so it is validated here, at the boundary.
-async function readFindings(path: string): Promise<z.infer<typeof ScanFile>["findings"] | string> {
-  let text: string;
-  try {
-    text = await readFile(path, "utf8");
-  } catch (e) {
-    return `INVALID_SCAN_FILE: ${path}: ${e instanceof Error ? e.message : String(e)}`;
-  }
-  let json: unknown;
-  try {
-    json = JSON.parse(text);
-  } catch (e) {
-    return `INVALID_SCAN_FILE: ${path}: not valid JSON (${e instanceof Error ? e.message : String(e)})`;
-  }
-  const parsed = ScanFile.safeParse(json);
-  if (!parsed.success) {
-    const issues = parsed.error.issues
-      .slice(0, 3)
-      .map((i) => `${i.path.join(".")}: ${i.message}`)
-      .join("; ");
-    return `INVALID_SCAN_FILE: ${path}: not a scan result (${issues})`;
-  }
-  return parsed.data.findings;
-}
-
 async function main(): Promise<number> {
   const args = parseCliArgs(process.argv.slice(2), OPTIONS, Args);
   if (args === null) {
@@ -67,11 +42,15 @@ async function main(): Promise<number> {
     console.error(KEY_HELP);
     return 2;
   }
-  const findings = await readFindings(args.from);
-  if (typeof findings === "string") {
-    console.error(findings);
+  const scan = await readJsonFile(args.from, ScanFile, {
+    code: "INVALID_SCAN_FILE",
+    what: "a scan result",
+  });
+  if (typeof scan === "string") {
+    console.error(scan);
     return 1;
   }
+  const { findings } = scan;
 
   const result = await composeCli().generateTests({ repoRoot: args.repo, findings }, ai);
   if (!result.ok) {

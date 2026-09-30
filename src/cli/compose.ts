@@ -10,6 +10,7 @@ import type { Finding } from "../core/domain/finding.ts";
 import type { StepEvent } from "../core/domain/step.ts";
 import { extractRequirements } from "../services/extract-requirements.ts";
 import { generateTests } from "../services/generate-tests.ts";
+import { type DiagnoseFailureInput, diagnoseFailure } from "../services/diagnose-failure.ts";
 import { type RunTestInput, runTest } from "../services/run-test.ts";
 import { scanProject } from "../services/scan-project.ts";
 import { recordingAiProvider } from "./recording-ai-provider.ts";
@@ -44,5 +45,14 @@ export function composeCli() {
       ),
     runTest: (input: RunTestInput, onStep: (event: StepEvent) => void, artifactsDir: string) =>
       runTest({ testRunner: createPlaywrightTestRunner({ artifactsDir }) }, input, onStep),
+    diagnoseFailure: (
+      input: DiagnoseFailureInput,
+      ai: ClaudeAiProviderOptions,
+      record?: { readonly dir: string; readonly runId: string },
+    ) => {
+      const claude = createClaudeAiProvider(ai);
+      const aiProvider = record ? recordingAiProvider(claude, record.dir, record.runId) : claude;
+      return diagnoseFailure({ repoReader, aiProvider }, input);
+    },
   };
 }

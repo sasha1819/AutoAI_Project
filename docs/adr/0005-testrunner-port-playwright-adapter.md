@@ -77,3 +77,9 @@ FailureCapture = { step; error; screenshotPath?; pageSnapshot? }
 - `AttemptRequest` gains `timeLimitMs`. The limit comes from `core/rules/run-time-limit.ts`: a whole run may take `RUN_TIME_LIMIT_MS` (10 min), and each attempt gets an equal share, so no clock or new port is needed.
 - Past its limit, the adapter asks Playwright to stop (SIGINT, so the browser and webServer shut down) and kills it 5 s later. An attempt that had already finished keeps its real result.
 - The result is a new error code, `RUN_TIMED_OUT`, never an attempt. Known limit: after the kill, a user's webServer started by Playwright may be left running (BUILD-LOG follow-up).
+
+## Amendment (2026-09-30, M3 diagnosis task; privacy guard the user asked for, and the M3 note on setup projects)
+- Step names never contain typed text. Playwright titles a typing step `Fill "<value>"`, so the value is dropped and only the action and the field remain (`Fill getByLabel('Password')`). Step names are logged, stored and sent for diagnosis.
+- The wrapper config reports the setup projects it did not run (the Chromium project's `dependencies`, followed transitively) as an `AUTOAI:` config line. The failure capture carries them as `skippedSetupProjects`, so a diagnosis can name them for certain, as a fact rather than an AI guess.
+- A project that names Chromium is preferred over one that names no browser, because setup projects usually name none.
+- Everything sent to the AI is also redacted by `core/rules/redaction.ts` before the prompt is built (see BUILD-LOG). The capture itself stays complete on the user's machine.

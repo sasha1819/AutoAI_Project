@@ -112,6 +112,15 @@ function header(tag: string): string {
   return `// AutoAI requirement: ${tag}`;
 }
 
+/** The requirement tag in a spec's first-line header, or null when the file has none (not written by AutoAI). */
+export function requirementTagOf(specText: string): string | null {
+  const firstLine = specText.split("\n", 1)[0] ?? "";
+  const prefix = header("");
+  if (!firstLine.startsWith(prefix)) return null;
+  const tag = firstLine.slice(prefix.length).trim();
+  return tag === "" ? null : tag;
+}
+
 /**
  * The existing test for a requirement, if any: a file in tests/autoai whose first line names the same tag (file
  * names can change when PRD text changes; the header does not), or else a file with the planned name.

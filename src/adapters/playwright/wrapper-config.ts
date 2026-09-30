@@ -30,8 +30,27 @@ const pinServer = (s) => ({ ...s, cwd: pin(s.cwd ?? ".") });
 
 // Chromium only (MVP): use the settings of the user's Chromium project if there is one. Other projects, and
 // project dependencies such as a login setup project, are not run.
-const browserOf = (p) => p?.use?.browserName ?? p?.use?.defaultBrowserType ?? "chromium";
-const chromium = (Array.isArray(base.projects) ? base.projects : []).find((p) => browserOf(p) === "chromium");
+// A project that names Chromium wins over one that names no browser (setup projects usually name none).
+const projects = Array.isArray(base.projects) ? base.projects : [];
+const browserOf = (p) => p?.use?.browserName ?? p?.use?.defaultBrowserType;
+const chromium =
+  projects.find((p) => browserOf(p) === "chromium") ?? projects.find((p) => browserOf(p) === undefined);
+
+// Setup projects the Chromium project depends on (e.g. a login step) are not run (MVP limit, LATER.md). They are
+// reported so a failure's diagnosis can say so for certain.
+const projectByName = new Map(projects.map((p) => [p.name, p]));
+const skippedSetupProjects = [];
+const visit = (names) => {
+  for (const name of Array.isArray(names) ? names : []) {
+    if (typeof name !== "string" || skippedSetupProjects.includes(name)) continue;
+    skippedSetupProjects.push(name);
+    visit(projectByName.get(name)?.dependencies);
+  }
+};
+visit(chromium?.dependencies);
+if (skippedSetupProjects.length > 0) {
+  process.stdout.write(\`AUTOAI:\${JSON.stringify({ kind: "config", skippedSetupProjects })}\\n\`);
+}
 
 export default {
   ...base,

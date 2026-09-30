@@ -14,6 +14,7 @@
     "scan": "node src/cli/scan.ts",
     "generate-tests": "node src/cli/generate-tests.ts",
     "run-test": "node src/cli/run-test.ts",
+    "diagnose": "node src/cli/diagnose.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "coverage:scope": "node scripts/check-coverage-scope.mjs",

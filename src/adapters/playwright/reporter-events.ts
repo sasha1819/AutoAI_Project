@@ -25,8 +25,18 @@ const TestLine = z.object({
   errorContextPath: z.string().min(1).nullable(),
 });
 const ErrorLine = z.object({ kind: z.literal("error"), message: z.string() });
+// Written by the wrapper config (not the reporter) when it drops setup projects.
+const ConfigLine = z.object({
+  kind: z.literal("config"),
+  skippedSetupProjects: z.array(z.string().min(1)),
+});
 
-export const ReporterEvent = z.discriminatedUnion("kind", [StepLine, TestLine, ErrorLine]);
+export const ReporterEvent = z.discriminatedUnion("kind", [
+  StepLine,
+  TestLine,
+  ErrorLine,
+  ConfigLine,
+]);
 export type ReporterEvent = z.infer<typeof ReporterEvent>;
 export type TestLine = z.infer<typeof TestLine>;
 

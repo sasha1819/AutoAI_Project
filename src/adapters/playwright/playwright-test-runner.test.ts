@@ -345,6 +345,50 @@ describe.concurrent(
       expect(Date.now() - started).toBeLessThan(15_000);
     });
 
+    it("never records typed values in step names (a password stays out of logs and prompts)", async () => {
+      const root = await makeRepo({
+        files: {
+          "tests/autoai/cart.spec.ts": [
+            'import { expect, test } from "@playwright/test";',
+            'test("login", async ({ page }) => {',
+            '  await page.setContent("<label>Password <input type=password></label>");',
+            '  await page.getByLabel("Password").fill("hunter2-SECRET");',
+            '  await page.getByLabel("Password").pressSequentially("more-SECRET");',
+            '  await expect(page.getByLabel("Password")).toHaveValue(/SECRET/);',
+            "});",
+          ].join("\n"),
+        },
+      });
+      const result = await runner.runAttempt(request(root), () => undefined);
+      const names = result.ok ? result.value.steps.map((e) => e.step) : [];
+      expect(names).toContain("Fill getByLabel('Password')");
+      expect(names).toContain("Type getByLabel('Password')");
+      expect(JSON.stringify(result)).not.toContain('SECRET"');
+      expect(names.join("\n")).not.toContain("SECRET");
+    });
+
+    it("reports the setup projects it did not run (e.g. a login step) with the failure", async () => {
+      const root = await makeRepo({
+        files: {
+          "playwright.config.mjs": [
+            "export default {",
+            "  projects: [",
+            '    { name: "db", testMatch: /db\\.setup\\.ts/ },',
+            '    { name: "login", testMatch: /login\\.setup\\.ts/, dependencies: ["db"] },',
+            '    { name: "chromium", use: { browserName: "chromium" }, dependencies: ["login"] },',
+            '    { name: "firefox", use: { browserName: "firefox" }, dependencies: ["other"] },',
+            "  ],",
+            "};",
+          ].join("\n"),
+          "tests/autoai/cart.spec.ts": failing,
+        },
+      });
+      const result = await runner.runAttempt(request(root), () => undefined);
+      expect(
+        result.ok && result.value.result === "failed" && result.value.failure.skippedSetupProjects,
+      ).toStrictEqual(["login", "db"]);
+    });
+
     it("treats a run id that is not a plain folder name as a runner bug", async () => {
       const root = await makeRepo({ files: { "tests/autoai/cart.spec.ts": passing } });
       await expect(

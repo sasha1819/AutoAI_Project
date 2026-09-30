@@ -6,13 +6,10 @@ import { parseMatchingResponse } from "../core/parsing/finding.ts";
 import type { AiError, AiProvider, AiUsage } from "../core/ports/ai-provider.ts";
 import type { RepoReadErrorCode, RepoReader } from "../core/ports/repo-reader.ts";
 import { buildMatchingPrompt } from "../core/prompts/matching.ts";
-import {
-  aiErrorAction,
-  batchRequirements,
-  INVALID_AI_OUTPUT_ATTEMPTS,
-} from "../core/rules/batching.ts";
+import { aiErrorAction, batchRequirements } from "../core/rules/batching.ts";
 import { fitFilesToBudget } from "../core/rules/prompt-budget.ts";
 import { indexFiles, rankFilesForBatch } from "../core/rules/relevance.ts";
+import { askUntilValid, newAiTally, usageOf } from "./ask-ai.ts";
 import { extractRequirements } from "./extract-requirements.ts";
 import { loadSourceFiles, type SourceFileWarning } from "./source-files.ts";
 
@@ -63,8 +60,7 @@ export async function scanProject(
   const byPath = new Map(files.map((f) => [f.path, f]));
   const findings: Finding[] = [];
   const notScanned: Requirement[] = [];
-  const models = new Set<string>();
-  const usage = { aiCalls: 0, inputTokens: 0, outputTokens: 0 };
+  const tally = newAiTally();
   let stoppedBy: AiError | null = null;
 
   for (const batch of batchRequirements(requirements)) {
@@ -80,40 +76,25 @@ export async function scanProject(
       omittedFiles: fitted.omitted,
       repoFiles: sourcePaths,
     });
-    let lastProblem = "";
-    let scanned = false;
-    for (let attempt = 1; attempt <= INVALID_AI_OUTPUT_ATTEMPTS; attempt++) {
-      const reply = await deps.aiProvider.complete({
-        system: prompt.system,
-        user: prompt.user,
-        jsonSchema: prompt.answerSchema,
-      });
-      if (!reply.ok) {
-        if (aiErrorAction(reply.error.code) === "stop_scan") stoppedBy = reply.error;
-        else lastProblem = `${reply.error.code}: ${reply.error.message}`;
-        break;
-      }
-      usage.aiCalls += 1;
-      usage.inputTokens += reply.value.usage.inputTokens;
-      usage.outputTokens += reply.value.usage.outputTokens;
-      models.add(reply.value.model);
-      const parsed = parseMatchingResponse(reply.value.text, prompt);
-      if (parsed.ok) {
-        findings.push(...parsed.value);
-        scanned = true;
-        break;
-      }
-      lastProblem = parsed.error.message;
+    const answer = await askUntilValid(
+      deps.aiProvider,
+      { system: prompt.system, user: prompt.user, jsonSchema: prompt.answerSchema },
+      (text) => parseMatchingResponse(text, prompt),
+      tally,
+    );
+    if (answer.ok) {
+      findings.push(...answer.value.value);
+      continue;
     }
-    if (!scanned) {
-      notScanned.push(...batch);
-      if (!stoppedBy) {
-        warnings.push({
-          code: "BATCH_NOT_SCANNED",
-          message: `${batch[0]?.area ?? "?"}: ${lastProblem}`,
-        });
-      }
+    notScanned.push(...batch);
+    const { error } = answer;
+    if (error.code !== "INVALID_AI_OUTPUT" && aiErrorAction(error.code) === "stop_scan") {
+      stoppedBy = error;
+      continue;
     }
+    const problem =
+      error.code === "INVALID_AI_OUTPUT" ? error.message : `${error.code}: ${error.message}`;
+    warnings.push({ code: "BATCH_NOT_SCANNED", message: `${batch[0]?.area ?? "?"}: ${problem}` });
   }
 
   return ok({
@@ -124,7 +105,7 @@ export async function scanProject(
     notScanned,
     warnings,
     stoppedBy,
-    models: [...models],
-    usage,
+    models: [...tally.models],
+    usage: usageOf(tally),
   });
 }

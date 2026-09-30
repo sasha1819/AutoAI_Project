@@ -24,6 +24,7 @@ const run = (over: Partial<FinishedRun>): FinishedRun => ({
   signal: null,
   spawnError: null,
   timedOutAfterMs: null,
+  skippedSetupProjects: [],
   ...over,
 });
 

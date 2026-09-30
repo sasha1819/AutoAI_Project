@@ -1,0 +1,96 @@
+{
+  "repoRoot": "<repo>",
+  "specPath": "tests/autoai/cart-1-1-add-to-basket.spec.ts",
+  "runId": "test-bug-cart-1-1",
+  "status": "failed",
+  "attempts": [
+    {
+      "result": "failed",
+      "durationMs": 10038,
+      "steps": [
+        {
+          "step": "Navigate /",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:05:11.109Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 1
+        },
+        {
+          "step": "Navigate /",
+          "status": "passed",
+          "durationMs": 21,
+          "ts": "2026-09-30T20:05:11.130Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:05:11.131Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+          "status": "failed",
+          "durationMs": 9973,
+          "ts": "2026-09-30T20:05:21.104Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 1
+        }
+      ],
+      "failure": {
+        "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+        "error": "Test timeout of 10000ms exceeded.\n\nError: locator.click: Test timeout of 10000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Add Coffee mug to basket' })",
+        "screenshotPath": "<artifacts>/test-bug-cart-1-1/attempt-1/cart-1-1-add-to-basket-Add-bee5b-e-cart-line-with-quantity-2-chromium/test-failed-1.png",
+        "pageSnapshot": "- main [ref=e2]:\n  - heading \"Sample Shop\" [level=1] [ref=e3]\n  - region [ref=e4]:\n    - heading \"Products\" [level=2] [ref=e5]\n    - list [ref=e6]:\n      - listitem [ref=e7]:\n        - text: Coffee mug $12.50\n        - button \"Add Coffee mug to cart\" [ref=e8]: Add to cart\n      - listitem [ref=e9]:\n        - text: T-shirt $20.00\n        - button \"Add T-shirt to cart\" [ref=e10]: Add to cart\n      - listitem [ref=e11]:\n        - text: Poster $25.00\n        - button \"Add Poster to cart\" [ref=e12]: Add to cart\n  - region [ref=e13]:\n    - heading \"Cart\" [level=2] [ref=e14]\n    - paragraph [ref=e15]: Your cart is empty\n    - list\n    - generic [ref=e16]:\n      - text: Discount code\n      - textbox \"Discount code\" [ref=e17]\n      - button \"Apply\" [ref=e18]\n    - status\n    - generic [ref=e19]:\n      - term [ref=e20]: Subtotal\n      - definition [ref=e21]: $0.00\n      - term [ref=e22]: Discount\n      - definition [ref=e23]: $0.00\n      - term [ref=e24]: Shipping\n      - definition [ref=e25]: $0.00\n      - term [ref=e26]: Total\n      - definition [ref=e27]: $0.00\n  - region [ref=e28]:\n    - heading \"Checkout\" [level=2] [ref=e29]\n    - generic [ref=e30]:\n      - text: Email\n      - textbox \"Email\" [ref=e31]\n      - button \"Place order\" [disabled] [ref=e32]\n    - status"
+      }
+    },
+    {
+      "result": "failed",
+      "durationMs": 10071,
+      "steps": [
+        {
+          "step": "Navigate /",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:05:22.487Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 2
+        },
+        {
+          "step": "Navigate /",
+          "status": "passed",
+          "durationMs": 23,
+          "ts": "2026-09-30T20:05:22.510Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:05:22.511Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+          "status": "failed",
+          "durationMs": 10006,
+          "ts": "2026-09-30T20:05:32.517Z",
+          "runId": "test-bug-cart-1-1",
+          "attempt": 2
+        }
+      ],
+      "failure": {
+        "step": "Click getByRole('button', { name: 'Add Coffee mug to basket' })",
+        "error": "Test timeout of 10000ms exceeded.\n\nError: locator.click: Test timeout of 10000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Add Coffee mug to basket' })",
+        "screenshotPath": "<artifacts>/test-bug-cart-1-1/attempt-2/cart-1-1-add-to-basket-Add-bee5b-e-cart-line-with-quantity-2-chromium/test-failed-1.png",
+        "pageSnapshot": "- main [ref=e2]:\n  - heading \"Sample Shop\" [level=1] [ref=e3]\n  - region [ref=e4]:\n    - heading \"Products\" [level=2] [ref=e5]\n    - list [ref=e6]:\n      - listitem [ref=e7]:\n        - text: Coffee mug $12.50\n        - button \"Add Coffee mug to cart\" [ref=e8]: Add to cart\n      - listitem [ref=e9]:\n        - text: T-shirt $20.00\n        - button \"Add T-shirt to cart\" [ref=e10]: Add to cart\n      - listitem [ref=e11]:\n        - text: Poster $25.00\n        - button \"Add Poster to cart\" [ref=e12]: Add to cart\n  - region [ref=e13]:\n    - heading \"Cart\" [level=2] [ref=e14]\n    - paragraph [ref=e15]: Your cart is empty\n    - list\n    - generic [ref=e16]:\n      - text: Discount code\n      - textbox \"Discount code\" [ref=e17]\n      - button \"Apply\" [ref=e18]\n    - status\n    - generic [ref=e19]:\n      - term [ref=e20]: Subtotal\n      - definition [ref=e21]: $0.00\n      - term [ref=e22]: Discount\n      - definition [ref=e23]: $0.00\n      - term [ref=e24]: Shipping\n      - definition [ref=e25]: $0.00\n      - term [ref=e26]: Total\n      - definition [ref=e27]: $0.00\n  - region [ref=e28]:\n    - heading \"Checkout\" [level=2] [ref=e29]\n    - generic [ref=e30]:\n      - text: Email\n      - textbox \"Email\" [ref=e31]\n      - button \"Place order\" [disabled] [ref=e32]\n    - status"
+      }
+    }
+  ]
+}

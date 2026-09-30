@@ -8,6 +8,12 @@ const HINT: Partial<Record<AiErrorCode, string>> = {
   AI_OUTPUT_TRUNCATED: "Try --effort medium, which leaves more room for the answer.",
 };
 
+/** "CODE: message", plus what to do about it in the terminal when the code has advice. */
+export function errorLine(error: { readonly code: string; readonly message: string }): string {
+  const hint = Object.entries(HINT).find(([code]) => code === error.code)?.[1];
+  return `${error.code}: ${error.message}${hint === undefined ? "" : ` ${hint}`}`;
+}
+
 /** "Stopped early: CODE - message", plus what to do about it in the terminal. */
 export function stoppedLine(error: AiError): string {
   const hint = HINT[error.code];

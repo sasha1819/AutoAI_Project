@@ -4,6 +4,8 @@ import {
   attemptResultOfSpec,
   decideRun,
   isRunFailure,
+  settledStatus,
+  shouldDiagnose,
   MAX_RUN_ATTEMPTS,
   type RunDecision,
 } from "./run-status.ts";
@@ -65,6 +67,37 @@ describe("isRunFailure", () => {
     "%s -> %s (only a failure that survived the retry counts; flaky is shown, not failed)",
     (status, failure) => {
       expect(isRunFailure(status)).toBe(failure);
+    },
+  );
+});
+
+describe("shouldDiagnose", () => {
+  it.each<[RunStatus, boolean]>([
+    ["failed", true],
+    ["flaky", false],
+    ["passed", false],
+    ["not_run", false],
+  ])(
+    "%s -> %s (only a confirmed failure is sent for diagnosis; a flaky run is not a bug)",
+    (status, diagnose) => {
+      expect(shouldDiagnose(status)).toBe(diagnose);
+    },
+  );
+});
+
+describe("settledStatus", () => {
+  it.each<[readonly AttemptResult[], RunStatus | null]>([
+    [["passed"], "passed"],
+    [["failed", "passed"], "flaky"],
+    [["failed", "failed"], "failed"],
+    [[], "not_run"],
+    [["failed"], null],
+    [["passed", "passed"], null],
+    [["failed", "failed", "failed"], null],
+  ])(
+    "%j -> %j (the status a finished run must have; null if it is unfinished or impossible)",
+    (attempts, status) => {
+      expect(settledStatus(attempts)).toBe(status);
     },
   );
 });

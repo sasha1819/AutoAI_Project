@@ -1,0 +1,256 @@
+{
+  "repoRoot": "<repo>",
+  "specPath": "tests/autoai/cart-1-2-discount-codes-are-case-insensitive-save10.spec.ts",
+  "runId": "app-bug-cart-1-2",
+  "status": "failed",
+  "attempts": [
+    {
+      "result": "failed",
+      "durationMs": 5279,
+      "steps": [
+        {
+          "step": "Navigate /",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:51.996Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Navigate /",
+          "status": "passed",
+          "durationMs": 25,
+          "ts": "2026-09-30T20:04:52.021Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Scroll into view getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.022Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Scroll into view getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "passed",
+          "durationMs": 50,
+          "ts": "2026-09-30T20:04:52.072Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.072Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "passed",
+          "durationMs": 47,
+          "ts": "2026-09-30T20:04:52.119Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Expect \"not toHaveText\" locator('#subtotal')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.122Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Expect \"not toHaveText\" locator('#subtotal')",
+          "status": "passed",
+          "durationMs": 24,
+          "ts": "2026-09-30T20:04:52.146Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Fill getByLabel('Discount code')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.148Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Fill getByLabel('Discount code')",
+          "status": "passed",
+          "durationMs": 4,
+          "ts": "2026-09-30T20:04:52.152Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Apply' })",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.153Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Apply' })",
+          "status": "passed",
+          "durationMs": 38,
+          "ts": "2026-09-30T20:04:52.191Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:52.192Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        },
+        {
+          "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+          "status": "failed",
+          "durationMs": 5005,
+          "ts": "2026-09-30T20:04:57.197Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 1
+        }
+      ],
+      "failure": {
+        "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+        "error": "Error: expect(locator).not.toBeVisible() failed\n\nLocator:  getByText('Unknown discount code')\nExpected: not visible\nReceived: visible\nTimeout:  5000ms\n\nCall log:\n  - Expect \"not toBeVisible\" getByText('Unknown discount code') with timeout 5000ms\n  - waiting for getByText('Unknown discount code')\n    14 × locator resolved to <p role=\"status\" id=\"discount-message\">Unknown discount code</p>\n       - unexpected value \"visible\"",
+        "screenshotPath": "<artifacts>/app-bug-cart-1-2/attempt-1/cart-1-2-discount-codes-ar-a03f0-e-code-in-lowercase-save10--chromium/test-failed-1.png",
+        "pageSnapshot": "- status: Unknown discount code"
+      }
+    },
+    {
+      "result": "failed",
+      "durationMs": 5285,
+      "steps": [
+        {
+          "step": "Navigate /",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.595Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Navigate /",
+          "status": "passed",
+          "durationMs": 20,
+          "ts": "2026-09-30T20:04:58.615Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Scroll into view getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.617Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Scroll into view getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "passed",
+          "durationMs": 54,
+          "ts": "2026-09-30T20:04:58.671Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.671Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: /Add .* to cart/i }).first()",
+          "status": "passed",
+          "durationMs": 43,
+          "ts": "2026-09-30T20:04:58.714Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Expect \"not toHaveText\" locator('#subtotal')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.717Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Expect \"not toHaveText\" locator('#subtotal')",
+          "status": "passed",
+          "durationMs": 3,
+          "ts": "2026-09-30T20:04:58.720Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Fill getByLabel('Discount code')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.749Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Fill getByLabel('Discount code')",
+          "status": "passed",
+          "durationMs": 3,
+          "ts": "2026-09-30T20:04:58.752Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Apply' })",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.753Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Click getByRole('button', { name: 'Apply' })",
+          "status": "passed",
+          "durationMs": 36,
+          "ts": "2026-09-30T20:04:58.789Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+          "status": "running",
+          "durationMs": 0,
+          "ts": "2026-09-30T20:04:58.790Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        },
+        {
+          "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+          "status": "failed",
+          "durationMs": 5009,
+          "ts": "2026-09-30T20:05:03.799Z",
+          "runId": "app-bug-cart-1-2",
+          "attempt": 2
+        }
+      ],
+      "failure": {
+        "step": "Expect \"not toBeVisible\" getByText('Unknown discount code')",
+        "error": "Error: expect(locator).not.toBeVisible() failed\n\nLocator:  getByText('Unknown discount code')\nExpected: not visible\nReceived: visible\nTimeout:  5000ms\n\nCall log:\n  - Expect \"not toBeVisible\" getByText('Unknown discount code') with timeout 5000ms\n  - waiting for getByText('Unknown discount code')\n    14 × locator resolved to <p role=\"status\" id=\"discount-message\">Unknown discount code</p>\n       - unexpected value \"visible\"",
+        "screenshotPath": "<artifacts>/app-bug-cart-1-2/attempt-2/cart-1-2-discount-codes-ar-a03f0-e-code-in-lowercase-save10--chromium/test-failed-1.png",
+        "pageSnapshot": "- status: Unknown discount code"
+      }
+    }
+  ]
+}

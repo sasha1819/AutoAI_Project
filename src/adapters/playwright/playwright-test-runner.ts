@@ -91,12 +91,18 @@ function runPlaywright(
 ): Promise<Omit<FinishedRun, "steps">> {
   const tests: Extract<ReporterEvent, { kind: "test" }>[] = [];
   const errors: string[] = [];
+  const skippedSetupProjects: string[] = [];
   let stderr = "";
   const lines = lineSplitter((line) => {
     const event = parseReporterLine(line);
     if (event === null) return;
     if (event.kind === "error") {
       errors.push(event.message);
+      return;
+    }
+    if (event.kind === "config") {
+      for (const name of event.skippedSetupProjects)
+        if (!skippedSetupProjects.includes(name)) skippedSetupProjects.push(name);
       return;
     }
     // A retry configured inside the spec is not an AutoAI attempt: only Playwright's first try counts.
@@ -136,7 +142,7 @@ function runPlaywright(
     const finish = (signal: NodeJS.Signals | null, spawnError: string | null): void => {
       clearTimeout(stop);
       clearTimeout(kill);
-      resolve({ tests, errors, stderr, signal, spawnError, timedOutAfterMs });
+      resolve({ tests, errors, stderr, signal, spawnError, timedOutAfterMs, skippedSetupProjects });
     };
     // A failed start emits "error" and may also emit "close": the first one settles the run.
     child.on("error", (e) => {

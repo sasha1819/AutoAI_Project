@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { fitFilesToBudget, PROMPT_FILE_BUDGET_CHARS } from "./prompt-budget.ts";
+import {
+  clipFailureText,
+  FAILURE_TEXT_LIMIT_CHARS,
+  fitFilesToBudget,
+  PROMPT_FILE_BUDGET_CHARS,
+} from "./prompt-budget.ts";
 
 const file = (path: string, size: number) => ({ path, text: "x".repeat(size) });
 
@@ -33,5 +38,20 @@ describe("fitFilesToBudget", () => {
   it("uses PROMPT_FILE_BUDGET_CHARS by default", () => {
     const result = fitFilesToBudget([file("a", PROMPT_FILE_BUDGET_CHARS), file("b", 1)]);
     expect(result.omitted).toStrictEqual(["b"]);
+  });
+});
+
+describe("clipFailureText", () => {
+  it("is 20k characters per failure text (error, page snapshot)", () => {
+    expect(FAILURE_TEXT_LIMIT_CHARS).toBe(20_000);
+  });
+
+  it.each<[string, number, string]>([
+    ["short", 10, "short"],
+    ["exactly10!", 10, "exactly10!"],
+    ["line one\nline two\nline three", 12, "line one\n[... 2 more lines cut]"],
+    ["abcdefghijklmnop", 10, "abcdefghij\n[... 6 more characters cut]"],
+  ])("%j with limit %i -> %j (cut at a line when possible, and say so)", (text, limit, clipped) => {
+    expect(clipFailureText(text, limit)).toBe(clipped);
   });
 });

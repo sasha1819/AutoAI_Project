@@ -1,0 +1,28 @@
+{
+  "repoRoot": "<repo>",
+  "specPath": "tests/autoai/account-3-1-order-history.spec.ts",
+  "runId": "environment-account-3-1",
+  "status": "failed",
+  "attempts": [
+    {
+      "result": "failed",
+      "durationMs": 2,
+      "steps": [],
+      "failure": {
+        "step": null,
+        "error": "Error: Error reading storage state from playwright/.auth/user.json:\nENOENT: no such file or directory, open 'playwright/.auth/user.json'",
+        "skippedSetupProjects": ["login"]
+      }
+    },
+    {
+      "result": "failed",
+      "durationMs": 1,
+      "steps": [],
+      "failure": {
+        "step": null,
+        "error": "Error: Error reading storage state from playwright/.auth/user.json:\nENOENT: no such file or directory, open 'playwright/.auth/user.json'",
+        "skippedSetupProjects": ["login"]
+      }
+    }
+  ]
+}

@@ -20,6 +20,8 @@ export const FailureCapture = z.object({
   error: z.string().min(1),
   screenshotPath: z.string().min(1).optional(),
   pageSnapshot: z.string().optional(),
+  /** Setup projects (e.g. a login step) the test's project depends on that the runner did not run (ADR 0005). */
+  skippedSetupProjects: z.array(z.string().min(1)).min(1).readonly().optional(),
 });
 export type FailureCapture = z.infer<typeof FailureCapture>;
 

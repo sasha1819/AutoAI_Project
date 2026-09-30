@@ -20,6 +20,24 @@ export function isRunFailure(status: RunStatus): boolean {
   return status === "failed";
 }
 
+/**
+ * Whether a run is sent to the AI for diagnosis (reliability-rules §4): only a failure that survived the retry.
+ * A flaky run is not diagnosed as a bug, and the AI never sees a run Playwright did not fail.
+ */
+export function shouldDiagnose(status: RunStatus): boolean {
+  return isRunFailure(status);
+}
+
+/**
+ * The status a finished run with these attempts must have, or null when the attempts are unfinished or impossible.
+ * Used to check a saved run (a file the user passes in) instead of trusting its status field.
+ */
+export function settledStatus(attempts: readonly AttemptResult[]): RunStatus | null {
+  if (!isPossible(attempts)) return null;
+  const decision = decideRun(attempts);
+  return decision.kind === "done" ? decision.status : null;
+}
+
 export type RunDecision =
   { readonly kind: "retry" } | { readonly kind: "done"; readonly status: RunStatus };
 
@@ -29,8 +47,7 @@ export type RunDecision =
  * be hidden by re-running until green, and it is not sent to diagnosis as a bug.
  */
 export function decideRun(attempts: readonly AttemptResult[]): RunDecision {
-  const passedEarly = attempts.slice(0, -1).includes("passed");
-  if (attempts.length > MAX_RUN_ATTEMPTS || passedEarly) {
+  if (!isPossible(attempts)) {
     throw new Error(
       `runner bug: attempts ${JSON.stringify(attempts)} should never happen (retry only after a failure, at most ${String(MAX_RUN_ATTEMPTS)} attempts)`,
     );
@@ -41,4 +58,9 @@ export function decideRun(attempts: readonly AttemptResult[]): RunDecision {
     return { kind: "done", status: attempts.length === 1 ? "passed" : "flaky" };
   if (attempts.length < MAX_RUN_ATTEMPTS) return { kind: "retry" };
   return { kind: "done", status: "failed" };
+}
+
+// A retry only ever follows a failure, and there are at most MAX_RUN_ATTEMPTS attempts.
+function isPossible(attempts: readonly AttemptResult[]): boolean {
+  return attempts.length <= MAX_RUN_ATTEMPTS && !attempts.slice(0, -1).includes("passed");
 }
