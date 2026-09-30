@@ -10,7 +10,7 @@ import { dirname, join, resolve } from "node:path";
 const REPO = process.cwd();
 const CONFIG = resolve(process.argv[2] ?? ".dependency-cruiser.cjs");
 const DEPCRUISE = join(REPO, "node_modules", ".bin", "depcruise");
-const FAKE_PACKAGES = ["zod", "electron", "fake-lib", "@anthropic-ai/sdk", "typescript", "@playwright/test"];
+const FAKE_PACKAGES = ["zod", "electron", "fake-lib", "@anthropic-ai/sdk", "typescript", "@playwright/test", "react", "@radix-ui/react-dialog", "lucide-react"];
 
 const leaf = "export const v = 1;\n";
 const uses = (...specs) =>
@@ -52,6 +52,10 @@ const illegal = [
   ["only-playwright-adapter-uses-playwright-and-typescript", { "cli/c31.ts": uses("@playwright/test") }],
   ["only-playwright-adapter-spawns-processes", { "adapters/fs/c32.ts": uses("node:child_process") }],
   ["only-playwright-adapter-spawns-processes", { "cli/c33.ts": uses("child_process") }],
+  ["ui-libraries-only-in-ui", { "cli/c34.ts": uses("react") }],
+  ["ui-libraries-only-in-ui", { "adapters/fs/c35.ts": uses("lucide-react") }],
+  ["features-use-the-design-system", { "ui/features/c36/x.ts": uses("@radix-ui/react-dialog") }],
+  ["features-use-the-design-system", { "ui/features/c37/x.ts": uses("lucide-react") }],
 ];
 
 const legal = {
@@ -71,10 +75,10 @@ const legal = {
   "app/preload/lpl.ts": uses("../../contracts/lc.ts", "electron"),
   "cli/lcli.ts": uses("../services/ls.ts", "../adapters/fs/lf.ts", "node:path"),
   "ui/design-system/tokens/lt.ts": leaf,
-  "ui/design-system/primitives/lpr.ts": uses("../tokens/lt.ts", "fake-lib"),
+  "ui/design-system/primitives/lpr.ts": uses("../tokens/lt.ts", "fake-lib", "react", "@radix-ui/react-dialog", "lucide-react"),
   "ui/design-system/patterns/lpa.ts": uses("../primitives/lpr.ts", "../tokens/lt.ts"),
   "ui/features/legal/lx.ts": uses("../../design-system/patterns/lpa.ts", "../../../contracts/lc.ts", "../../../core/domain/ld.ts"),
-  "ui/features/legal/ly.ts": uses("./lx.ts"),
+  "ui/features/legal/ly.ts": uses("./lx.ts", "react"),
   "ui/features/legal/lw.tsx": leaf,
   "ui/features/legal/lz.tsx": uses("./lw.tsx", "../../design-system/patterns/lpa.ts"),
 };

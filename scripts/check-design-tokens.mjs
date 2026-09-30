@@ -12,7 +12,10 @@ const EXT = /\.(tsx?|css|scss)$/;
 const rules = [
   { re: /#[0-9a-fA-F]{3,8}\b/, msg: "raw hex color" },
   { re: /\b(rgba?|hsla?|oklch|oklab)\(/, msg: "raw color function" },
-  { re: /\b[a-z][a-z0-9-]*-\[[^\]]*(px|rem|#)[^\]]*\]/, msg: "tailwind arbitrary value (add a token instead)" },
+  // Any arbitrary value (bg-[red], w-[3em], p-[3px]) except one of our token variables (w-[var(--tk-...)]).
+  { re: /\b[a-z][a-z0-9-]*-\[(?!var\(--tk-)[^\]]*\]/, msg: "tailwind arbitrary value (add a token instead)" },
+  // Arbitrary properties ([color:red]); a TypeScript index type ([key: string]) has a space and is not matched.
+  { re: /(?<![\w$.])\[[a-z-]+:[^\s\]]+\]/, msg: "tailwind arbitrary property (add a token instead)" },
   { re: /\b\d+(\.\d+)?px\b/, msg: "raw pixel value", featuresOnly: true },
   { re: /style=\{\{/, msg: "inline style in a feature", featuresOnly: true },
 ];
@@ -31,6 +34,12 @@ try { statSync(ROOT); } catch { console.log(`tokens:check — ${ROOT} not found,
 
 for (const file of walk(ROOT)) {
   const inFeatures = file.startsWith(FEATURES_DIR + sep);
+  // Styles live in the tokens file; components and screens use utility classes only.
+  if (/\.(css|scss)$/.test(file)) {
+    problems++;
+    console.error(`${relative(process.cwd(), file)}  stylesheet outside design-system/tokens: use utility classes`);
+    continue;
+  }
   readFileSync(file, "utf8").split("\n").forEach((line, i) => {
     if (line.includes("tokens-ignore")) return;
     for (const r of rules) {

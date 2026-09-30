@@ -77,14 +77,14 @@ Four tiers, each may only use the tier above it:
 
 Rules:
 - Features never contain raw colors, pixel values, or inline `style`. `npm run tokens:check` fails if they do.
-- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet = AI actions and primary buttons only.
+- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet = AI actions and primary buttons only, plus the keyboard focus ring and the active-tab indicator (as in the mockups).
 - Every primitive/pattern has all states designed: default, hover, focus-visible, disabled, loading, error, empty (where relevant).
 - Accessibility baseline: keyboard reachable, visible focus, labels on inputs, role/aria on custom widgets, contrast from tokens.
 - A story per component state (Storybook). Build the component in the story first, then use it in a screen.
 - Features are isolated: one feature never imports another. Shared things move down to patterns.
 
 ## 8. Definition of Done (a task is not done until all are true)
-1. `npm run verify` passes. It runs, in order: `lock:check`, `lock:selftest`, `format:check`, `typecheck`, `lint`, `deps:check`, `deps:selftest`, `tokens:check`, `test:coverage`, `coverage:scope`. Any new check added to verify must also be added to this list and to the verifier.
+1. `npm run verify` passes. It runs, in order: `lock:check`, `lock:selftest`, `format:check`, `typecheck`, `lint`, `deps:check`, `deps:selftest`, `tokens:check`, `tokens:selftest`, `stories:check`, `stories:selftest`, `test:coverage`, `coverage:scope`. Any new check added to verify must also be added to this list and to the verifier.
 2. New logic has tests; new/changed rules are table-tested.
 3. No rule decided outside `core/rules`; no raw design values in features.
 4. Reused an existing primitive/pattern/port if one existed (searched first).

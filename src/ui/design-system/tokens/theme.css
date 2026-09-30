@@ -1,0 +1,191 @@
+/*
+ * AutoAI design tokens: the ONLY file with raw colours, sizes, radii and fonts (ARCHITECTURE §7, ADR 0006).
+ *
+ * Colours were sampled pixel-exact from the mockups in docs/design (1440x900 @1x), noted per token as
+ * "screen: element". A few states the mockups never show (hover, pressed) are derived from a sampled colour
+ * and marked "derived". Names are semantic: components say what a colour is FOR, never which colour it is.
+ *
+ * Layers:
+ *   1. --tk-*       raw values per theme (dark first; a light theme is a second block later)
+ *   2. @theme       maps them to Tailwind utility names (bg-surface, text-status-warning, rounded-card, ...)
+ * Tailwind's defaults that carry raw values (palette, sizes, radii, shadows, blur, weights) are switched off, so
+ * only these tokens can be used.
+ */
+@import "tailwindcss";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+/* Scan the UI source for class names. */
+@source "../..";
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces, darkest to lightest */
+  --tk-bg-app: #0b0c10; /* 4 workspace: title bar, icon rail, status bar */
+  --tk-bg-canvas: #0e0f14; /* 11 findings: page background */
+  --tk-bg-surface: #12141b; /* 11 findings: card; 4 workspace: side panels */
+  --tk-bg-inset: #161923; /* 7 run detail: "Quick facts" box */
+  --tk-bg-raised: #1a1d26; /* 11 findings: area chip, Low tag; 7: chat input */
+  --tk-bg-selected: #1e2130; /* 4 workspace: selected test row */
+  --tk-bg-hover: #181b24; /* derived: between surface and raised */
+
+  /* Borders */
+  --tk-border-subtle: #1a1d25; /* 11 findings: card edge */
+  --tk-border-default: #1f2230; /* 4 workspace: panel dividers */
+  --tk-border-strong: #2c303f; /* 11 findings: secondary button edge */
+
+  /* Text */
+  --tk-text-primary: #e6e8ef; /* 11 findings: title and body */
+  --tk-text-secondary: #9aa1b2; /* 11 findings: subtitle, section labels */
+  /* 11 findings: "Found while scanning ..." is #6b7285, only 3.3-4.0:1 on our surfaces. Lightened (derived) to the
+     smallest value that meets WCAG AA 4.5:1 for small text on every surface; the sampled grey stays for the
+     not-run status dot (graphics need 3:1). */
+  --tk-text-muted: #81889b;
+  --tk-text-on-accent: #ffffff; /* 11 findings: primary button label */
+  --tk-text-link: #7dbbff; /* 11 findings: code file path */
+
+  /* Violet is ONLY for primary buttons, AI actions, the focus ring and the active-tab indicator (ARCHITECTURE §7) */
+  --tk-accent: #6d5ae6; /* 11 findings: "Create test to confirm" button */
+  --tk-accent-hover: #6250dd; /* derived: accent, a step darker (lighter fails 4.5:1 with white text) */
+  --tk-accent-pressed: #5644c9; /* derived: accent, two steps darker */
+  --tk-accent-edge: #403780; /* 11 findings: primary button top edge */
+  --tk-accent-strong: #8b7cff; /* 4 workspace: active tab underline */
+  --tk-ai-surface: #1b1730; /* 11 findings: "mismatches found by Claude" pill */
+  --tk-ai-border: #362d66; /* 11 findings: same pill, edge */
+  --tk-ai-text: #c6beff; /* 11 findings: same pill, text */
+  --tk-focus-ring: #8b7cff; /* = accent-strong, so focus reads as "active" */
+
+  /* Status (one meaning each; mapped from domain values by StatusPill / SeverityTag only) */
+  --tk-status-passed: #3dd68c; /* 12 PR impact: "Passed" dot and text */
+  --tk-status-failed: #ff6b6b; /* 12 PR impact: "Failed" dot and text */
+  --tk-status-failed-text: #ff8a8a; /* 7 run detail: "FAILED" badge text; 11: "High" tag */
+  --tk-status-failed-surface: #3a1f24; /* 7 run detail: "FAILED" badge; 11: "High" tag */
+  --tk-status-warning: #f5b544; /* 12 PR impact: "Flaky"; 11: "Medium" tag text */
+  --tk-status-warning-surface: #33280f; /* 14 flaky detail: "FLAKY" badge; 11: "Medium" tag */
+  --tk-status-passed-surface: #182f2b; /* derived: passed at 14% over surface, like the failed badge */
+  --tk-status-running: #5aa9ff; /* 4 workspace: "running" dot and text */
+  --tk-status-running-surface: #1c293b; /* derived: running at 14% over surface */
+  /* 4 workspace: not-run dot. Graphics only (3:1): a "not run" LABEL uses text-muted, which meets 4.5:1. */
+  --tk-status-neutral: #6b7285;
+  --tk-status-neutral-surface: #1a1d26; /* 11 findings: "Low" tag */
+
+  --tk-opacity-disabled: 0.45; /* derived: the mockups show no disabled control */
+
+  /* Overlays (Popover, Modal, Toast). The mockups show none; derived from the app background. */
+  --tk-scrim: rgb(11 12 16 / 0.7); /* derived: bg-app at 70% behind a modal */
+  --tk-shadow-overlay:
+    0 8px 24px rgb(0 0 0 / 0.45), 0 0 0 1px var(--tk-border-default); /* derived */
+}
+
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --blur-*: initial;
+  --font-weight-*: initial;
+
+  /* Only the weights that are bundled (Inter 400-700), so no faked light or black weight appears. */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 4px grid: p-1 = 4px, p-5 = 20px (11 findings: card padding), gap-3 = 12px (gap between cards).
+     Control heights are on the grid too: h-7 = 28px (toolbar), h-8 = 32px (card actions: 11 findings, 31px),
+     h-11 = 44px (hero: 1 welcome, 44px). */
+  --spacing: 4px;
+
+  /* Type scale, measured from glyph heights (caps ~0.73em, ascender-to-descender ~0.93em) */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --text-xs: 11px; /* 11 findings: caps labels, tags */
+  --text-xs--line-height: 16px;
+  --text-sm: 12px; /* 11 findings: button labels, meta */
+  --text-sm--line-height: 16px;
+  --text-md: 13px; /* 11 findings: body and subtitle */
+  --text-md--line-height: 20px;
+  --text-lg: 15px; /* 13 readiness: section titles */
+  --text-lg--line-height: 22px;
+  --text-xl: 22px; /* 11 findings: page title */
+  --text-xl--line-height: 28px;
+  --text-2xl: 28px; /* 13 readiness: stat numbers */
+  --text-2xl--line-height: 34px;
+  --text-display: 40px; /* 1 welcome: product name */
+  --text-display--line-height: 48px;
+
+  --radius-control: 6px; /* 11 findings: buttons, inputs */
+  --radius-card: 8px; /* 11 findings: finding card */
+  --radius-tag: 5px; /* 11 findings: severity tag */
+  --radius-full: 9999px; /* 1 welcome: platform chips */
+}
+
+@theme inline {
+  --color-app: var(--tk-bg-app);
+  --color-canvas: var(--tk-bg-canvas);
+  --color-surface: var(--tk-bg-surface);
+  --color-inset: var(--tk-bg-inset);
+  --color-raised: var(--tk-bg-raised);
+  --color-selected: var(--tk-bg-selected);
+  --color-hover: var(--tk-bg-hover);
+
+  --color-border-subtle: var(--tk-border-subtle);
+  --color-border-default: var(--tk-border-default);
+  --color-border-strong: var(--tk-border-strong);
+
+  --color-text-primary: var(--tk-text-primary);
+  --color-text-secondary: var(--tk-text-secondary);
+  --color-text-muted: var(--tk-text-muted);
+  --color-text-on-accent: var(--tk-text-on-accent);
+  --color-text-link: var(--tk-text-link);
+
+  --color-accent: var(--tk-accent);
+  --color-accent-hover: var(--tk-accent-hover);
+  --color-accent-pressed: var(--tk-accent-pressed);
+  --color-accent-edge: var(--tk-accent-edge);
+  --color-accent-strong: var(--tk-accent-strong);
+  --color-ai-surface: var(--tk-ai-surface);
+  --color-ai-border: var(--tk-ai-border);
+  --color-ai-text: var(--tk-ai-text);
+  --color-focus-ring: var(--tk-focus-ring);
+
+  --color-status-passed: var(--tk-status-passed);
+  --color-status-failed: var(--tk-status-failed);
+  --color-status-failed-text: var(--tk-status-failed-text);
+  --color-status-failed-surface: var(--tk-status-failed-surface);
+  --color-status-warning: var(--tk-status-warning);
+  --color-status-warning-surface: var(--tk-status-warning-surface);
+  --color-status-passed-surface: var(--tk-status-passed-surface);
+  --color-status-running: var(--tk-status-running);
+  --color-status-running-surface: var(--tk-status-running-surface);
+  --color-status-neutral: var(--tk-status-neutral);
+  --color-status-neutral-surface: var(--tk-status-neutral-surface);
+  --color-scrim: var(--tk-scrim);
+
+  --shadow-overlay: var(--tk-shadow-overlay);
+}
+
+/* disabled:opacity-disabled — the one disabled look for every control. */
+@utility opacity-disabled {
+  opacity: var(--tk-opacity-disabled);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    line-height: var(--text-md--line-height);
+    background: var(--tk-bg-canvas);
+    color: var(--tk-text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+}
