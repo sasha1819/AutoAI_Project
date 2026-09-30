@@ -1,30 +1,14 @@
-import { parseArgs } from "node:util";
 import { z } from "zod";
+import { parseCliArgs } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
 import { formatRequirements } from "./format-requirements.ts";
 
 const USAGE = "Usage: npm run requirements -- --prds <folder> [--json]";
 const Args = z.object({ prds: z.string().min(1), json: z.boolean() });
 
-function readArgs(argv: string[]): z.infer<typeof Args> | null {
-  try {
-    const { values } = parseArgs({
-      args: argv,
-      options: { prds: { type: "string" }, json: { type: "boolean", default: false } },
-      strict: true,
-      allowPositionals: false,
-    });
-    const parsed = Args.safeParse(values);
-    return parsed.success ? parsed.data : null;
-  } catch (e) {
-    // parseArgs reports bad input by throwing ERR_PARSE_ARGS_*; that is a usage error, anything else is a bug.
-    if (e instanceof Error && "code" in e && String(e.code).startsWith("ERR_PARSE_ARGS"))
-      return null;
-    throw e;
-  }
-}
+const OPTIONS = { prds: { type: "string" }, json: { type: "boolean", default: false } } as const;
 
-const args = readArgs(process.argv.slice(2));
+const args = parseCliArgs(process.argv.slice(2), OPTIONS, Args);
 if (args === null) {
   console.error(USAGE);
   process.exitCode = 2;

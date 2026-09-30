@@ -1,6 +1,6 @@
-import { parseArgs } from "node:util";
 import { z } from "zod";
 import { KEY_HELP, readAiOptions } from "./ai-options.ts";
+import { parseCliArgs, timeStamp } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
 import { runCostUsd } from "./format-ai.ts";
 import { formatScan } from "./format-scan.ts";
@@ -20,34 +20,18 @@ const Args = z.object({
   json: z.boolean(),
 });
 
-function readArgs(argv: string[]): z.infer<typeof Args> | null {
-  try {
-    const { values } = parseArgs({
-      args: argv,
-      options: {
-        repo: { type: "string" },
-        prds: { type: "string" },
-        out: { type: "string" },
-        model: { type: "string" },
-        effort: { type: "string" },
-        record: { type: "string" },
-        json: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
-    const parsed = Args.safeParse(values);
-    return parsed.success ? parsed.data : null;
-  } catch (e) {
-    // parseArgs reports bad input by throwing ERR_PARSE_ARGS_*; that is a usage error, anything else is a bug.
-    if (e instanceof Error && "code" in e && String(e.code).startsWith("ERR_PARSE_ARGS"))
-      return null;
-    throw e;
-  }
-}
+const OPTIONS = {
+  repo: { type: "string" },
+  prds: { type: "string" },
+  out: { type: "string" },
+  model: { type: "string" },
+  effort: { type: "string" },
+  record: { type: "string" },
+  json: { type: "boolean", default: false },
+} as const;
 
 async function main(): Promise<number> {
-  const args = readArgs(process.argv.slice(2));
+  const args = parseCliArgs(process.argv.slice(2), OPTIONS, Args);
   if (args === null) {
     console.error(USAGE);
     return 2;
@@ -61,9 +45,7 @@ async function main(): Promise<number> {
   const result = await composeCli().scanProject(
     { repoRoot: args.repo, prdFolder: args.prds },
     ai,
-    args.record === undefined
-      ? undefined
-      : { dir: args.record, runId: new Date().toISOString().replace(/[:.]/g, "-") },
+    args.record === undefined ? undefined : { dir: args.record, runId: timeStamp(new Date()) },
   );
   if (!result.ok) {
     console.error(`${result.error.code}: ${result.error.message}`);

@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
-import { parseArgs } from "node:util";
 import { z } from "zod";
 import { Finding } from "../core/domain/finding.ts";
 import { KEY_HELP, readAiOptions } from "./ai-options.ts";
+import { parseCliArgs } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
 import { runCostUsd } from "./format-ai.ts";
 import { formatGenerate } from "./format-generate.ts";
@@ -22,30 +22,14 @@ const Args = z.object({
 // Only the findings of a saved `npm run scan --out` result are needed; the rest of that file is ignored.
 const ScanFile = z.object({ findings: z.array(Finding) });
 
-function readArgs(argv: string[]): z.infer<typeof Args> | null {
-  try {
-    const { values } = parseArgs({
-      args: argv,
-      options: {
-        repo: { type: "string" },
-        from: { type: "string" },
-        out: { type: "string" },
-        model: { type: "string" },
-        effort: { type: "string" },
-        json: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
-    const parsed = Args.safeParse(values);
-    return parsed.success ? parsed.data : null;
-  } catch (e) {
-    // parseArgs reports bad input by throwing ERR_PARSE_ARGS_*; that is a usage error, anything else is a bug.
-    if (e instanceof Error && "code" in e && String(e.code).startsWith("ERR_PARSE_ARGS"))
-      return null;
-    throw e;
-  }
-}
+const OPTIONS = {
+  repo: { type: "string" },
+  from: { type: "string" },
+  out: { type: "string" },
+  model: { type: "string" },
+  effort: { type: "string" },
+  json: { type: "boolean", default: false },
+} as const;
 
 // The scan file is outside data (disk), so it is validated here, at the boundary.
 async function readFindings(path: string): Promise<z.infer<typeof ScanFile>["findings"] | string> {
@@ -73,7 +57,7 @@ async function readFindings(path: string): Promise<z.infer<typeof ScanFile>["fin
 }
 
 async function main(): Promise<number> {
-  const args = readArgs(process.argv.slice(2));
+  const args = parseCliArgs(process.argv.slice(2), OPTIONS, Args);
   if (args === null) {
     console.error(USAGE);
     return 2;
