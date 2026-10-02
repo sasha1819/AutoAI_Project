@@ -83,6 +83,7 @@
   --tk-ai-surface: #1b1730; /* 11 findings: "mismatches found by Claude" pill */
   --tk-ai-border: #362d66; /* 11 findings: same pill, edge */
   --tk-ai-text: #c6beff; /* 11 findings: same pill, text */
+  --tk-ai-tile: #2a2446; /* 7 run detail: the icon tile before "Claude's diagnosis" (14: before "Likely cause") */
   --tk-focus-ring: #8b7cff; /* = accent-strong, the same violet as the active-tab underline */
 
   /* Status (one meaning each; mapped from domain values by StatusPill / SeverityTag only) */
@@ -192,6 +193,7 @@
   --color-ai-surface: var(--tk-ai-surface);
   --color-ai-border: var(--tk-ai-border);
   --color-ai-text: var(--tk-ai-text);
+  --color-ai-tile: var(--tk-ai-tile);
   --color-focus-ring: var(--tk-focus-ring);
 
   --color-status-passed: var(--tk-status-passed);

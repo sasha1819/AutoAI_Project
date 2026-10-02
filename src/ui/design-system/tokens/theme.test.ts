@@ -64,6 +64,7 @@ const PAIRS = [
   ["status-running", "status-running-surface"],
   ["text-secondary", "status-neutral-surface"],
   ["ai-text", "ai-surface"],
+  ["ai-text", "ai-tile"],
 ] as const;
 // Graphics that must stand out from a specific neighbour (3:1, WCAG non-text contrast).
 const GRAPHIC_PAIRS = [

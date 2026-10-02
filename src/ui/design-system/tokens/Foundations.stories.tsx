@@ -45,6 +45,7 @@ const GROUPS: readonly { readonly title: string; readonly swatches: readonly Swa
       { name: "ai-surface", className: "bg-ai-surface", use: "AI chip / panel background" },
       { name: "ai-border", className: "bg-ai-border", use: "AI chip / panel edge" },
       { name: "ai-text", className: "bg-ai-text", use: "AI chip text" },
+      { name: "ai-tile", className: "bg-ai-tile", use: "AI mark tile (panel headers)" },
     ],
   },
   {

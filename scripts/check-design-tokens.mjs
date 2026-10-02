@@ -69,6 +69,7 @@ const VIOLET_FILES = new Set([
   "design-system/primitives/Popover/Popover.tsx", // 3. focus ring on the panel when it takes focus itself
   "design-system/primitives/CodeBlock/CodeBlock.tsx", // 3. focus ring on the scrollable code
   "design-system/primitives/Modal/Modal.tsx", // 3. focus ring on the dialog when it takes focus itself
+  "design-system/patterns/AiChip/AiChip.tsx", // 2. the AI chip and the AI mark before an AI panel's title
 ]);
 
 // The token variables that exist: a var(--tk-...) anywhere else must name one of them.
