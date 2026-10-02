@@ -29,6 +29,8 @@ export type ToneBadgeProps<Label extends string = string> = {
   readonly icon?: IconGlyph;
   /** Caps, for status words ("FAILED", "FLAKY") and area tags; title case for severities ("High"). */
   readonly uppercase?: boolean;
+  /** The icon turns (a running status), and stops with reduced motion, as Spinner does. */
+  readonly iconSpins?: boolean;
 };
 
 /** Never wraps: the label is short (a status, an area); the container gives it room. A badge in one of the tones. For StatusPill and SeverityTag; screens use Badge. */
@@ -37,12 +39,16 @@ export function ToneBadge<Label extends string>({
   tone,
   icon,
   uppercase = false,
+  iconSpins = false,
 }: ToneBadgeProps<Label>) {
   assertAccessibleName(label, "Badge");
   return (
     <span className={`${LOOK} ${TONE[tone]} ${uppercase ? "uppercase tracking-wide" : ""}`}>
       {icon !== undefined && (
-        <span aria-hidden="true" className="inline-flex">
+        <span
+          aria-hidden="true"
+          className={`inline-flex ${iconSpins ? "animate-spin motion-reduce:animate-none" : ""}`}
+        >
           <Icon glyph={icon} decorative size="xs" />
         </span>
       )}
