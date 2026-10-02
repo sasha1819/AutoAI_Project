@@ -54,7 +54,6 @@
   --tk-accent: #6d5ae6; /* 11 findings: "Create test to confirm" button */
   --tk-accent-hover: #6250dd; /* derived: accent, a step darker (lighter fails 4.5:1 with white text) */
   --tk-accent-pressed: #5644c9; /* derived: accent, two steps darker */
-  --tk-accent-edge: #403780; /* 11 findings: primary button top edge */
   --tk-accent-strong: #8b7cff; /* 4 workspace: active tab underline */
   --tk-ai-surface: #1b1730; /* 11 findings: "mismatches found by Claude" pill */
   --tk-ai-border: #362d66; /* 11 findings: same pill, edge */
@@ -101,8 +100,8 @@
   --font-weight-bold: 700;
 
   /* 4px grid: p-1 = 4px, p-5 = 20px (11 findings: card padding), gap-3 = 12px (gap between cards).
-     Control heights are on the grid too: h-7 = 28px (toolbar), h-8 = 32px (card actions: 11 findings, 31px),
-     h-11 = 44px (hero: 1 welcome, 44px). */
+     Control heights are on the grid too: h-7 = 28px (toolbar), h-7.5 = 30px (card actions: 11 findings, measured),
+     h-10 = 40px (page actions: 3 scan screen), h-11 = 44px (onboarding: 1 welcome, 2 connect). */
   --spacing: 4px;
 
   /* Type scale, measured from glyph heights (caps ~0.73em, ascender-to-descender ~0.93em) */
@@ -151,7 +150,6 @@
   --color-accent: var(--tk-accent);
   --color-accent-hover: var(--tk-accent-hover);
   --color-accent-pressed: var(--tk-accent-pressed);
-  --color-accent-edge: var(--tk-accent-edge);
   --color-accent-strong: var(--tk-accent-strong);
   --color-ai-surface: var(--tk-ai-surface);
   --color-ai-border: var(--tk-ai-border);
@@ -172,6 +170,38 @@
   --color-scrim: var(--tk-scrim);
 
   --shadow-overlay: var(--tk-shadow-overlay);
+}
+
+/*
+ * Storybook shows every state of every component (ARCHITECTURE §7), but a browser cannot force :hover, :active or
+ * :focus-visible in a static story. So these variants also match data-preview-state="hover" (or active,
+ * focus-visible) on the element. Only stories may set it: tokens:check refuses it anywhere else.
+ */
+@custom-variant hover {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &[data-preview-state~="hover"] {
+    @slot;
+  }
+}
+@custom-variant active {
+  &:active {
+    @slot;
+  }
+  &[data-preview-state~="active"] {
+    @slot;
+  }
+}
+@custom-variant focus-visible {
+  &:focus-visible {
+    @slot;
+  }
+  &[data-preview-state~="focus-visible"] {
+    @slot;
+  }
 }
 
 /* disabled:opacity-disabled — the one disabled look for every control. */

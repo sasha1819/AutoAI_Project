@@ -35,6 +35,11 @@ try { statSync(ROOT); } catch { console.log(`tokens:check — ${ROOT} not found,
 for (const file of walk(ROOT)) {
   const inFeatures = file.startsWith(FEATURES_DIR + sep);
   // Styles live in the tokens file; components and screens use utility classes only.
+  // The state-preview hook (theme.css) exists for stories only; the app must never force a visual state.
+  if (!file.endsWith(".stories.tsx") && readFileSync(file, "utf8").includes("data-preview-state")) {
+    problems++;
+    console.error(`${relative(process.cwd(), file)}  data-preview-state is for stories only`);
+  }
   if (/\.(css|scss)$/.test(file)) {
     problems++;
     console.error(`${relative(process.cwd(), file)}  stylesheet outside design-system/tokens: use utility classes`);

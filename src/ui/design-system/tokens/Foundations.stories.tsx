@@ -40,7 +40,6 @@ const GROUPS: readonly { readonly title: string; readonly swatches: readonly Swa
       { name: "accent", className: "bg-accent", use: "primary button" },
       { name: "accent-hover", className: "bg-accent-hover", use: "primary button, hover" },
       { name: "accent-pressed", className: "bg-accent-pressed", use: "primary button, pressed" },
-      { name: "accent-edge", className: "bg-accent-edge", use: "primary button top edge" },
       { name: "accent-strong", className: "bg-accent-strong", use: "active tab indicator" },
       { name: "focus-ring", className: "bg-focus-ring", use: "keyboard focus ring" },
       { name: "ai-surface", className: "bg-ai-surface", use: "AI chip / panel background" },
@@ -180,8 +179,9 @@ export const Spacing: StoryObj = {
         { className: "w-4", label: "4 · 16px" },
         { className: "w-5", label: "5 · 20px (card padding)" },
         { className: "w-6", label: "6 · 24px" },
-        { className: "w-8", label: "8 · 32px (control height md)" },
-        { className: "w-11", label: "11 · 44px (control height lg)" },
+        { className: "w-7.5", label: "7.5 · 30px (control height md)" },
+        { className: "w-10", label: "10 · 40px (control height lg)" },
+        { className: "w-11", label: "11 · 44px (control height xl)" },
         { className: "w-16", label: "16 · 64px" },
       ].map((s) => (
         <li key={s.label} className="flex items-center gap-4">
