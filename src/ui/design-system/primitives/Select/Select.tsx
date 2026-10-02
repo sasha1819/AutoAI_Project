@@ -2,6 +2,13 @@ import * as RadixSelect from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { isBlank, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
+import {
+  LIST_MAX_HEIGHT,
+  LIST_PANEL,
+  LIST_ROW,
+  LIST_ROW_INDICATOR,
+  LIST_SCROLL_BUTTON,
+} from "../_list/index.ts";
 
 export type SelectOption = {
   /** What onValueChange receives. Non-empty and unique within the list. */
@@ -65,20 +72,9 @@ const CHEVRON: Record<SelectSize, string> = {
   lg: "[&_svg]:size-4",
 };
 
-// The open list. The mockups never show one open, so it is made of existing tokens: a surface panel with the
-// overlay shadow, rows as tall as the sm controls, the current row highlighted with the selected fill and an inset
-// focus-ring outline (a fill change alone would be too faint to follow by keyboard).
-// The list is capped at 10 rows (max-h-80) inside the room the window leaves, with scroll buttons top and bottom
-// when it does not fit: Radix hides the scrollbar, and a list that just ends would not show there is more.
-const CONTENT =
-  "z-50 max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden " +
-  "rounded-card border border-border-default bg-surface p-1 shadow-overlay";
-const SCROLL_BUTTON =
-  "flex h-6 cursor-default items-center justify-center text-text-muted [&_svg]:size-3.5";
-const ITEM =
-  "relative flex h-8 cursor-default select-none items-center rounded-control pl-8 pr-3 text-md text-text-primary " +
-  "outline-none data-highlighted:bg-selected data-highlighted:inset-ring-1 data-highlighted:inset-ring-focus-ring " +
-  "data-disabled:cursor-not-allowed data-disabled:opacity-disabled";
+// The list look is shared (../_list); Select adds Radix's size limits: no taller than the window allows, no
+// narrower than the trigger.
+const CONTENT = `${LIST_PANEL} max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width)`;
 
 /**
  * Options a person can tell apart and pick: every label and value non-blank, values unique, labels unique (two
@@ -178,25 +174,25 @@ export function Select<Label extends string>({
               // The list is named like its select, so a screen reader landing in it knows what it is choosing.
               aria-labelledby={field.labelId}
             >
-              <RadixSelect.ScrollUpButton className={SCROLL_BUTTON}>
+              <RadixSelect.ScrollUpButton className={LIST_SCROLL_BUTTON}>
                 <ChevronUp />
               </RadixSelect.ScrollUpButton>
-              <RadixSelect.Viewport className="max-h-80">
+              <RadixSelect.Viewport className={LIST_MAX_HEIGHT}>
                 {options.map((option) => (
                   <RadixSelect.Item
                     key={option.value}
                     value={option.value}
                     disabled={option.disabled === true}
-                    className={ITEM}
+                    className={LIST_ROW}
                   >
-                    <RadixSelect.ItemIndicator className="absolute left-2.5 inline-flex text-text-primary [&_svg]:size-3.5">
+                    <RadixSelect.ItemIndicator className={LIST_ROW_INDICATOR}>
                       <Check />
                     </RadixSelect.ItemIndicator>
                     <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
                   </RadixSelect.Item>
                 ))}
               </RadixSelect.Viewport>
-              <RadixSelect.ScrollDownButton className={SCROLL_BUTTON}>
+              <RadixSelect.ScrollDownButton className={LIST_SCROLL_BUTTON}>
                 <ChevronDown />
               </RadixSelect.ScrollDownButton>
             </RadixSelect.Content>
