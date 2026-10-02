@@ -2,6 +2,7 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "../Button/index.ts";
 import { Spinner } from "../Spinner/index.ts";
+import { Tooltip } from "../Tooltip/index.ts";
 
 export type IconButtonSize = "sm" | "md";
 
@@ -43,7 +44,8 @@ const SIZE: Record<IconButtonSize, string> = {
 
 /**
  * A button whose only content is an icon. The label is its accessible name and must be non-empty: the type rejects
- * a missing or empty label, and a blank one built at runtime throws instead of rendering a nameless button.
+ * a missing or empty label, and a blank one built at runtime throws instead of rendering a nameless button. The
+ * label is also shown in a tooltip on hover and keyboard focus, so sighted users can read it too (not read twice).
  */
 export function IconButton<Label extends string>({
   label,
@@ -55,9 +57,8 @@ export function IconButton<Label extends string>({
   onClick,
   ...rest
 }: IconButtonProps<Label>) {
-  // TODO(M4): show the label in the Tooltip primitive once it exists, so mouse users can read it too.
   assertAccessibleName(label, "IconButton");
-  return (
+  const button = (
     <button
       {...rest}
       type={type}
@@ -76,5 +77,11 @@ export function IconButton<Label extends string>({
         {loading ? <Spinner decorative size={size} /> : icon}
       </span>
     </button>
+  );
+  return (
+    <Tooltip text={label} purpose="label">
+      {/* A disabled button gets no pointer events, so the tooltip listens on a wrapper: an icon alone says nothing. */}
+      {rest.disabled === true ? <span className="inline-flex">{button}</span> : button}
+    </Tooltip>
   );
 }

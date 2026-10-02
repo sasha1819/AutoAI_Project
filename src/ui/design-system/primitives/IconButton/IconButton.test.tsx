@@ -14,6 +14,27 @@ describe("IconButton", () => {
     expect(button).toHaveProperty("type", "button");
   });
 
+  it("shows its label in a tooltip on keyboard focus, without a second reading", async () => {
+    render(<IconButton label="Close" icon={icon} aria-describedby="outside-hint" />);
+    await userEvent.tab();
+    const button = screen.getByRole("button", { name: "Close" });
+    expect(document.activeElement).toBe(button);
+    // The button's name comes from aria-label, so the only "Close" text is the tooltip: shown, hidden from readers.
+    expect(screen.getByText("Close").getAttribute("aria-hidden")).toBe("true");
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    // A description the screen adds is kept; the tooltip adds none of its own.
+    expect(button.getAttribute("aria-describedby")).toBe("outside-hint");
+  });
+
+  it("disabled: still shows its label on hover, through a wrapper", async () => {
+    render(<IconButton label="Close" icon={icon} disabled />);
+    const button = screen.getByRole("button", { name: "Close" });
+    const wrapper = button.parentElement;
+    if (wrapper === null) throw new Error("no wrapper");
+    await userEvent.hover(wrapper);
+    expect((await screen.findByText("Close")).getAttribute("aria-hidden")).toBe("true");
+  });
+
   // These are checked at typecheck time (part of verify): each @ts-expect-error fails the build if the rule loosens.
   it("cannot be built without an accessible name", () => {
     // @ts-expect-error no label: an icon-only button with no name is announced as just "button"
