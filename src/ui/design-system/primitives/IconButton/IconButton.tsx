@@ -1,11 +1,9 @@
 import { LoaderCircle } from "lucide-react";
 import type { ComponentPropsWithRef, ReactNode } from "react";
+import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "../Button/index.ts";
 
 export type IconButtonSize = "sm" | "md";
-
-/** A string literal that is not empty: `label=""` does not compile. */
-type NonEmpty<T extends string> = T extends "" ? never : T;
 
 export type IconButtonProps<Label extends string = string> = Omit<
   ComponentPropsWithRef<"button">,
@@ -38,9 +36,6 @@ export type IconButtonProps<Label extends string = string> = Omit<
   readonly loading?: boolean;
 };
 
-// Whitespace and invisible characters (soft hyphen, zero-width space/joiners, BOM) do not make a name.
-const BLANK = /^[\s\u00AD\u180E\u200B-\u200D\u2060\uFEFF]*$/u;
-
 const SIZE: Record<IconButtonSize, string> = {
   sm: "size-7 [&_svg]:size-3.5",
   md: "size-7.5 [&_svg]:size-4",
@@ -62,9 +57,7 @@ export function IconButton<Label extends string>({
 }: IconButtonProps<Label>) {
   // TODO(M4): show the label in the Tooltip primitive once it exists, so mouse users can read it too.
   // TODO(M4): use the Spinner primitive once it exists (same as Button).
-  if (typeof label !== "string" || BLANK.test(label)) {
-    throw new Error("IconButton needs a non-empty label: it is the button's only accessible name");
-  }
+  assertAccessibleName(label, "IconButton");
   return (
     <button
       {...rest}

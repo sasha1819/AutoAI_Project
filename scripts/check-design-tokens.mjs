@@ -30,6 +30,17 @@ function* walk(dir) {
 }
 
 let problems = 0;
+
+// The token variables that exist: a var(--tk-...) anywhere else must name one of them.
+const defined = new Set();
+try {
+  for (const name of readdirSync(TOKENS_DIR)) {
+    if (!/\.css$/.test(name)) continue;
+    for (const m of readFileSync(join(TOKENS_DIR, name), "utf8").matchAll(/(--tk-[a-z0-9-]+)\s*:/g)) defined.add(m[1]);
+  }
+} catch {
+  // No tokens folder: every --tk- reference below is then unknown.
+}
 try { statSync(ROOT); } catch { console.log(`tokens:check — ${ROOT} not found, nothing to check`); process.exit(0); }
 
 for (const file of walk(ROOT)) {
@@ -47,6 +58,12 @@ for (const file of walk(ROOT)) {
   }
   readFileSync(file, "utf8").split("\n").forEach((line, i) => {
     if (line.includes("tokens-ignore")) return;
+    for (const m of line.matchAll(/var\((--tk-[a-z0-9-]+)\)/g)) {
+      if (!defined.has(m[1])) {
+        problems++;
+        console.error(`${relative(process.cwd(), file)}:${i + 1}  unknown token ${m[1]} (not defined in tokens)`);
+      }
+    }
     for (const r of rules) {
       if (r.featuresOnly && !inFeatures) continue;
       if (r.re.test(line)) {

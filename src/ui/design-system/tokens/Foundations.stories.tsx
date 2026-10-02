@@ -92,7 +92,13 @@ const GROUPS: readonly { readonly title: string; readonly swatches: readonly Swa
     swatches: [
       { name: "border-subtle", className: "bg-border-subtle", use: "card edge" },
       { name: "border-default", className: "bg-border-default", use: "panel dividers" },
-      { name: "border-strong", className: "bg-border-strong", use: "control edges" },
+      { name: "border-strong", className: "bg-border-strong", use: "secondary button edge" },
+      { name: "border-field", className: "bg-border-field", use: "form field edge (3:1 at rest)" },
+      {
+        name: "border-field-hover",
+        className: "bg-border-field-hover",
+        use: "form field edge, hover",
+      },
     ],
   },
 ];

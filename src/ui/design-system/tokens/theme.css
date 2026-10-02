@@ -39,6 +39,17 @@
   --tk-border-subtle: #1a1d25; /* 11 findings: card edge */
   --tk-border-default: #1f2230; /* 4 workspace: panel dividers */
   --tk-border-strong: #2c303f; /* 11 findings: secondary button edge */
+  /* Form fields (Input, Select, Checkbox, Switch off). The mockups draw field edges #262a36-#2e3242 (3, 7, 8, 9:
+     1.2-1.5:1), and a field's own background is almost the page's (1.07:1), so the edge is the only cue to where
+     the field is. WCAG non-text contrast needs 3:1: lightened (derived) to the smallest step of the same blue-grey
+     that meets it on every background a field can sit on (app, canvas, surface, inset, raised, hover, selected). Hover is a step up;
+     focus uses the violet focus ring, so the three stay clearly distinct. A secondary Button keeps border-strong
+     (1.4:1): its label identifies it. A Select trigger is a field and uses border-field. */
+  --tk-border-field: #676b7b;
+  --tk-border-field-hover: #7d8191; /* derived: border-field +22 per channel, a visible step, not a contrast bar */
+  /* A validation error is not a run status, so fields have their own names (ARCHITECTURE §7: status colours are
+     mapped by StatusPill / SeverityTag only). Same red as status-failed: 6.1-6.9:1, as an edge and as text. */
+  --tk-field-invalid: var(--tk-status-failed);
 
   /* Text */
   --tk-text-primary: #e6e8ef; /* 11 findings: title and body */
@@ -140,6 +151,9 @@
   --color-border-subtle: var(--tk-border-subtle);
   --color-border-default: var(--tk-border-default);
   --color-border-strong: var(--tk-border-strong);
+  --color-border-field: var(--tk-border-field);
+  --color-border-field-hover: var(--tk-border-field-hover);
+  --color-field-invalid: var(--tk-field-invalid);
 
   --color-text-primary: var(--tk-text-primary);
   --color-text-secondary: var(--tk-text-secondary);

@@ -14,7 +14,12 @@ const feature = (line) => ({ "features/f/F.tsx": `export const x = ${line};\n` }
 const cases = [
   ["raw values inside the tokens folder", { "design-system/tokens/theme.css": ":root { --tk-a: #0e0f14; --tk-b: rgb(0 0 0 / 0.5); }" }, true],
   ["token utility classes", primitive('"bg-surface p-5 text-md rounded-card h-8"'), true],
-  ["an arbitrary value that is a token variable", primitive('"w-[var(--tk-width)]"'), true],
+  [
+    "an arbitrary value that is a defined token variable",
+    { "design-system/tokens/theme.css": ":root { --tk-width: 4px; }", ...primitive('"w-[var(--tk-width)]"') },
+    true,
+  ],
+  ["an arbitrary value with an undefined token variable", primitive('"w-[var(--tk-made-up)]"'), false],
   ["an arbitrary value with a made-up variable", primitive('"w-[var(--anything)]"'), false],
   ["an arbitrary variant", primitive('"[&_svg]:size-4"'), true],
   ["a TypeScript index type", primitive("{} as { [key: string]: number }"), true],

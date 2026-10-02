@@ -9,14 +9,24 @@ const css = readFileSync(join(import.meta.dirname, "theme.css"), "utf8");
 const themes = [...css.matchAll(/((?::root,\s*)?\[data-theme="([a-z]+)"\])\s*\{([^}]*)\}/g)].map(
   (m) => ({
     name: m[2] ?? "",
-    colors: new Map(
-      [...(m[3] ?? "").matchAll(/--tk-([a-z-]+):\s*(#[0-9a-f]{6})\s*;/g)].map((c) => [
-        c[1] ?? "",
-        c[2] ?? "",
-      ]),
-    ),
+    colors: resolveAliases(m[3] ?? ""),
   }),
 );
+
+// Hex tokens of one theme block, with aliases (--tk-a: var(--tk-b)) resolved to the colour they point at.
+function resolveAliases(block: string): Map<string, string> {
+  const colors = new Map(
+    [...block.matchAll(/--tk-([a-z-]+):\s*(#[0-9a-f]{6})\s*;/g)].map((c) => [
+      c[1] ?? "",
+      c[2] ?? "",
+    ]),
+  );
+  for (const c of block.matchAll(/--tk-([a-z-]+):\s*var\(--tk-([a-z-]+)\)\s*;/g)) {
+    const target = colors.get(c[2] ?? "");
+    if (target !== undefined) colors.set(c[1] ?? "", target);
+  }
+  return colors;
+}
 
 // WCAG 2.x relative luminance and contrast ratio.
 function luminance(hex: string): number {
@@ -33,6 +43,7 @@ function contrast(a: string, b: string): number {
 
 const SURFACES = ["bg-canvas", "bg-surface", "bg-inset", "bg-raised", "bg-selected", "bg-hover"];
 const TEXT = [
+  "field-invalid",
   "text-primary",
   "text-secondary",
   "text-muted",
@@ -105,9 +116,14 @@ describe("design tokens", () => {
       expect(contrast(color(text), color(surface))).toBeGreaterThanOrEqual(4.5);
     });
 
-    it("status dots and the focus ring are visible (3:1, WCAG non-text contrast)", () => {
-      for (const graphic of ["status-neutral", "focus-ring"]) {
-        for (const surface of SURFACES) {
+    it("status dots, field edges and the focus ring are visible (3:1, WCAG non-text contrast)", () => {
+      for (const graphic of [
+        "status-neutral",
+        "focus-ring",
+        "border-field",
+        "border-field-hover",
+      ]) {
+        for (const surface of [...SURFACES, "bg-app"]) {
           expect(
             contrast(color(graphic), color(surface)),
             `${graphic} on ${surface}`,
