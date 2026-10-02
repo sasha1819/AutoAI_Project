@@ -63,6 +63,9 @@ function replay(recording: Recording): AiProvider & { readonly asked: AiRequest[
       asked.push(request);
       return Promise.resolve(ok(recording.result.value));
     },
+    verifyAccess: () => {
+      throw new Error("a replay never checks the key");
+    },
   };
 }
 

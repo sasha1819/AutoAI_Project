@@ -7,6 +7,8 @@ import { join, relative, sep } from "node:path";
 const ROOT = process.argv[2] ?? "src/ui";
 const TOKENS_DIR = join(ROOT, "design-system", "tokens");
 const FEATURES_DIR = join(ROOT, "features");
+// The renderer's root (providers, frame, screen switching) is held to the screens' rules too.
+const APP_DIR = join(ROOT, "app");
 const EXT = /\.(tsx?|css|scss)$/;
 
 const rules = [
@@ -88,7 +90,7 @@ try {
 try { statSync(ROOT); } catch { console.log(`tokens:check — ${ROOT} not found, nothing to check`); process.exit(0); }
 
 for (const file of walk(ROOT)) {
-  const inFeatures = file.startsWith(FEATURES_DIR + sep);
+  const inFeatures = file.startsWith(FEATURES_DIR + sep) || file.startsWith(APP_DIR + sep);
   // Styles live in the tokens file; components and screens use utility classes only.
   // The state-preview hook (theme.css) exists for stories only; the app must never force a visual state.
   if (!file.endsWith(".stories.tsx") && readFileSync(file, "utf8").includes("data-preview-state")) {

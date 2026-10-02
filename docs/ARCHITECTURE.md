@@ -31,7 +31,10 @@ Dependency direction: `ui -> contracts`, `app/cli -> services -> core <- adapter
 | reading files / walking the repo | `adapters/fs/` |
 | SQL and migrations | `adapters/sqlite/` |
 | "scan project = read repo, parse PRDs, match, save" | `services/` |
-| handling an IPC message | `app/main/ipc/` (thin) |
+| handling an IPC message | `app/main/handlers.ts` (thin: validate, one service call, map) |
+| an IPC channel's request/reply/event shape | `contracts/` (zod; ADR 0007) |
+| the window, its security, the composition root | `app/main/` (`main.ts`, `window.ts`, `compose.ts`) |
+| what the screens may call (`window.autoai`) | `app/preload/` (`bridge.ts`) |
 | a button, badge, input, table | `ui/design-system/primitives/` |
 | a repeated combination (StatusPill, FindingCard) | `ui/design-system/patterns/` |
 | a whole screen | `ui/features/<feature>/` |
@@ -73,7 +76,9 @@ Four tiers, each may only use the tier above it:
 1. `tokens/` — the ONLY place with raw colors, spacing, radii, font sizes, shadows (CSS variables + Tailwind theme). Dark theme first, theme-switchable.
 2. `primitives/` — Button, IconButton, Input, Select, Checkbox, Switch, Badge, Tabs, Tooltip, Popover, Modal, Card, ProgressBar, Table, Spinner, EmptyState, CodeBlock, Toast, Icon. Internals shared by several primitives (the field look, the list look) live in `primitives/_name/` folders: not components, so no stories of their own, and screens may not import them (deps rule `features-use-public-primitives`).
 3. `patterns/` — reusable combinations built from primitives: StatusPill (also StatusIcon, StatusDot and statusWord for rows: the one status-to-colour mapping), SeverityTag, FindingCard, StepRow, RunLogLine (with RunLog), RequirementTag, AiActionButton, AiChip (with AiMark), ConfidenceMeter, SidebarList, FactList. Internals shared by patterns live in `patterns/_name/` (e.g. `_format`), closed to screens like the primitives' ones.
-4. `features/<name>/` — screens. They compose patterns and primitives, hold view state only, call the outside world through one hook per feature (`useX`) that talks to the IPC contract.
+4. `features/<name>/` — screens. They compose patterns and primitives, hold view state only, call the outside world through one hook per feature (`useX`) that talks to the IPC contract. Each screen is `useX()` (the only caller of `bridge()`) plus an `XView` that takes plain props: stories and state tests render `XView`; a feature test of `useX` stubs `window.autoai` with a fake bridge.
+
+Beside the tiers, `ui/app/` is the renderer's composition root (ADR 0007): providers, the app frame, which screen shows, and `bridge()` — the one typed accessor to `window.autoai`. It has no visual values of its own (held to the screens' token rules), composes design-system patterns, and features may import only its `bridge.ts`; the design system may not import it.
 
 Rules:
 - Features never contain raw colors, pixel values, or inline `style`. `npm run tokens:check` fails if they do.

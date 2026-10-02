@@ -28,12 +28,11 @@ export function createClaudeAiProvider(options: ClaudeAiProviderOptions): AiProv
   const effort = options.effort ?? DEFAULT_EFFORT;
   // Never build a client without a key: an empty one would let the SDK look for other credentials.
   if (options.apiKey.trim() === "") {
-    return {
-      complete: () =>
-        Promise.resolve(
-          err({ code: "AI_AUTH_FAILED", message: "No Anthropic API key was provided." }),
-        ),
-    };
+    const noKey = () =>
+      Promise.resolve(
+        err({ code: "AI_AUTH_FAILED", message: "No Anthropic API key was provided." }),
+      );
+    return { complete: noKey, verifyAccess: noKey };
   }
   const client = new Anthropic({
     apiKey: options.apiKey,
@@ -46,6 +45,15 @@ export function createClaudeAiProvider(options: ClaudeAiProviderOptions): AiProv
   });
 
   return {
+    // Listing one model proves the key is accepted and costs no tokens (ADR 0007).
+    async verifyAccess() {
+      try {
+        await client.models.list({ limit: 1 });
+        return ok(undefined);
+      } catch (e) {
+        return err(translate(e, model));
+      }
+    },
     async complete(request) {
       try {
         const message = await client.messages.create({

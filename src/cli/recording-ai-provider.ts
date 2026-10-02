@@ -9,6 +9,8 @@ import type { AiProvider } from "../core/ports/ai-provider.ts";
 export function recordingAiProvider(inner: AiProvider, dir: string, runId: string): AiProvider {
   let calls = 0;
   return {
+    // Key checks carry no prompt, so there is nothing to record.
+    verifyAccess: () => inner.verifyAccess(),
     async complete(request) {
       const result = await inner.complete(request);
       calls += 1;

@@ -21,6 +21,12 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "vitest.config.ts", ".storybook/main.ts", ".storybook/preview.ts"],
+  "include": [
+    "src",
+    "vitest.config.ts",
+    "vite.renderer.config.ts",
+    ".storybook/main.ts",
+    ".storybook/preview.ts"
+  ],
   "exclude": ["src/ui"]
 }

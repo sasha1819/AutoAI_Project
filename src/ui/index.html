@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- ADR 0007: only our own files; scripts strictly so. Inline styles are allowed: Radix's scroll lock adds a <style>
+         tag (styles cannot run code). The dev build relaxes scripts for Vite's live reload (vite.renderer.config.ts). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>AutoAI</title>
+  </head>
+  <body class="bg-app font-sans text-text-primary">
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

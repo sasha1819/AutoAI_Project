@@ -1,6 +1,7 @@
 import type { DomainError } from "../core/domain/domain-error.ts";
 import type { Finding } from "../core/domain/finding.ts";
 import type { Requirement } from "../core/domain/requirement.ts";
+import type { ScanProgress } from "../core/domain/scan-progress.ts";
 import { err, ok, type Result } from "../core/domain/result.ts";
 import { parseMatchingResponse } from "../core/parsing/finding.ts";
 import type { AiError, AiProvider, AiUsage } from "../core/ports/ai-provider.ts";
@@ -36,10 +37,21 @@ type Deps = { readonly repoReader: RepoReader; readonly aiProvider: AiProvider }
 /** Reads the PRDs and the repo, asks Claude to classify each requirement area, and returns reviewed findings. */
 export async function scanProject(
   deps: Deps,
-  input: { readonly repoRoot: string; readonly prdFolder: string },
+  input: {
+    readonly repoRoot: string;
+    /** null when the project has no PRDs: the scan then finds nothing to compare (PRD Flow 1 edge case). */
+    readonly prdFolder: string | null;
+    /** Told how far the scan has got (the app streams it to the screen; the CLI leaves it out). */
+    readonly onProgress?: (progress: ScanProgress) => void;
+  },
 ): Promise<Result<ScanResult, ScanProjectError>> {
+  const progress = input.onProgress ?? (() => undefined);
   const warnings: ScanWarning[] = [];
-  const extracted = await extractRequirements(deps, { prdFolder: input.prdFolder });
+  progress({ stage: "reading_prds" });
+  const extracted =
+    input.prdFolder === null
+      ? err({ code: "NO_PRD_FILES" as const, message: "No PRD folder was chosen." })
+      : await extractRequirements(deps, { prdFolder: input.prdFolder });
   if (!extracted.ok && extracted.error.code !== "NO_PRD_FILES") {
     return err({ code: extracted.error.code, message: extracted.error.message });
   }
@@ -48,13 +60,16 @@ export async function scanProject(
   const { prdFiles, requirements } = extracted.ok
     ? extracted.value
     : { prdFiles: [], requirements: [] };
+  progress({ stage: "prds_read", prdFiles: prdFiles.length, requirements: requirements.length });
 
+  progress({ stage: "reading_code" });
   const loaded = await loadSourceFiles(deps.repoReader, input.repoRoot, {
     readContents: requirements.length > 0,
   });
   if (!loaded.ok) return loaded;
   const { sourcePaths, files } = loaded.value;
   warnings.push(...loaded.value.warnings);
+  progress({ stage: "code_read", sourceFiles: sourcePaths.length });
 
   const index = indexFiles(files);
   const byPath = new Map(files.map((f) => [f.path, f]));
@@ -63,11 +78,18 @@ export async function scanProject(
   const tally = newAiTally();
   let stoppedBy: AiError | null = null;
 
-  for (const batch of batchRequirements(requirements)) {
+  const batches = batchRequirements(requirements);
+  for (const [i, batch] of batches.entries()) {
     if (stoppedBy) {
       notScanned.push(...batch);
       continue;
     }
+    progress({
+      stage: "matching",
+      area: areaOf(batch),
+      batch: i + 1,
+      batches: batches.length,
+    });
     const ranked = rankFilesForBatch(batch, index).flatMap((p) => byPath.get(p) ?? []);
     const fitted = fitFilesToBudget(ranked);
     const prompt = buildMatchingPrompt({
@@ -94,9 +116,10 @@ export async function scanProject(
     }
     const problem =
       error.code === "INVALID_AI_OUTPUT" ? error.message : `${error.code}: ${error.message}`;
-    warnings.push({ code: "BATCH_NOT_SCANNED", message: `${batch[0]?.area ?? "?"}: ${problem}` });
+    warnings.push({ code: "BATCH_NOT_SCANNED", message: `${areaOf(batch)}: ${problem}` });
   }
 
+  progress({ stage: "done" });
   return ok({
     prdFiles,
     sourceFiles: sourcePaths.length,
@@ -108,4 +131,9 @@ export async function scanProject(
     models: [...tally.models],
     usage: usageOf(tally),
   });
+}
+
+/** A batch's area, as the progress events and the warnings both name it. */
+function areaOf(batch: readonly Requirement[]): string {
+  return batch[0]?.area ?? "?";
 }

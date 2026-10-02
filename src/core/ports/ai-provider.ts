@@ -27,4 +27,6 @@ export type AiCompletion = {
 /** Sends one prompt to a language model and returns its raw text. Never decides anything itself. */
 export type AiProvider = {
   readonly complete: (request: AiRequest) => Promise<Result<AiCompletion, AiError>>;
+  /** Proves the key works without spending tokens (Connect AI's "check key", ADR 0007). */
+  readonly verifyAccess: () => Promise<Result<undefined, AiError>>;
 };

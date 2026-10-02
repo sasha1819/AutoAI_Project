@@ -11,8 +11,13 @@ const REBUILD = "rm -rf node_modules package-lock.json && npm install";
 const real = JSON.parse(readFileSync("package-lock.json", "utf8"));
 
 // Break the real lock the way npm/cli#4828 does: drop the hoisted entry of one recorded optional dependency.
-const [ownerKey, owner] = Object.entries(real.packages).find(([, p]) => p.optionalDependencies) ?? [];
-const victim = owner && Object.keys(owner.optionalDependencies)[0];
+// Pick an optional dependency that resolves only to its hoisted entry: one with its own nested copy (e.g. undici under
+// @electron/get) would still resolve after the hoisted entry is dropped, so removing it would break nothing.
+const pairs = Object.entries(real.packages).flatMap(([key, p]) =>
+  Object.keys(p.optionalDependencies ?? {}).map((dep) => [key, dep]),
+);
+const [ownerKey, victim] =
+  pairs.find(([key, dep]) => !real.packages[`${key}/node_modules/${dep}`] && real.packages[`node_modules/${dep}`]) ?? [];
 const brokenReal = {
   ...real,
   packages: Object.fromEntries(Object.entries(real.packages).filter(([k]) => k !== `node_modules/${victim}`)),

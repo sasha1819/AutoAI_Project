@@ -248,3 +248,53 @@ describe("createClaudeAiProvider", () => {
     expect(result.ok ? "" : result.error.message).toMatch(/claude-nope/);
   });
 });
+
+describe("verifyAccess", () => {
+  const models = {
+    data: [
+      {
+        type: "model",
+        id: "claude-sonnet-5",
+        display_name: "Claude Sonnet 5",
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ],
+    has_more: false,
+    first_id: "claude-sonnet-5",
+    last_id: "claude-sonnet-5",
+  };
+
+  it("lists one model with the user's key: proves access and spends no tokens", async () => {
+    const { fetch, sent } = fakeFetch(json(200, models));
+    const result = await createClaudeAiProvider({ apiKey: KEY, fetch }).verifyAccess();
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.url).toBe(`${ANTHROPIC_API_URL}/v1/models?limit=1`);
+    expect(sent[0]?.headers.get("x-api-key")).toBe(KEY);
+  });
+
+  it("a rejected key is AI_AUTH_FAILED", async () => {
+    const { fetch } = fakeFetch(json(401, apiError("authentication_error")));
+    const result = await createClaudeAiProvider({
+      apiKey: KEY,
+      fetch,
+      maxRetries: 0,
+    }).verifyAccess();
+    expect(result.ok ? null : result.error.code).toBe("AI_AUTH_FAILED");
+  });
+
+  it("no network is AI_UNAVAILABLE", async () => {
+    const { fetch } = fakeFetch(new TypeError("fetch failed"));
+    const result = await createClaudeAiProvider({
+      apiKey: KEY,
+      fetch,
+      maxRetries: 0,
+    }).verifyAccess();
+    expect(result.ok ? null : result.error.code).toBe("AI_UNAVAILABLE");
+  });
+
+  it("no key at all fails without a request", async () => {
+    const result = await createClaudeAiProvider({ apiKey: "  " }).verifyAccess();
+    expect(result.ok ? null : result.error.code).toBe("AI_AUTH_FAILED");
+  });
+});

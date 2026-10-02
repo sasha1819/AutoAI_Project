@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ScanProgress } from "../core/domain/scan-progress.ts";
 import type { AiError } from "../core/ports/ai-provider.ts";
 import { scanProject } from "./scan-project.ts";
 import { inMemoryRepoReader } from "./testing/in-memory-repo-reader.ts";
@@ -96,6 +97,40 @@ describe("scanProject", () => {
     expect(JSON.stringify(cart?.jsonSchema)).toContain('"enum":["R1","R2"]');
   });
 
+  it("reports its progress stage by stage, one matching event per area", async () => {
+    const seen: ScanProgress[] = [];
+    await scanProject(
+      {
+        repoReader: inMemoryRepoReader({ repo, prds }),
+        aiProvider: scriptedAiProvider(cartAnswer, shippingAnswer),
+      },
+      { ...input, onProgress: (p) => seen.push(p) },
+    );
+    expect(seen).toStrictEqual([
+      { stage: "reading_prds" },
+      { stage: "prds_read", prdFiles: 1, requirements: 3 },
+      { stage: "reading_code" },
+      { stage: "code_read", sourceFiles: 2 },
+      { stage: "matching", area: "Cart", batch: 1, batches: 2 },
+      { stage: "matching", area: "Shipping", batch: 2, batches: 2 },
+      { stage: "done" },
+    ]);
+    for (const p of seen) expect(ScanProgress.safeParse(p).success).toBe(true);
+  });
+
+  it("stops reporting matching once an AI error stops the scan", async () => {
+    const seen: ScanProgress[] = [];
+    await scanProject(
+      {
+        repoReader: inMemoryRepoReader({ repo, prds }),
+        aiProvider: scriptedAiProvider(authFailed),
+      },
+      { ...input, onProgress: (p) => seen.push(p) },
+    );
+    expect(seen.filter((p) => p.stage === "matching")).toHaveLength(1);
+    expect(seen.at(-1)).toStrictEqual({ stage: "done" });
+  });
+
   it("retries once when an answer fails validation", async () => {
     const ai = scriptedAiProvider("not json at all", cartAnswer, shippingAnswer);
     const result = await scanProject(
@@ -179,6 +214,17 @@ describe("scanProject", () => {
       [],
     ]);
     expect(reader.calls.filter((c) => c.startsWith("read repo"))).toStrictEqual([]);
+  });
+
+  it("no PRD folder at all: the same as an empty one (no AI, a warning)", async () => {
+    const ai = scriptedAiProvider();
+    const result = await scanProject(
+      { repoReader: inMemoryRepoReader({ repo, prds }), aiProvider: ai },
+      { repoRoot: "repo", prdFolder: null },
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.value.warnings.map((w) => w.code)).toStrictEqual(["NO_PRD_FILES"]);
+    expect(ai.requests).toStrictEqual([]);
   });
 
   it("skips an unreadable source file with a warning", async () => {

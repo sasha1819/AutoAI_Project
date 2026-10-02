@@ -33,6 +33,8 @@ const cases = [
   ["an arbitrary property", primitive('"[color:red]"'), false],
   ["a stylesheet outside tokens", { "design-system/primitives/X/X.css": ".x { color: var(--tk-a); }" }, false],
   ["px in a feature", feature('"16px"'), false],
+  ["px in the renderer root (ui/app)", { "app/App.tsx": 'export const x = "16px";\n' }, false],
+  ["an inline style in the renderer root (ui/app)", { "app/App.tsx": "export const x = <div style={{ color: 1 }} />;\n" }, false],
   ["an inline style in a feature", { "features/f/F.tsx": "export const F = () => <div style={{ margin: 0 }} />;\n" }, false],
   ["an ignored line", primitive('"#ff0000" // tokens-ignore'), true],
   ["violet in a file implementing an allowed use", { "design-system/primitives/Switch/Switch.tsx": 'const x = "aria-checked:bg-accent";\n' }, true],
