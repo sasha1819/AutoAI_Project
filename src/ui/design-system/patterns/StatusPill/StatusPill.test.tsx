@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { type BadgeTone, ToneBadge } from "../../primitives/_badge/index.ts";
-import { type PillStatus, StatusPill } from "./StatusPill.tsx";
+import { type PillStatus, StatusDot, StatusIcon, StatusPill, statusWord } from "./StatusPill.tsx";
 
 describe("StatusPill", () => {
   it.each<[PillStatus, string, BadgeTone]>([
@@ -54,5 +54,47 @@ describe("StatusPill", () => {
       render(<ToneBadge label="y" tone="passed" uppercase />).container.firstElementChild
         ?.className,
     );
+  });
+});
+
+describe("StatusIcon and StatusDot", () => {
+  const ALL: readonly PillStatus[] = ["passed", "failed", "flaky", "running", "not_run"];
+
+  it("use the pill's icon and say nothing themselves (the row says the word)", () => {
+    for (const s of ALL) {
+      const { container: icon, unmount: u1 } = render(<StatusIcon status={s} />);
+      const { container: pill, unmount: u2 } = render(<StatusPill status={s} />);
+      expect(icon.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+      // The same glyph (lucide names it in a class); only the size differs (12px in the pill, 14px in rows).
+      const glyph = (root: HTMLElement) =>
+        (root.querySelector("svg")?.getAttribute("class") ?? "")
+          .split(" ")
+          .filter((c) => c.startsWith("lucide-"));
+      expect(glyph(icon)).toEqual(glyph(pill));
+      expect(glyph(icon).length).toBeGreaterThan(0);
+      u1();
+      u2();
+    }
+  });
+
+  it("each status has its own glyph colour and dot colour", () => {
+    const glyphs = new Set<string>();
+    const dots = new Set<string>();
+    for (const s of ALL) {
+      const { container, unmount } = render(
+        <>
+          <StatusIcon status={s} />
+          <StatusDot status={s} />
+        </>,
+      );
+      glyphs.add(container.children[0]?.className ?? "");
+      dots.add(container.children[1]?.className ?? "");
+      unmount();
+    }
+    expect([glyphs.size, dots.size]).toEqual([5, 5]);
+  });
+
+  it("statusWord gives the pill's word", () => {
+    expect(ALL.map(statusWord)).toEqual(["Passed", "Failed", "Flaky", "Running", "Not run"]);
   });
 });

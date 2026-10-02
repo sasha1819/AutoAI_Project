@@ -44,7 +44,7 @@ module.exports = {
     { name: 'features-use-the-design-system', comment: 'ADR 0006: screens use our primitives, never Radix or the icon package directly', severity: 'error',
       from: { path: '^src/ui/features/' }, to: { path: '^node_modules/(@radix-ui|lucide-react)/' } },
     { name: 'features-use-public-primitives', comment: 'primitives/_x folders are internals shared by primitives; screens use the components', severity: 'error',
-      from: { path: '^src/ui/features/' }, to: { path: '^src/ui/design-system/primitives/_' } },
+      from: { path: '^src/ui/features/' }, to: { path: '^src/ui/design-system/(primitives|patterns)/_' } },
     { name: 'tone-badge-only-for-status-patterns', comment: 'status tones are picked by StatusPill / SeverityTag only (ARCHITECTURE §7); Badge is the neutral face', severity: 'error',
       from: { path: '^src/ui/', pathNot: '^src/ui/design-system/(primitives/(Badge|_badge)|patterns/(StatusPill|SeverityTag))/' },
       to: { path: '^src/ui/design-system/primitives/_badge/' } },

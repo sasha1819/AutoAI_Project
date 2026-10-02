@@ -57,6 +57,7 @@ const illegal = [
   ["features-use-the-design-system", { "ui/features/c36/x.ts": uses("@radix-ui/react-dialog") }],
   ["features-use-the-design-system", { "ui/features/c37/x.ts": uses("lucide-react") }],
   ["features-use-public-primitives", { "ui/features/c38/x.ts": uses("../../design-system/primitives/_field/c38t.ts"), "ui/design-system/primitives/_field/c38t.ts": leaf }],
+  ["features-use-public-primitives", { "ui/features/c41/x.ts": uses("../../design-system/patterns/_format/c41t.ts"), "ui/design-system/patterns/_format/c41t.ts": leaf }],
   ["tone-badge-only-for-status-patterns", { "ui/design-system/primitives/C39/x.ts": uses("../_badge/c39t.ts"), "ui/design-system/primitives/_badge/c39t.ts": leaf }],
   ["toast-card-only-in-toast", { "ui/design-system/patterns/c40/x.ts": uses("../../primitives/Toast/Toast.tsx"), "ui/design-system/primitives/Toast/Toast.tsx": leaf }],
 ];
