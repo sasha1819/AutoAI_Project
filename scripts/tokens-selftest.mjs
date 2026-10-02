@@ -64,6 +64,8 @@ const cases = [
   ["toast error icon borrowed as a red by a screen", feature('"text-toast-error-icon"'), false],
   ["toast error icon in the toast provider", { "design-system/primitives/Toast/ToastProvider.tsx": 'const x = "text-toast-error-icon";\n' }, false],
   ["toast token built in a template", feature('`text-toast-${part}`'), false],
+  ["a focus ring cancelled by outline-none", primitive('"outline-none focus-visible:outline-2 focus-visible:outline-focus-ring"'), false],
+  ["outline-none on a panel with no focus ring", primitive('"outline-none rounded-card"'), true],
   ["toast token built partway in a template", feature('`text-toast-error-${k}`'), false],
   ["field-invalid built in a template", feature('`text-field-${state}`'), false],
   ["a status colour chosen by a screen", feature('"text-status-failed"'), false],

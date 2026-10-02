@@ -65,6 +65,7 @@ const VIOLET_FILES = new Set([
   "design-system/primitives/_list/list-look.ts", // 3. current-option outline in a list
   "design-system/primitives/Checkbox/Checkbox.tsx", // 5. checked state
   "design-system/primitives/Switch/Switch.tsx", // 5. on state
+  "design-system/primitives/Tabs/Tabs.tsx", // 4. active-tab underline (and 3. its focus ring)
 ]);
 
 // The token variables that exist: a var(--tk-...) anywhere else must name one of them.
@@ -86,6 +87,13 @@ for (const file of walk(ROOT)) {
   if (!file.endsWith(".stories.tsx") && readFileSync(file, "utf8").includes("data-preview-state")) {
     problems++;
     console.error(`${relative(process.cwd(), file)}  data-preview-state is for stories only`);
+  }
+  // Tailwind 4's outline-none sets the outline style to none, and focus-visible:outline-2 keeps that style: the
+  // focus ring never shows. Found on Tabs by screenshot; jsdom tests cannot see it.
+  const source = readFileSync(file, "utf8");
+  if (/\boutline-none\b/.test(source) && /focus-visible:-?outline-\d/.test(source)) {
+    problems++;
+    console.error(`${relative(process.cwd(), file)}  outline-none hides the focus-visible ring: remove outline-none`);
   }
   if (/\.(css|scss)$/.test(file)) {
     problems++;

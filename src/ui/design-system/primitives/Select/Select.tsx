@@ -1,7 +1,7 @@
 import * as RadixSelect from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Icon, type IconSize } from "../Icon/index.ts";
-import { isBlank, type NonEmpty } from "../../accessibility/accessible-name.ts";
+import { isBlank, type NonEmpty, nameKey } from "../../accessibility/accessible-name.ts";
 import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
 import {
   LIST_MAX_HEIGHT,
@@ -88,7 +88,7 @@ function assertUsableOptions(
     if (isBlank(option.label) || isBlank(option.value)) {
       throw new Error("Select option needs a non-empty label and value");
     }
-    const spoken = option.label.trim().toLowerCase();
+    const spoken = nameKey(option.label);
     if (values.has(option.value))
       throw new Error(`Select option value "${option.value}" is used twice`);
     if (labels.has(spoken)) throw new Error(`Select option label "${option.label}" is used twice`);

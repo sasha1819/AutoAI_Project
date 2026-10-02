@@ -12,6 +12,16 @@ export function isBlank(text: string): boolean {
   return BLANK.test(text);
 }
 
+const INVISIBLE = /[\u00AD\u180E\u200B-\u200D\u2060\uFEFF]/gu;
+
+/**
+ * How two names compare when a list must not repeat one (options, tabs): case, spacing and invisible characters
+ * ignored, since a screen reader says "Logs", " logs " and "Logs" + a zero-width space the same way.
+ */
+export function nameKey(text: string): string {
+  return text.replace(INVISIBLE, "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 /** Throws when a control would render without an accessible name (a missing or blank label is a bug). */
 export function assertAccessibleName(name: unknown, component: string): asserts name is string {
   if (typeof name !== "string" || isBlank(name)) {
