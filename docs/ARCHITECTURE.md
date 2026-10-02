@@ -77,6 +77,7 @@ Four tiers, each may only use the tier above it:
 
 Rules:
 - Features never contain raw colors, pixel values, or inline `style`. `npm run tokens:check` fails if they do.
+- UI timings (a toast's display time, a tooltip's delay) are presentation, not business rules: they live in their primitive, not in `core/rules`.
 - Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. The `status-*` tokens are named only in the internal tone badge (`primitives/_badge`) that those patterns use, and in its own test; `tokens:check` refuses them anywhere else, so the public `Badge` is neutral and a screen cannot pick a status colour. `field-invalid`, an alias of `status-failed`, is allowed only in the form-field frame (`primitives/_field`), and `progress-fill` (an alias of `status-passed`: the done part of a run, mockup 4), `progress-track` and `progress-busy` (neutral, indeterminate) only in ProgressBar; both enforced, template-built names included. Only Badge, StatusPill and SeverityTag may import `primitives/_badge` (dependency-cruiser).
 - Violet means the tokens `accent`, `accent-hover`, `accent-pressed`, `accent-strong`, `focus-ring` and `ai-*`, and any tint or opacity of them. It is allowed for exactly these five uses, with their own hover, pressed and disabled states, and nothing else:
   1. Primary buttons (Button / IconButton `variant="primary"`).
