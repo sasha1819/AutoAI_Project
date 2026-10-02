@@ -14,7 +14,7 @@ const GROUPS: readonly { readonly title: string; readonly swatches: readonly Swa
       { name: "app", className: "bg-app", use: "title bar, icon rail, status bar" },
       { name: "canvas", className: "bg-canvas", use: "page background" },
       { name: "surface", className: "bg-surface", use: "cards, side panels" },
-      { name: "inset", className: "bg-inset", use: "boxes inside a card" },
+      { name: "sunken", className: "bg-sunken", use: "boxes inside a card" },
       { name: "raised", className: "bg-raised", use: "chips, inputs, neutral tags" },
       { name: "hover", className: "bg-hover", use: "row and control hover" },
       { name: "selected", className: "bg-selected", use: "selected row" },

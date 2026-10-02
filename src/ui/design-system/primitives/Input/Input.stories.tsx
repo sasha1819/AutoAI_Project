@@ -108,7 +108,7 @@ const BACKGROUNDS = [
   { name: "app", className: "bg-app" },
   { name: "canvas", className: "bg-canvas" },
   { name: "surface", className: "bg-surface" },
-  { name: "inset", className: "bg-inset" },
+  { name: "sunken", className: "bg-sunken" },
   { name: "raised", className: "bg-raised" },
   { name: "selected", className: "bg-selected" },
 ] as const;

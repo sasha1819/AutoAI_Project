@@ -41,7 +41,7 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const SURFACES = ["bg-canvas", "bg-surface", "bg-inset", "bg-raised", "bg-selected", "bg-hover"];
+const SURFACES = ["bg-canvas", "bg-surface", "bg-sunken", "bg-raised", "bg-selected", "bg-hover"];
 const TEXT = [
   "field-invalid",
   "text-primary",

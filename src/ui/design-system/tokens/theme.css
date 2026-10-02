@@ -11,7 +11,9 @@
  * Tailwind's defaults that carry raw values (palette, sizes, radii, shadows, blur, weights) are switched off, so
  * only these tokens can be used.
  */
-@import "tailwindcss";
+/* source(none): Tailwind would also scan the whole project on its own (scripts, docs, test fixtures that contain
+   deliberately bad classes); only the UI source below may produce utilities. */
+@import "tailwindcss" source(none);
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
@@ -30,7 +32,8 @@
   --tk-bg-app: #0b0c10; /* 4 workspace: title bar, icon rail, status bar */
   --tk-bg-canvas: #0e0f14; /* 11 findings: page background */
   --tk-bg-surface: #12141b; /* 11 findings: card; 4 workspace: side panels */
-  --tk-bg-inset: #161923; /* 7 run detail: "Quick facts" box */
+  /* "sunken", not "inset": a colour named inset would turn Tailwind's ring-inset into a ring colour. */
+  --tk-bg-sunken: #161923; /* 7 run detail: "Quick facts" box */
   --tk-bg-raised: #1a1d26; /* 11 findings: area chip, Low tag; 7: chat input */
   --tk-bg-selected: #1e2130; /* 4 workspace: selected test row */
   --tk-bg-hover: #181b24; /* derived: between surface and raised */
@@ -42,7 +45,7 @@
   /* Form fields (Input, Select, Checkbox, Switch off). The mockups draw field edges #262a36-#2e3242 (3, 7, 8, 9:
      1.2-1.5:1), and a field's own background is almost the page's (1.07:1), so the edge is the only cue to where
      the field is. WCAG non-text contrast needs 3:1: lightened (derived) to the smallest step of the same blue-grey
-     that meets it on every background a field can sit on (app, canvas, surface, inset, raised, hover, selected). Hover is a step up;
+     that meets it on every background a field can sit on (app, canvas, surface, sunken, raised, hover, selected). Hover is a step up;
      focus uses the violet focus ring, so the three stay clearly distinct. A secondary Button keeps border-strong
      (1.4:1): its label identifies it. A Select trigger is a field and uses border-field. */
   --tk-border-field: #676b7b;
@@ -143,7 +146,7 @@
   --color-app: var(--tk-bg-app);
   --color-canvas: var(--tk-bg-canvas);
   --color-surface: var(--tk-bg-surface);
-  --color-inset: var(--tk-bg-inset);
+  --color-sunken: var(--tk-bg-sunken);
   --color-raised: var(--tk-bg-raised);
   --color-selected: var(--tk-bg-selected);
   --color-hover: var(--tk-bg-hover);
@@ -189,7 +192,9 @@
 /*
  * Storybook shows every state of every component (ARCHITECTURE §7), but a browser cannot force :hover, :active or
  * :focus-visible in a static story. So these variants also match data-preview-state="hover" (or active,
- * focus-visible) on the element. Only stories may set it: tokens:check refuses it anywhere else.
+ * focus-visible) on the element, or on a wrapper around a component that spreads no props (Select). A wrapper
+ * applies the state to every descendant with that variant, so wrap one control, not a whole card. Only stories
+ * may set it: tokens:check refuses it anywhere else.
  */
 @custom-variant hover {
   @media (hover: hover) {
@@ -197,7 +202,8 @@
       @slot;
     }
   }
-  &[data-preview-state~="hover"] {
+  &[data-preview-state~="hover"],
+  [data-preview-state~="hover"] & {
     @slot;
   }
 }
@@ -205,7 +211,8 @@
   &:active {
     @slot;
   }
-  &[data-preview-state~="active"] {
+  &[data-preview-state~="active"],
+  [data-preview-state~="active"] & {
     @slot;
   }
 }
@@ -213,7 +220,8 @@
   &:focus-visible {
     @slot;
   }
-  &[data-preview-state~="focus-visible"] {
+  &[data-preview-state~="focus-visible"],
+  [data-preview-state~="focus-visible"] & {
     @slot;
   }
 }
