@@ -58,6 +58,7 @@ const illegal = [
   ["features-use-the-design-system", { "ui/features/c37/x.ts": uses("lucide-react") }],
   ["features-use-public-primitives", { "ui/features/c38/x.ts": uses("../../design-system/primitives/_field/c38t.ts"), "ui/design-system/primitives/_field/c38t.ts": leaf }],
   ["tone-badge-only-for-status-patterns", { "ui/design-system/primitives/C39/x.ts": uses("../_badge/c39t.ts"), "ui/design-system/primitives/_badge/c39t.ts": leaf }],
+  ["toast-card-only-in-toast", { "ui/design-system/patterns/c40/x.ts": uses("../../primitives/Toast/Toast.tsx"), "ui/design-system/primitives/Toast/Toast.tsx": leaf }],
 ];
 
 const legal = {
@@ -80,6 +81,7 @@ const legal = {
   "ui/design-system/primitives/lpr.ts": uses("../tokens/lt.ts", "fake-lib", "react", "@radix-ui/react-dialog", "lucide-react"),
   "ui/design-system/patterns/lpa.ts": uses("../primitives/lpr.ts", "../tokens/lt.ts"),
   "ui/design-system/primitives/_badge/lb.ts": leaf,
+  "ui/design-system/primitives/Toast/ltp.ts": uses("./Toast.tsx"),
   "ui/design-system/primitives/Badge/lbg.ts": uses("../_badge/lb.ts"),
   "ui/design-system/patterns/StatusPill/lsp.ts": uses("../../primitives/_badge/lb.ts"),
   "ui/features/legal/lx.ts": uses("../../design-system/patterns/lpa.ts", "../../../contracts/lc.ts", "../../../core/domain/ld.ts"),

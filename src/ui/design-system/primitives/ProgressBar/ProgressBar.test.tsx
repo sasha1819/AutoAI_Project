@@ -56,11 +56,54 @@ describe("ProgressBar", () => {
     expect(() => render(<ProgressBar label="Run progress" {...numbers} />)).toThrow(message);
   });
 
+  it.each<[string, number, "passed" | "failed" | undefined, string]>([
+    ["running, no outcome yet", 4, undefined, "bg-progress-active"],
+    ["running with failures already known", 4, "failed", "bg-progress-active"],
+    ["running, all passing so far", 4, "passed", "bg-progress-active"],
+    ["complete, outcome not given", 9, undefined, "bg-progress-active"],
+    ["complete and passed", 9, "passed", "bg-progress-passed"],
+    ["complete with failures", 9, "failed", "bg-progress-failed"],
+    ["past the total (clamped to complete) and passed", 12, "passed", "bg-progress-passed"],
+  ])("colour shows the outcome, not just completion: %s", (_, value, outcome, tone) => {
+    render(
+      outcome === undefined ? (
+        <ProgressBar label="Run progress" value={value} max={9} />
+      ) : (
+        <ProgressBar
+          label="Run progress"
+          value={value}
+          max={9}
+          outcome={outcome}
+          valueText="words"
+        />
+      ),
+    );
+    const cls = fill(screen.getByRole("progressbar")).className;
+    expect(cls).toContain(tone);
+    for (const other of ["bg-progress-active", "bg-progress-passed", "bg-progress-failed"]) {
+      if (other !== tone) expect(cls).not.toContain(other);
+    }
+  });
+
+  it("an indeterminate bar ignores an outcome", () => {
+    render(<ProgressBar label="Scanning" outcome="passed" valueText="Working" />);
+    expect(fill(screen.getByRole("progressbar")).className).toContain("bg-progress-active");
+  });
+
+  it("an outcome must be said in words, not by colour alone", () => {
+    // @ts-expect-error an outcome without valueText
+    expect(() => render(<ProgressBar label="Run" value={9} max={9} outcome="failed" />)).toThrow(
+      /needs valueText/,
+    );
+    expect(() =>
+      render(<ProgressBar label="Run" value={9} max={9} outcome="failed" valueText="  " />),
+    ).toThrow(/needs valueText/);
+  });
+
   it("indeterminate is neutral, and stays still on a centred third with reduced motion", () => {
     render(<ProgressBar label="Scanning" />);
     const busy = fill(screen.getByRole("progressbar")).className;
-    expect(busy).toContain("bg-progress-busy");
-    expect(busy).not.toContain("bg-progress-fill");
+    expect(busy).toContain("bg-progress-active");
     expect(busy).toContain("motion-reduce:left-1/3");
   });
 

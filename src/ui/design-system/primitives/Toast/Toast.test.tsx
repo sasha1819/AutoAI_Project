@@ -132,6 +132,15 @@ describe("Toast", () => {
     expect(screen.getByText("Error")).toBeTruthy();
   });
 
+  it("only an error's icon is red", () => {
+    const { container, rerender } = render(<Toast title="Done" kind="info" onDismiss={vi.fn()} />);
+    expect(container.querySelector("svg")?.getAttribute("class")).not.toContain("toast-error-icon");
+    rerender(<Toast title="Failed" kind="error" onDismiss={vi.fn()} />);
+    expect(container.querySelector("svg")?.getAttribute("class")).toContain(
+      "text-toast-error-icon",
+    );
+  });
+
   it("each live region holds only its newest message, so open ones are not read again", () => {
     const { api } = setup();
     act(() => {

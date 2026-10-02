@@ -13,7 +13,17 @@ type Story = StoryObj<typeof ProgressBar>;
 export const Default: Story = {};
 export const WithValueText: Story = { args: { valueText: "4 of 9 done" } };
 export const Empty: Story = { args: { value: 0, valueText: "0 of 9 done" } };
-export const Complete: Story = { args: { value: 9, valueText: "9 of 9 done" } };
+// Neutral until complete with a known outcome: green only for passed, red when anything failed.
+export const CompleteNoOutcome: Story = { args: { value: 9, valueText: "9 of 9 done" } };
+export const CompletePassed: Story = {
+  args: { value: 9, valueText: "9 of 9 passed", outcome: "passed" },
+};
+export const CompleteWithFailures: Story = {
+  args: { value: 9, valueText: "9 of 9 done, 2 failed", outcome: "failed" },
+};
+export const RunningWithFailures: Story = {
+  args: { value: 6, valueText: "6 of 9 done, 1 failed", outcome: "failed" },
+};
 // No value: the total is not known yet. With reduced motion the third stays still in the middle.
 export const Indeterminate: Story = {
   render: () => <ProgressBar label="Progress" valueText="Working…" />,

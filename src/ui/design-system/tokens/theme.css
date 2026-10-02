@@ -53,12 +53,16 @@
   /* A validation error is not a run status, so fields have their own names (ARCHITECTURE §7: status colours are
      mapped by StatusPill / SeverityTag only). Same red as status-failed: 6.1-6.9:1, as an edge and as text. */
   --tk-field-invalid: var(--tk-status-failed);
-  /* ProgressBar only (tokens:check). 4 workspace: "4 of 9 done" bar, the done part the passed green on a track
-     drawn #262a36; the fill is 3:1+ against the track and every surface, the track itself carries no meaning. */
-  --tk-progress-fill: var(--tk-status-passed);
+  /* ProgressBar only (tokens:check). The colour says the outcome, not only how far it got: neutral while running
+     (and indeterminate), the passed green only once complete with no failures, the failed red once complete with
+     failures. Mockup 4 draws a running bar green: a recorded deviation, since green would say "passed" too early.
+     Track as drawn there (#262a36); every fill is 3:1+ against it and every surface. */
   --tk-progress-track: #262a36;
-  /* derived: an indeterminate bar has done nothing yet, so it is neutral, not the "done" green (5.5:1 on track) */
-  --tk-progress-busy: var(--tk-text-secondary);
+  --tk-progress-active: var(--tk-text-secondary);
+  --tk-progress-passed: var(--tk-status-passed);
+  --tk-progress-failed: var(--tk-status-failed);
+  /* Toast only (tokens:check): the icon of an error toast; the card stays neutral, the word "Error" says it too. */
+  --tk-toast-error-icon: var(--tk-status-failed);
 
   /* Text */
   --tk-text-primary: #e6e8ef; /* 11 findings: title and body */
@@ -164,9 +168,11 @@
   --color-border-field: var(--tk-border-field);
   --color-border-field-hover: var(--tk-border-field-hover);
   --color-field-invalid: var(--tk-field-invalid);
-  --color-progress-fill: var(--tk-progress-fill);
   --color-progress-track: var(--tk-progress-track);
-  --color-progress-busy: var(--tk-progress-busy);
+  --color-progress-active: var(--tk-progress-active);
+  --color-progress-passed: var(--tk-progress-passed);
+  --color-progress-failed: var(--tk-progress-failed);
+  --color-toast-error-icon: var(--tk-toast-error-icon);
 
   --color-text-primary: var(--tk-text-primary);
   --color-text-secondary: var(--tk-text-secondary);

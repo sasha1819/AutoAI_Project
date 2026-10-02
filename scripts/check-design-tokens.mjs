@@ -49,11 +49,13 @@ const STATUS_FILES = new Set([
   "design-system/primitives/_badge/tone-badge.tsx", // the tone looks, for StatusPill and SeverityTag
 ]);
 // Tokens owned by one component (ARCHITECTURE §7): field-invalid is red (an alias of status-failed) for the
-// form-field frame; progress-* (the fill is the passed green) for ProgressBar. Nothing else may name them.
+// form-field frame; progress-* (passed green, failed red) for ProgressBar; toast-error-icon (red) for the Toast card.
+// Nothing else may name them.
 const OWNED = [
   // A template-built name (`text-field-${x}`) is caught too, as for status colours.
   { re: /field-(?:invalid\b|\$\{)/, files: new Set(["design-system/primitives/_field/field-frame.tsx"]), owner: "the form-field frame" },
-  { re: /progress-(?:fill\b|track\b|busy\b|\$\{)/, files: new Set(["design-system/primitives/ProgressBar/ProgressBar.tsx"]), owner: "ProgressBar" },
+  { re: /progress-(?:track\b|active\b|passed\b|failed\b|\$\{)/, files: new Set(["design-system/primitives/ProgressBar/ProgressBar.tsx"]), owner: "ProgressBar" },
+  { re: /toast-(?:error-(?:icon\b|\$\{)|\$\{)/, files: new Set(["design-system/primitives/Toast/Toast.tsx"]), owner: "the Toast card" },
 ];
 // A file on a list may be tested by name: its own X.test.tsx beside it shares the allowance.
 const allowedIn = (files, file) => files.has(relative(ROOT, file).split(sep).join("/").replace(/\.test(\.tsx?)$/, "$1"));

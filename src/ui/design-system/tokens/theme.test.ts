@@ -67,8 +67,9 @@ const PAIRS = [
 ] as const;
 // Graphics that must stand out from a specific neighbour (3:1, WCAG non-text contrast).
 const GRAPHIC_PAIRS = [
-  ["progress-fill", "progress-track"],
-  ["progress-busy", "progress-track"],
+  ["progress-active", "progress-track"],
+  ["progress-passed", "progress-track"],
+  ["progress-failed", "progress-track"],
 ] as const;
 // Tokens whose value is not a single hex colour (rgb with alpha, shadows, numbers).
 const NOT_HEX = new Set(["opacity-disabled", "scrim", "shadow-overlay"]);
@@ -131,7 +132,10 @@ describe("design tokens", () => {
         "focus-ring",
         "border-field",
         "border-field-hover",
-        "progress-fill",
+        "progress-active",
+        "progress-passed",
+        "progress-failed",
+        "toast-error-icon",
       ]) {
         for (const surface of [...SURFACES, "bg-app"]) {
           expect(

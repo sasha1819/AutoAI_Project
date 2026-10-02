@@ -1,1 +1,1 @@
-export { ProgressBar, type ProgressBarProps } from "./ProgressBar.tsx";
+export { ProgressBar, type ProgressBarProps, type ProgressOutcome } from "./ProgressBar.tsx";
