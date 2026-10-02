@@ -1,7 +1,9 @@
 import { LoaderCircle } from "lucide-react";
-import type { ComponentPropsWithRef, MouseEvent, ReactNode } from "react";
+import type { ComponentPropsWithRef, ReactNode } from "react";
+import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "./button-look.ts";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type { ButtonVariant };
+
 export type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 export type ButtonProps = Omit<
@@ -18,8 +20,9 @@ export type ButtonProps = Omit<
    */
   readonly size?: ButtonSize;
   /**
-   * Busy with the action it started: stays focusable and is announced as busy, but ignores presses and shows no
+   * Busy with the action it started: stays focusable and is marked aria-busy, but ignores presses and shows no
    * hover or press feedback. The only way to "disable but keep focus"; aria-disabled is not accepted on its own.
+   * Most screen readers do not announce a change of aria-busy: a screen that must say "saving…" uses a live region.
    */
   readonly loading?: boolean;
   /** Shown before the label; replaced by a spinner while loading. Decorative: the label names the button. */
@@ -29,22 +32,11 @@ export type ButtonProps = Omit<
   readonly fullWidth?: boolean;
 };
 
-const BASE =
-  "inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-control transition-colors " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring " +
-  "disabled:cursor-not-allowed disabled:opacity-disabled aria-busy:cursor-progress";
-
-// Hover and press feedback only when the button can act: not disabled, not busy.
-const VARIANT: Record<ButtonVariant, string> = {
-  primary:
-    "bg-accent font-semibold text-text-on-accent " +
-    "enabled:not-aria-busy:hover:bg-accent-hover enabled:not-aria-busy:active:bg-accent-pressed",
-  secondary:
-    "border border-border-strong bg-transparent font-medium text-text-primary " +
-    "enabled:not-aria-busy:hover:bg-hover enabled:not-aria-busy:active:bg-raised",
-  ghost:
-    "bg-transparent font-medium text-text-secondary " +
-    "enabled:not-aria-busy:hover:bg-hover enabled:not-aria-busy:hover:text-text-primary enabled:not-aria-busy:active:bg-raised",
+// A labelled primary action reads heavier than the others (measured in the mockups).
+const WEIGHT: Record<ButtonVariant, string> = {
+  primary: "font-semibold",
+  secondary: "font-medium",
+  ghost: "font-medium",
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -79,15 +71,8 @@ export function Button({
       type={type}
       aria-busy={loading || undefined}
       aria-disabled={loading || undefined}
-      className={`${BASE} ${VARIANT[variant]} ${SIZE[size]}${fullWidth ? " w-full" : ""}`}
-      onClick={(event: MouseEvent<HTMLButtonElement>) => {
-        // A busy button must not start the action twice, nor submit its form again.
-        if (loading) {
-          event.preventDefault();
-          return;
-        }
-        onClick?.(event);
-      }}
+      className={`${BUTTON_BASE} ${BUTTON_VARIANT[variant]} ${WEIGHT[variant]} ${SIZE[size]}${fullWidth ? " w-full" : ""}`}
+      onClick={pressHandler(loading, onClick)}
     >
       {lead !== undefined && lead !== null && (
         <span aria-hidden="true" className="inline-flex">
