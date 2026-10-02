@@ -77,7 +77,13 @@ Four tiers, each may only use the tier above it:
 
 Rules:
 - Features never contain raw colors, pixel values, or inline `style`. `npm run tokens:check` fails if they do.
-- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet = AI actions and primary buttons only, plus the keyboard focus ring, the active-tab indicator and the on/checked state of selection controls (Checkbox, Switch, radio), as in the mockups (5, 8).
+- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet means the tokens `accent`, `accent-hover`, `accent-pressed`, `accent-strong`, `focus-ring` and `ai-*`, and any tint or opacity of them. It is allowed for exactly these five uses, with their own hover, pressed and disabled states, and nothing else:
+  1. Primary buttons (Button / IconButton `variant="primary"`).
+  2. AI: controls that start an AI action (the AiActionButton pattern) and the AI chip / panel that marks content as Claude's (`ai-*` tokens). Not AI-written text itself, confidence, review status or chat bubbles.
+  3. The focus indicator: the ring around a focused control, and the outline of the current option in a list (Select, later menus), which is that list's focus indicator for keyboard and pointer alike.
+  4. The underline of the active tab in Tabs. Not active navigation or rail items, sidebar rows, segmented controls or icon tiles; the violet tints the mockups draw on those are recorded deviations.
+  5. The checked / on state of Checkbox, Switch and radio.
+  This list is closed. It is not a general "selected", "active" or "brand" colour (a selected row, chip or filter is not on it, nor is the logo until approved), and adding any use needs the user's approval. `tokens:check` enforces it: violet classes are refused outside the files that implement these uses.
 - Every primitive/pattern has all states designed: default, hover, focus-visible, disabled, loading, error, empty (where relevant).
 - Accessibility baseline: keyboard reachable, visible focus, labels on inputs, role/aria on custom widgets, contrast from tokens.
 - A story per component state (Storybook). Build the component in the story first, then use it in a screen.

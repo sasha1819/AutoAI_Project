@@ -64,8 +64,8 @@
   --tk-text-on-accent: #ffffff; /* 11 findings: primary button label */
   --tk-text-link: #7dbbff; /* 11 findings: code file path */
 
-  /* Violet is ONLY for primary buttons, AI actions, the focus ring, the active-tab indicator and checked/on selection
-     controls (ARCHITECTURE §7) */
+  /* Violet: only the five uses in ARCHITECTURE §7 (primary buttons, AI controls and the AI chip/panel, the focus
+     indicator, the active-tab underline, checked/on Checkbox/Switch/radio); a closed list, enforced by tokens:check */
   --tk-accent: #6d5ae6; /* 11 findings: "Create test to confirm" button */
   --tk-accent-hover: #6250dd; /* derived: accent, a step darker (lighter fails 4.5:1 with white text) */
   --tk-accent-pressed: #5644c9; /* derived: accent, two steps darker */
@@ -73,7 +73,7 @@
   --tk-ai-surface: #1b1730; /* 11 findings: "mismatches found by Claude" pill */
   --tk-ai-border: #362d66; /* 11 findings: same pill, edge */
   --tk-ai-text: #c6beff; /* 11 findings: same pill, text */
-  --tk-focus-ring: #8b7cff; /* = accent-strong, so focus reads as "active" */
+  --tk-focus-ring: #8b7cff; /* = accent-strong, the same violet as the active-tab underline */
 
   /* Status (one meaning each; mapped from domain values by StatusPill / SeverityTag only) */
   --tk-status-passed: #3dd68c; /* 12 PR impact: "Passed" dot and text */

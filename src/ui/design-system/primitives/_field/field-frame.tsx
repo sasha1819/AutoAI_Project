@@ -50,6 +50,8 @@ export type FieldFrameProps = {
    * (a checkbox, a switch), with hint and error lined up under the label.
    */
   readonly layout?: "stacked" | "inline";
+  /** Inline only: how wide the control is, so the hint and error line up under the label text. */
+  readonly controlWidth?: "box" | "switch";
   /** Dims an inline label too: there the label is the main click target, so it must not look clickable. */
   readonly disabled?: boolean;
   /** fill: as wide as its container (forms) · hug: as wide as its content (a toolbar filter). */
@@ -71,6 +73,7 @@ export function FieldFrame({
   error,
   component,
   layout = "stacked",
+  controlWidth = "box",
   disabled = false,
   width = "fill",
   labelClickFocuses = true,
@@ -110,9 +113,10 @@ export function FieldFrame({
       {label}
     </label>
   );
-  // Inline: messages start under the label, past the control (16px) and the gap (8px).
   // Whole class names only: Tailwind finds classes by reading the source, so a name glued to an expression is lost.
-  const messageIndent = layout === "inline" && !hideLabel ? "pl-6" : "";
+  // Inline: under the label text, past the control and the 8px gap (box 16 → 24, switch 38 → 46).
+  const messageIndent =
+    layout === "inline" && !hideLabel ? (controlWidth === "switch" ? "pl-11.5" : "pl-6") : "";
   return (
     <div className={`flex flex-col gap-1.5 ${width === "fill" ? "w-full" : "w-auto"}`}>
       {layout === "inline" ? (

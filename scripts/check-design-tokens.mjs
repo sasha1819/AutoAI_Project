@@ -36,6 +36,20 @@ function* walk(dir) {
 
 let problems = 0;
 
+// ARCHITECTURE §7: violet (accent*, focus-ring, ai-*) is a closed list of five uses. Only the files that implement
+// those uses may name violet classes; adding a file here needs the user's approval, like adding a use.
+// Matches the token name, not a list of utility prefixes, so every way to write it is caught: any utility
+// (border-b-, from-, divide-, ring-offset-, accent-, …), the ! prefix, var(--tk-accent) and var(--color-accent).
+// text-on-accent is white, not violet, and is not matched.
+const VIOLET = /(?<!on)-(?:-tk-|-color-)?(?:accent(?:-[a-z]+)*|focus-ring|ai-[a-z]+(?:-[a-z]+)*)\b/;
+const VIOLET_FILES = new Set([
+  "design-system/primitives/Button/button-look.ts", // 1. primary buttons
+  "design-system/primitives/_field/field-frame.tsx", // 3. focus ring of every form control
+  "design-system/primitives/_list/list-look.ts", // 3. current-option outline in a list
+  "design-system/primitives/Checkbox/Checkbox.tsx", // 5. checked state
+  "design-system/primitives/Switch/Switch.tsx", // 5. on state
+]);
+
 // The token variables that exist: a var(--tk-...) anywhere else must name one of them.
 const defined = new Set();
 try {
@@ -68,6 +82,10 @@ for (const file of walk(ROOT)) {
         problems++;
         console.error(`${relative(process.cwd(), file)}:${i + 1}  unknown token ${m[1]} (not defined in tokens)`);
       }
+    }
+    if (VIOLET.test(line) && !VIOLET_FILES.has(relative(ROOT, file).split(sep).join("/"))) {
+      problems++;
+      console.error(`${relative(process.cwd(), file)}:${i + 1}  violet outside its closed list of uses (ARCHITECTURE §7)`);
     }
     for (const r of rules) {
       if (r.featuresOnly && !inFeatures) continue;
