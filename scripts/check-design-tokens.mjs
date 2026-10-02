@@ -48,9 +48,13 @@ const STATUS = /(?:^|[^\w-])[a-z!-]*-(?:-tk-|-color-)?status-(?:[a-z-]+\b|\$\{)/
 const STATUS_FILES = new Set([
   "design-system/primitives/_badge/tone-badge.tsx", // the tone looks, for StatusPill and SeverityTag
 ]);
-// field-invalid is red (an alias of status-failed) and belongs to the form-field frame only.
-const FIELD_INVALID = /field-invalid\b/;
-const FIELD_INVALID_FILES = new Set(["design-system/primitives/_field/field-frame.tsx"]);
+// Tokens owned by one component (ARCHITECTURE §7): field-invalid is red (an alias of status-failed) for the
+// form-field frame; progress-* (the fill is the passed green) for ProgressBar. Nothing else may name them.
+const OWNED = [
+  // A template-built name (`text-field-${x}`) is caught too, as for status colours.
+  { re: /field-(?:invalid\b|\$\{)/, files: new Set(["design-system/primitives/_field/field-frame.tsx"]), owner: "the form-field frame" },
+  { re: /progress-(?:fill\b|track\b|busy\b|\$\{)/, files: new Set(["design-system/primitives/ProgressBar/ProgressBar.tsx"]), owner: "ProgressBar" },
+];
 // A file on a list may be tested by name: its own X.test.tsx beside it shares the allowance.
 const allowedIn = (files, file) => files.has(relative(ROOT, file).split(sep).join("/").replace(/\.test(\.tsx?)$/, "$1"));
 const VIOLET_FILES = new Set([
@@ -98,9 +102,11 @@ for (const file of walk(ROOT)) {
       problems++;
       console.error(`${relative(process.cwd(), file)}:${i + 1}  status colour outside StatusPill / SeverityTag (ARCHITECTURE §7)`);
     }
-    if (FIELD_INVALID.test(line) && !allowedIn(FIELD_INVALID_FILES, file)) {
-      problems++;
-      console.error(`${relative(process.cwd(), file)}:${i + 1}  field-invalid outside the form-field frame (ARCHITECTURE §7)`);
+    for (const o of OWNED) {
+      if (o.re.test(line) && !allowedIn(o.files, file)) {
+        problems++;
+        console.error(`${relative(process.cwd(), file)}:${i + 1}  token owned by ${o.owner} (ARCHITECTURE §7)`);
+      }
     }
     if (VIOLET.test(line) && !allowedIn(VIOLET_FILES, file)) {
       problems++;

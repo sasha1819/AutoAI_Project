@@ -65,6 +65,11 @@ const PAIRS = [
   ["text-secondary", "status-neutral-surface"],
   ["ai-text", "ai-surface"],
 ] as const;
+// Graphics that must stand out from a specific neighbour (3:1, WCAG non-text contrast).
+const GRAPHIC_PAIRS = [
+  ["progress-fill", "progress-track"],
+  ["progress-busy", "progress-track"],
+] as const;
 // Tokens whose value is not a single hex colour (rgb with alpha, shadows, numbers).
 const NOT_HEX = new Set(["opacity-disabled", "scrim", "shadow-overlay"]);
 
@@ -116,12 +121,17 @@ describe("design tokens", () => {
       expect(contrast(color(text), color(surface))).toBeGreaterThanOrEqual(4.5);
     });
 
+    it.each(GRAPHIC_PAIRS)("%s against %s is visible (3:1)", (graphic, neighbour) => {
+      expect(contrast(color(graphic), color(neighbour))).toBeGreaterThanOrEqual(3);
+    });
+
     it("status dots, field edges and the focus ring are visible (3:1, WCAG non-text contrast)", () => {
       for (const graphic of [
         "status-neutral",
         "focus-ring",
         "border-field",
         "border-field-hover",
+        "progress-fill",
       ]) {
         for (const surface of [...SURFACES, "bg-app"]) {
           expect(

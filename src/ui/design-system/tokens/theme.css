@@ -53,6 +53,12 @@
   /* A validation error is not a run status, so fields have their own names (ARCHITECTURE §7: status colours are
      mapped by StatusPill / SeverityTag only). Same red as status-failed: 6.1-6.9:1, as an edge and as text. */
   --tk-field-invalid: var(--tk-status-failed);
+  /* ProgressBar only (tokens:check). 4 workspace: "4 of 9 done" bar, the done part the passed green on a track
+     drawn #262a36; the fill is 3:1+ against the track and every surface, the track itself carries no meaning. */
+  --tk-progress-fill: var(--tk-status-passed);
+  --tk-progress-track: #262a36;
+  /* derived: an indeterminate bar has done nothing yet, so it is neutral, not the "done" green (5.5:1 on track) */
+  --tk-progress-busy: var(--tk-text-secondary);
 
   /* Text */
   --tk-text-primary: #e6e8ef; /* 11 findings: title and body */
@@ -158,6 +164,9 @@
   --color-border-field: var(--tk-border-field);
   --color-border-field-hover: var(--tk-border-field-hover);
   --color-field-invalid: var(--tk-field-invalid);
+  --color-progress-fill: var(--tk-progress-fill);
+  --color-progress-track: var(--tk-progress-track);
+  --color-progress-busy: var(--tk-progress-busy);
 
   --color-text-primary: var(--tk-text-primary);
   --color-text-secondary: var(--tk-text-secondary);
@@ -188,6 +197,17 @@
   --color-scrim: var(--tk-scrim);
 
   --shadow-overlay: var(--tk-shadow-overlay);
+
+  /* An indeterminate ProgressBar: a third of the track slides across. */
+  --animate-progress-slide: progress-slide 1.4s ease-in-out infinite;
+  @keyframes progress-slide {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
 }
 
 /*
