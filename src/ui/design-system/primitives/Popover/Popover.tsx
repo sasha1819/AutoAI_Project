@@ -1,6 +1,7 @@
 import * as RadixPopover from "@radix-ui/react-popover";
 import { type KeyboardEvent, type ReactElement, type ReactNode, useRef, useState } from "react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
+import { tabbables } from "../../accessibility/tabbable.ts";
 import { OVERLAY_SURFACE } from "../_overlay/index.ts";
 
 export type PopoverWidth = "sm" | "md";
@@ -29,14 +30,9 @@ export type PopoverProps<Label extends string = string> = {
 };
 
 const WIDTH: Record<PopoverWidth, string> = { sm: "w-64", md: "w-80" };
-const TABBABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 /** The control after `from` in page order, outside `skip` (the panel, which lives in a portal at the end). */
 function nextAfter(from: HTMLElement, skip: HTMLElement): HTMLElement | undefined {
-  const all = [...document.querySelectorAll<HTMLElement>(TABBABLE)].filter(
-    (el) => !skip.contains(el),
-  );
+  const all = tabbables(document).filter((el) => !skip.contains(el));
   return all[all.indexOf(from) + 1];
 }
 
@@ -70,7 +66,7 @@ export function Popover<Label extends string>({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Tab") return;
     const panel = event.currentTarget;
-    const inside = [...panel.querySelectorAll<HTMLElement>(TABBABLE)];
+    const inside = tabbables(panel);
     const atEdge = event.shiftKey
       ? inside.length === 0 ||
         document.activeElement === inside[0] ||

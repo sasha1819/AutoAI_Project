@@ -20,3 +20,4 @@
 - [ ] Send the failure screenshot to the diagnosis (PRD Flow 4 step 17 lists it). MVP sends the text page snapshot instead: the AiProvider port is text-only, so images need a port change + ADR, and a screenshot cannot be redacted like text (decided 2026-09-30).
 
 When a new idea appears, `/scope-check` adds it here with a one-line reason.
+- Modal `tone="alert"` (role alertdialog, description required) for urgent or destructive confirmations: Radix Dialog's Content accepts a role override, so no new dependency. Deferred from M4 (2026-10-02); today an unmissable step is `dismissible={false}` with role dialog.

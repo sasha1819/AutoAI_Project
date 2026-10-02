@@ -67,6 +67,8 @@ const VIOLET_FILES = new Set([
   "design-system/primitives/Switch/Switch.tsx", // 5. on state
   "design-system/primitives/Tabs/Tabs.tsx", // 4. active-tab underline (and 3. its focus ring)
   "design-system/primitives/Popover/Popover.tsx", // 3. focus ring on the panel when it takes focus itself
+  "design-system/primitives/CodeBlock/CodeBlock.tsx", // 3. focus ring on the scrollable code
+  "design-system/primitives/Modal/Modal.tsx", // 3. focus ring on the dialog when it takes focus itself
 ]);
 
 // The token variables that exist: a var(--tk-...) anywhere else must name one of them.
