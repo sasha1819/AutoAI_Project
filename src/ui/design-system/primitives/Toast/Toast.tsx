@@ -1,6 +1,7 @@
 import { CircleAlert, Info, X } from "lucide-react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { Badge } from "../Badge/index.ts";
+import { Icon, type IconGlyph } from "../Icon/index.ts";
 import { IconButton } from "../IconButton/index.ts";
 
 /** info: something finished or changed; it closes by itself. error: something failed; it stays until dismissed. */
@@ -15,9 +16,9 @@ export type ToastProps<Title extends string = string> = {
 
 // The card is neutral; only an error's icon is red (toast-error-icon, owned by this file). An error is also told by
 // its icon shape and a visible "Error" tag (read out too), never by colour alone.
-const ICON: Record<ToastKind, { readonly Icon: typeof Info; readonly tone: string }> = {
-  info: { Icon: Info, tone: "text-text-primary" },
-  error: { Icon: CircleAlert, tone: "text-toast-error-icon" },
+const ICON: Record<ToastKind, { readonly glyph: IconGlyph; readonly tone: string }> = {
+  info: { glyph: Info, tone: "text-text-primary" },
+  error: { glyph: CircleAlert, tone: "text-toast-error-icon" },
 };
 
 /** One notification card. Screens do not render it: they call `useToast().show`, which also announces it. */
@@ -28,11 +29,13 @@ export function Toast<Title extends string>({
   onDismiss,
 }: ToastProps<Title>) {
   assertAccessibleName(title, "Toast");
-  const { Icon, tone } = ICON[kind];
+  const { glyph, tone } = ICON[kind];
   const detail = description !== undefined && description.trim() !== "" ? description : undefined;
   return (
     <div className="flex w-80 items-start gap-3 rounded-card border border-border-strong bg-raised p-3 shadow-overlay">
-      <Icon aria-hidden="true" className={`mt-0.5 size-4 shrink-0 ${tone}`} />
+      <span className={`mt-0.5 inline-flex ${tone}`}>
+        <Icon glyph={glyph} decorative size="md" />
+      </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="flex items-start gap-2 text-md font-medium text-text-primary">
           {kind === "error" && <Badge label="Error" uppercase />}
@@ -42,7 +45,7 @@ export function Toast<Title extends string>({
       </div>
       {/* Pulled into the padding so the 28px button centres on the first line of the title. */}
       <div className="-my-1 -mr-1">
-        <IconButton label="Dismiss notification" icon={<X />} size="sm" onClick={onDismiss} />
+        <IconButton label="Dismiss notification" icon={X} size="sm" onClick={onDismiss} />
       </div>
     </div>
   );

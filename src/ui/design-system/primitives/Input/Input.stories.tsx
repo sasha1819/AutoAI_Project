@@ -68,18 +68,18 @@ export const SearchWithValue: Story = {
     label: "Search",
     hideLabel: true,
     type: "search",
-    icon: <Search />,
+    icon: Search,
     defaultValue: "example query",
   },
 };
-export const WithIcon: Story = { args: { size: "lg", icon: <Folder /> } };
+export const WithIcon: Story = { args: { size: "lg", icon: Folder } };
 export const HiddenLabel: Story = {
   args: {
     label: "Search",
     hideLabel: true,
     type: "search",
     size: "sm",
-    icon: <Search />,
+    icon: Search,
     placeholder: "Search…",
   },
 };
@@ -96,7 +96,7 @@ export const Sizes: Story = {
           size={size}
           label={`Size ${size}`}
           placeholder="Placeholder text"
-          icon={<Search />}
+          icon={Search}
         />
       ))}
     </div>

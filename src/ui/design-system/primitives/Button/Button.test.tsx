@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -64,13 +65,14 @@ describe("Button", () => {
 
   it("shows its icons beside the label without changing its accessible name", () => {
     render(
-      <Button icon={<svg data-testid="lead" />} trailingIcon={<svg data-testid="trail" />}>
+      <Button icon={ArrowLeft} trailingIcon={ArrowRight}>
         Continue
       </Button>,
     );
-    expect(screen.getByRole("button", { name: "Continue" })).toBeDefined();
-    expect(screen.getByTestId("lead").parentElement?.getAttribute("aria-hidden")).toBe("true");
-    expect(screen.getByTestId("trail").parentElement?.getAttribute("aria-hidden")).toBe("true");
+    const button = screen.getByRole("button", { name: "Continue" });
+    const icons = [...button.querySelectorAll("svg")];
+    expect(icons).toHaveLength(2);
+    for (const svg of icons) expect(svg.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("passes aria and data attributes through (e.g. aria-describedby)", () => {
@@ -83,7 +85,7 @@ describe("Button", () => {
   // Checked at typecheck time (part of verify): the @ts-expect-error fails the build if the rule ever loosens.
   it("cannot be built without a label (icon-only actions use IconButton)", () => {
     // @ts-expect-error an icon-only Button would have no accessible name
-    render(<Button icon={<svg />} />);
+    render(<Button icon={Check} />);
   });
 
   it("ignores aria-disabled from outside: only loading makes it busy, so it is never announced disabled while acting", async () => {

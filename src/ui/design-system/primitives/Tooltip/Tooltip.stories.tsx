@@ -36,8 +36,8 @@ export const Label: Story = {
 export const OnIconButtons: Story = {
   render: () => (
     <div className="flex gap-3">
-      <IconButton label="Settings" icon={<Settings />} variant="secondary" />
-      <IconButton label="Settings" icon={<Settings />} variant="secondary" disabled />
+      <IconButton label="Settings" icon={Settings} variant="secondary" />
+      <IconButton label="Settings" icon={Settings} variant="secondary" disabled />
     </div>
   ),
 };

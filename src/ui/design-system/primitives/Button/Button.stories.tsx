@@ -37,13 +37,13 @@ export const Loading: Story = { args: { loading: true, children: "Running" } };
 export const WithIcons: Story = {
   render: (args) => (
     <div className="flex gap-3">
-      <Button {...args} icon={<Play />}>
+      <Button {...args} icon={Play}>
         Run again
       </Button>
-      <Button {...args} trailingIcon={<ArrowRight />}>
+      <Button {...args} trailingIcon={ArrowRight}>
         Continue
       </Button>
-      <Button {...args} variant="secondary" icon={<ExternalLink />}>
+      <Button {...args} variant="secondary" icon={ExternalLink}>
         Open in editor
       </Button>
     </div>
@@ -62,7 +62,7 @@ export const Sizes: Story = {
       <Button {...args} size="lg">
         Large · 40
       </Button>
-      <Button {...args} size="xl" trailingIcon={<ArrowRight />}>
+      <Button {...args} size="xl" trailingIcon={ArrowRight}>
         Extra large · 44
       </Button>
     </div>
@@ -125,7 +125,7 @@ export const AllStates: Story = {
       </table>
       <div className="flex items-center gap-3">
         {SIZES.map((size) => (
-          <Button key={size} size={size} icon={<Play />}>
+          <Button key={size} size={size} icon={Play}>
             Size {size}
           </Button>
         ))}

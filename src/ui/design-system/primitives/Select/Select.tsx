@@ -1,5 +1,6 @@
 import * as RadixSelect from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Icon, type IconSize } from "../Icon/index.ts";
 import { isBlank, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
 import {
@@ -66,11 +67,7 @@ const WIDTH: Record<"fill" | "hug", string> = {
   hug: "w-auto justify-start gap-1.5",
 };
 
-const CHEVRON: Record<SelectSize, string> = {
-  sm: "[&_svg]:size-3.5",
-  md: "[&_svg]:size-4",
-  lg: "[&_svg]:size-4",
-};
+const CHEVRON: Record<SelectSize, IconSize> = { sm: "sm", md: "md", lg: "md" };
 
 // The list look is shared (../_list); Select adds Radix's size limits: no taller than the window allows, no
 // narrower than the trigger.
@@ -161,9 +158,9 @@ export function Select<Label extends string>({
               <RadixSelect.Value placeholder={empty ? shownEmptyText : shownPlaceholder} />
             </span>
             <RadixSelect.Icon
-              className={`inline-flex shrink-0 text-text-muted transition-transform group-aria-expanded:rotate-180 ${CHEVRON[size]}`}
+              className={`inline-flex shrink-0 text-text-muted transition-transform group-aria-expanded:rotate-180`}
             >
-              <ChevronDown />
+              <Icon glyph={ChevronDown} decorative size={CHEVRON[size]} />
             </RadixSelect.Icon>
           </RadixSelect.Trigger>
           <RadixSelect.Portal>
@@ -175,7 +172,7 @@ export function Select<Label extends string>({
               aria-labelledby={field.labelId}
             >
               <RadixSelect.ScrollUpButton className={LIST_SCROLL_BUTTON}>
-                <ChevronUp />
+                <Icon glyph={ChevronUp} decorative size="sm" />
               </RadixSelect.ScrollUpButton>
               <RadixSelect.Viewport className={LIST_MAX_HEIGHT}>
                 {options.map((option) => (
@@ -186,14 +183,14 @@ export function Select<Label extends string>({
                     className={LIST_ROW}
                   >
                     <RadixSelect.ItemIndicator className={LIST_ROW_INDICATOR}>
-                      <Check />
+                      <Icon glyph={Check} decorative size="sm" />
                     </RadixSelect.ItemIndicator>
                     <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
                   </RadixSelect.Item>
                 ))}
               </RadixSelect.Viewport>
               <RadixSelect.ScrollDownButton className={LIST_SCROLL_BUTTON}>
-                <ChevronDown />
+                <Icon glyph={ChevronDown} decorative size="sm" />
               </RadixSelect.ScrollDownButton>
             </RadixSelect.Content>
           </RadixSelect.Portal>

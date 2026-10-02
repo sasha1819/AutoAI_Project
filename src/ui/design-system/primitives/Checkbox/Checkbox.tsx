@@ -37,6 +37,7 @@ export type CheckboxProps<Label extends string = string> = {
 const BOX =
   `${FIELD_STATES} relative inline-flex size-4 shrink-0 items-center justify-center rounded-tag ` +
   "after:absolute after:-inset-1 " +
+  // The mark stays a raw glyph: it needs a heavier stroke than Icon offers, and adding a prop for one use is not worth it.
   "[&_svg]:size-3 [&_svg]:stroke-3";
 const UNCHECKED =
   "border-border-field bg-surface enabled:not-aria-invalid:hover:border-border-field-hover";

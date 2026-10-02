@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
@@ -177,8 +178,8 @@ describe("Input", () => {
   });
 
   it("shows a decorative leading icon that screen readers skip", () => {
-    render(<Input label="Search" icon={<svg data-testid="icon" />} />);
-    expect(screen.getByTestId("icon").parentElement?.getAttribute("aria-hidden")).toBe("true");
+    const { container } = render(<Input label="Search" icon={Search} />);
+    expect(container.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("gives every field its own ids, so two on a page never share a label or message", () => {

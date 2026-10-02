@@ -6,7 +6,7 @@ import { IconButton, type IconButtonSize } from "./IconButton.tsx";
 const meta: Meta<typeof IconButton> = {
   title: "Primitives/IconButton",
   component: IconButton,
-  args: { label: "Close", icon: <X />, variant: "ghost", size: "md" },
+  args: { label: "Close", icon: X, variant: "ghost", size: "md" },
   argTypes: {
     variant: { control: "inline-radio", options: ["ghost", "secondary", "primary"] },
     size: { control: "inline-radio", options: ["sm", "md"] },
@@ -22,10 +22,10 @@ type Story = StoryObj<typeof IconButton>;
 // Ghost is the default: toolbar and panel icons (close, back, settings).
 export const Ghost: Story = {};
 export const Secondary: Story = {
-  args: { variant: "secondary", label: "Settings", icon: <Settings /> },
+  args: { variant: "secondary", label: "Settings", icon: Settings },
 };
 export const Primary: Story = {
-  args: { variant: "primary", size: "sm", label: "Send message", icon: <Send /> },
+  args: { variant: "primary", size: "sm", label: "Send message", icon: Send },
 };
 
 // hover / active / focus-visible cannot be forced in a browser; data-preview-state shows them (theme.css).
@@ -44,20 +44,20 @@ export const Disabled: Story = { args: { disabled: true } };
  * A change of aria-busy is usually not announced, so a screen that must say "sending…" uses a live region.
  */
 export const Loading: Story = {
-  args: { variant: "primary", size: "sm", label: "Send message", icon: <Send />, loading: true },
+  args: { variant: "primary", size: "sm", label: "Send message", icon: Send, loading: true },
 };
 
 // The same heights as Button, so a toolbar mixes them without jumps.
 export const BesideButtons: Story = {
   render: () => (
     <div className="flex items-center gap-2 rounded-card border border-border-subtle bg-surface p-3">
-      <IconButton label="Back" icon={<ChevronLeft />} />
+      <IconButton label="Back" icon={ChevronLeft} />
       <Button variant="secondary">Run again</Button>
       <Button>Continue</Button>
-      <IconButton label="Zoom out" icon={<Minus />} />
-      <IconButton label="Zoom in" icon={<Plus />} />
-      <IconButton variant="secondary" label="Settings" icon={<Settings />} />
-      <IconButton variant="primary" label="Send message" icon={<Send />} />
+      <IconButton label="Zoom out" icon={Minus} />
+      <IconButton label="Zoom in" icon={Plus} />
+      <IconButton variant="secondary" label="Settings" icon={Settings} />
+      <IconButton variant="primary" label="Send message" icon={Send} />
     </div>
   ),
 };
@@ -103,7 +103,7 @@ export const AllStates: Story = {
                     variant={variant}
                     size={size}
                     label="Example action"
-                    icon={<X />}
+                    icon={X}
                     {...s.props}
                   />
                 </td>

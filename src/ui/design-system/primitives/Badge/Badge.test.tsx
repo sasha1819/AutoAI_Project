@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Badge } from "./Badge.tsx";
@@ -11,8 +12,8 @@ describe("Badge", () => {
   });
 
   it("shows a decorative icon that screen readers skip", () => {
-    render(<Badge label="Example" icon={<svg data-testid="icon" />} />);
-    expect(screen.getByTestId("icon").parentElement?.getAttribute("aria-hidden")).toBe("true");
+    const { container } = render(<Badge label="Example" icon={Check} />);
+    expect(container.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("can be caps (short tags)", () => {

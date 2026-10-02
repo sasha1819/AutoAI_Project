@@ -13,12 +13,11 @@ export const LIST_ROW =
   "data-disabled:cursor-not-allowed data-disabled:opacity-disabled";
 
 /** Where a row's check mark sits (neutral: violet is reserved for primary, AI and focus). */
-export const LIST_ROW_INDICATOR =
-  "absolute left-2.5 inline-flex text-text-primary [&_svg]:size-3.5";
+export const LIST_ROW_INDICATOR = "absolute left-2.5 inline-flex text-text-primary";
 
 /** Shown at the top and bottom of a list that scrolls: the scrollbar is hidden, so a list that just ends would not show there is more. */
 export const LIST_SCROLL_BUTTON =
-  "flex h-6 cursor-default items-center justify-center text-text-muted [&_svg]:size-3.5";
+  "flex h-6 cursor-default items-center justify-center text-text-muted";
 
 /** At most 10 rows are visible; longer lists scroll. */
 export const LIST_MAX_HEIGHT = "max-h-80";

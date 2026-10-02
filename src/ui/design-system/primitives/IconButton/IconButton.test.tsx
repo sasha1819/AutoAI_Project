@@ -1,16 +1,17 @@
+import { X } from "lucide-react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { IconButton } from "./IconButton.tsx";
 
-const icon = <svg data-testid="icon" />;
+const icon = X;
 
 describe("IconButton", () => {
   it("is a button named by its label (the icon itself is hidden from assistive tech)", () => {
     render(<IconButton label="Close" icon={icon} />);
     const button = screen.getByRole("button", { name: "Close" });
     expect(button.getAttribute("aria-label")).toBe("Close");
-    expect(screen.getByTestId("icon").parentElement?.getAttribute("aria-hidden")).toBe("true");
+    expect(button.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
     expect(button).toHaveProperty("type", "button");
   });
 
@@ -41,8 +42,8 @@ describe("IconButton", () => {
     expect(() => render(<IconButton icon={icon} />)).toThrow(/label/);
     // @ts-expect-error an empty label is no name either
     expect(() => render(<IconButton label="" icon={icon} />)).toThrow(/label/);
-    // @ts-expect-error the icon is required too: it is the button's only visible content (a type check only)
-    render(<IconButton label="Close" />);
+    // @ts-expect-error the icon is required too: it is the button's only visible content (and fails at runtime)
+    expect(() => render(<IconButton label="Close" />)).toThrow();
   });
 
   it.each([

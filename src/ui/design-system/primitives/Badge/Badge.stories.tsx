@@ -13,7 +13,7 @@ type Story = StoryObj<typeof Badge>;
 
 export const Default: Story = {};
 export const Uppercase: Story = { args: { label: "Area", uppercase: true } };
-export const WithIcon: Story = { args: { label: "Example", icon: <Check /> } };
+export const WithIcon: Story = { args: { label: "Example", icon: Check } };
 
 // Never wraps or truncates: a badge is a short word, and the row around it gives it room.
 export const LongLabel: Story = {
@@ -26,10 +26,10 @@ export const TonesForStatusPatterns: Story = {
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <ToneBadge label="Neutral" tone="neutral" uppercase />
-        <ToneBadge label="Passed" tone="passed" icon={<Check />} uppercase />
-        <ToneBadge label="Failed" tone="failed" icon={<X />} uppercase />
-        <ToneBadge label="Warning" tone="warning" icon={<TriangleAlert />} uppercase />
-        <ToneBadge label="Running" tone="running" icon={<Loader />} uppercase />
+        <ToneBadge label="Passed" tone="passed" icon={Check} uppercase />
+        <ToneBadge label="Failed" tone="failed" icon={X} uppercase />
+        <ToneBadge label="Warning" tone="warning" icon={TriangleAlert} uppercase />
+        <ToneBadge label="Running" tone="running" icon={Loader} uppercase />
       </div>
       <div className="flex items-center gap-2">
         <ToneBadge label="Low" tone="neutral" />

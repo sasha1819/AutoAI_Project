@@ -134,9 +134,12 @@ describe("Toast", () => {
 
   it("only an error's icon is red", () => {
     const { container, rerender } = render(<Toast title="Done" kind="info" onDismiss={vi.fn()} />);
-    expect(container.querySelector("svg")?.getAttribute("class")).not.toContain("toast-error-icon");
+    // The first svg is the kind icon; its colour is set on the wrapper (Icon takes the text colour).
+    expect(container.querySelector("svg")?.parentElement?.className).not.toContain(
+      "toast-error-icon",
+    );
     rerender(<Toast title="Failed" kind="error" onDismiss={vi.fn()} />);
-    expect(container.querySelector("svg")?.getAttribute("class")).toContain(
+    expect(container.querySelector("svg")?.parentElement?.className).toContain(
       "text-toast-error-icon",
     );
   });

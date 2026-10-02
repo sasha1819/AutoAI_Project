@@ -1,6 +1,7 @@
-import type { ComponentPropsWithRef, ReactNode } from "react";
+import type { ComponentPropsWithRef } from "react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "../Button/index.ts";
+import { Icon, type IconGlyph } from "../Icon/index.ts";
 import { Spinner } from "../Spinner/index.ts";
 import { Tooltip } from "../Tooltip/index.ts";
 
@@ -24,7 +25,7 @@ export type IconButtonProps<Label extends string = string> = Omit<
    */
   readonly label: NonEmpty<Label>;
   /** The only visible content. Decorative: the label names the button. */
-  readonly icon: ReactNode;
+  readonly icon: IconGlyph;
   /** Same three looks as Button: primary (the one main action), secondary (bordered), ghost (toolbar icons). */
   readonly variant?: ButtonVariant;
   /** Square, matching Button's heights so the two line up: sm 28 (send in chat) · md 30 (toolbars). */
@@ -38,8 +39,8 @@ export type IconButtonProps<Label extends string = string> = Omit<
 };
 
 const SIZE: Record<IconButtonSize, string> = {
-  sm: "size-7 [&_svg]:size-3.5",
-  md: "size-7.5 [&_svg]:size-4",
+  sm: "size-7",
+  md: "size-7.5",
 };
 
 /**
@@ -74,7 +75,11 @@ export function IconButton<Label extends string>({
       onClick={pressHandler(loading, onClick)}
     >
       <span aria-hidden="true" className="inline-flex">
-        {loading ? <Spinner decorative size={size} /> : icon}
+        {loading ? (
+          <Spinner decorative size={size} />
+        ) : (
+          <Icon glyph={icon} decorative size={size} />
+        )}
       </span>
     </button>
   );

@@ -1,4 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
+import { Icon, type IconGlyph, type IconSize } from "../Icon/index.ts";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "./button-look.ts";
 import { Spinner } from "../Spinner/index.ts";
 
@@ -26,9 +27,9 @@ export type ButtonProps = Omit<
    */
   readonly loading?: boolean;
   /** Shown before the label; replaced by a spinner while loading. Decorative: the label names the button. */
-  readonly icon?: ReactNode;
+  readonly icon?: IconGlyph;
   /** Shown after the label, e.g. an arrow on a "next step" action. Decorative. */
-  readonly trailingIcon?: ReactNode;
+  readonly trailingIcon?: IconGlyph;
   readonly fullWidth?: boolean;
 };
 
@@ -39,14 +40,19 @@ const WEIGHT: Record<ButtonVariant, string> = {
   ghost: "font-medium",
 };
 
-// The spinner takes the icon's place at the icon's size.
-const SPINNER_SIZE: Record<ButtonSize, "sm" | "md"> = { sm: "sm", md: "sm", lg: "md", xl: "md" };
+// The icons' size; the spinner takes the icon's place at the same size.
+const ICON: Record<ButtonSize, IconSize & ("sm" | "md")> = {
+  sm: "sm",
+  md: "sm",
+  lg: "md",
+  xl: "md",
+};
 
 const SIZE: Record<ButtonSize, string> = {
-  sm: "h-7 gap-1.5 px-2.5 text-sm [&_svg]:size-3.5",
-  md: "h-7.5 gap-2 px-3 text-sm [&_svg]:size-3.5",
-  lg: "h-10 gap-2 px-4 text-md [&_svg]:size-4",
-  xl: "h-11 gap-2 px-5 text-lg [&_svg]:size-4",
+  sm: "h-7 gap-1.5 px-2.5 text-sm",
+  md: "h-7.5 gap-2 px-3 text-sm",
+  lg: "h-10 gap-2 px-4 text-md",
+  xl: "h-11 gap-2 px-5 text-lg",
 };
 
 /** The button of the design system. Colours come from tokens only; screens pick a variant, never a colour. */
@@ -62,8 +68,11 @@ export function Button({
   children,
   ...rest
 }: ButtonProps) {
-  // TODO(M4): use the Icon primitive once it exists (design review, Button).
-  const lead = loading ? <Spinner decorative size={SPINNER_SIZE[size]} /> : icon;
+  const lead = loading ? (
+    <Spinner decorative size={ICON[size]} />
+  ) : icon === undefined ? undefined : (
+    <Icon glyph={icon} decorative size={ICON[size]} />
+  );
   return (
     <button
       {...rest}
@@ -73,15 +82,15 @@ export function Button({
       className={`${BUTTON_BASE} ${BUTTON_VARIANT[variant]} ${WEIGHT[variant]} ${SIZE[size]}${fullWidth ? " w-full" : ""}`}
       onClick={pressHandler(loading, onClick)}
     >
-      {lead !== undefined && lead !== null && (
+      {lead !== undefined && (
         <span aria-hidden="true" className="inline-flex">
           {lead}
         </span>
       )}
       {children}
-      {trailingIcon !== undefined && trailingIcon !== null && (
+      {trailingIcon !== undefined && (
         <span aria-hidden="true" className="inline-flex">
-          {trailingIcon}
+          <Icon glyph={trailingIcon} decorative size={ICON[size]} />
         </span>
       )}
     </button>

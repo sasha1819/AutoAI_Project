@@ -1,6 +1,7 @@
-import type { ComponentPropsWithRef, ReactNode } from "react";
+import type { ComponentPropsWithRef } from "react";
 import type { NonEmpty } from "../../accessibility/accessible-name.ts";
 import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
+import { Icon, type IconGlyph, type IconSize } from "../Icon/index.ts";
 
 export type InputSize = FieldSize;
 export type InputType = "text" | "search" | "email" | "url" | "password";
@@ -31,7 +32,7 @@ export type InputProps<Label extends string = string> = Omit<
   /** Measured in the mockups: sm 28 (title-bar search, 26 normalised up) · md 36 (form fields) · lg 44 (page level). */
   readonly size?: InputSize;
   /** Decorative leading icon (a folder, a magnifier); the label names the field. */
-  readonly icon?: ReactNode;
+  readonly icon?: IconGlyph;
   /** Helps fill it in; read after the label. */
   readonly hint?: string;
   /**
@@ -55,13 +56,18 @@ const TEXT_FIELD =
 
 const SIZE: Record<
   InputSize,
-  { readonly field: string; readonly withIcon: string; readonly icon: string }
+  {
+    readonly field: string;
+    readonly withIcon: string;
+    readonly icon: string;
+    readonly iconSize: IconSize;
+  }
 > = {
   // Icon and text insets measured: sm as the title-bar search (4: icon 12, text ~33), lg as the project path
   // (3: icon 16, text ~40).
-  sm: { field: `${FIELD_HEIGHT.sm} px-3`, withIcon: "pl-8", icon: "left-3 [&_svg]:size-3.5" },
-  md: { field: `${FIELD_HEIGHT.md} px-3`, withIcon: "pl-9", icon: "left-3 [&_svg]:size-4" },
-  lg: { field: `${FIELD_HEIGHT.lg} px-4`, withIcon: "pl-10", icon: "left-4 [&_svg]:size-4" },
+  sm: { field: `${FIELD_HEIGHT.sm} px-3`, withIcon: "pl-8", icon: "left-3", iconSize: "sm" },
+  md: { field: `${FIELD_HEIGHT.md} px-3`, withIcon: "pl-9", icon: "left-3", iconSize: "md" },
+  lg: { field: `${FIELD_HEIGHT.lg} px-4`, withIcon: "pl-10", icon: "left-4", iconSize: "md" },
 };
 
 /**
@@ -83,12 +89,12 @@ export function Input<Label extends string>({
     <FieldFrame label={label} hideLabel={hideLabel} hint={hint} error={error} component="Input">
       {(field) => (
         <div className="relative flex items-center">
-          {icon !== undefined && icon !== null && (
+          {icon !== undefined && (
             <span
               aria-hidden="true"
               className={`pointer-events-none absolute inline-flex text-text-muted ${sizing.icon}`}
             >
-              {icon}
+              <Icon glyph={icon} decorative size={sizing.iconSize} />
             </span>
           )}
           <input
@@ -111,7 +117,7 @@ export function Input<Label extends string>({
             role={undefined}
             aria-invalid={field.invalid || undefined}
             aria-describedby={field.describedBy}
-            className={`${TEXT_FIELD} ${sizing.field}${icon !== undefined && icon !== null ? ` ${sizing.withIcon}` : ""}`}
+            className={`${TEXT_FIELD} ${sizing.field}${icon !== undefined ? ` ${sizing.withIcon}` : ""}`}
           />
         </div>
       )}
