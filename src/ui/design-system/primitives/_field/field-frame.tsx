@@ -7,12 +7,18 @@ import { assertAccessibleName, isBlank } from "../../accessibility/accessible-na
 
 export type FieldSize = "sm" | "md" | "lg";
 
-// Rest, hover (per control, since what may hover differs), focus and invalid are always distinguishable.
-export const FIELD_LOOK =
-  "rounded-control border border-border-field bg-surface text-text-primary transition-colors " +
+// What every control shares regardless of its colours: a 1px edge, the focus ring outside it, the invalid edge and
+// the disabled look. Each control sets its own edge and fill colours, so no property is set by two classes (a
+// checkbox's edge turns violet when checked; a text field's never does). Rest, hover (per control), focus and
+// invalid are always distinguishable.
+export const FIELD_STATES =
+  "border transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring " +
   "aria-invalid:border-field-invalid " +
   "disabled:cursor-not-allowed disabled:opacity-disabled";
+
+/** A text-like field (Input, Select's trigger): the shared states with the field edge and the surface fill. */
+export const FIELD_LOOK = `${FIELD_STATES} rounded-control border-border-field bg-surface text-text-primary`;
 
 /** Measured in the mockups: sm 28 (title-bar search, toolbar pickers) · md 36 (form fields) · lg 44 (page level). */
 export const FIELD_HEIGHT: Record<FieldSize, string> = {
@@ -39,6 +45,13 @@ export type FieldFrameProps = {
   readonly error: string | undefined;
   /** For the error message when the label is blank, e.g. "Input". */
   readonly component: string;
+  /**
+   * stacked: the label above the control (text fields, selects) · inline: the control, then its label beside it
+   * (a checkbox, a switch), with hint and error lined up under the label.
+   */
+  readonly layout?: "stacked" | "inline";
+  /** Dims an inline label too: there the label is the main click target, so it must not look clickable. */
+  readonly disabled?: boolean;
   /** fill: as wide as its container (forms) · hug: as wide as its content (a toolbar filter). */
   readonly width?: "fill" | "hug";
   /**
@@ -57,6 +70,8 @@ export function FieldFrame({
   hint,
   error,
   component,
+  layout = "stacked",
+  disabled = false,
   width = "fill",
   labelClickFocuses = true,
   children,
@@ -72,28 +87,52 @@ export function FieldFrame({
     (x) => x !== null,
   );
 
+  const wiring: FieldWiring = {
+    id,
+    labelId,
+    invalid: hasError,
+    describedBy: describedBy.length > 0 ? describedBy.join(" ") : undefined,
+  };
+  const labelElement = (
+    <label
+      id={labelId}
+      htmlFor={labelClickFocuses ? id : undefined}
+      className={
+        hideLabel
+          ? "sr-only"
+          : layout === "inline"
+            ? // Fills the 24px row from the control's edge (pl-2 is the gap), so box, gap and label are one
+              // continuous click target of at least 24px (WCAG 2.5.8). Medium weight, as mockup 5's radio labels.
+              `inline-flex self-stretch items-center pl-2 text-md font-medium text-text-primary ${disabled ? "cursor-not-allowed opacity-disabled" : "cursor-pointer"}`
+            : "text-sm font-medium text-text-primary"
+      }
+    >
+      {label}
+    </label>
+  );
+  // Inline: messages start under the label, past the control (16px) and the gap (8px).
+  // Whole class names only: Tailwind finds classes by reading the source, so a name glued to an expression is lost.
+  const messageIndent = layout === "inline" && !hideLabel ? "pl-6" : "";
   return (
     <div className={`flex flex-col gap-1.5 ${width === "fill" ? "w-full" : "w-auto"}`}>
-      <label
-        id={labelId}
-        htmlFor={labelClickFocuses ? id : undefined}
-        className={hideLabel ? "sr-only" : "text-sm font-medium text-text-primary"}
-      >
-        {label}
-      </label>
-      {children({
-        id,
-        labelId,
-        invalid: hasError,
-        describedBy: describedBy.length > 0 ? describedBy.join(" ") : undefined,
-      })}
+      {layout === "inline" ? (
+        <div className="flex min-h-6 items-center">
+          {children(wiring)}
+          {labelElement}
+        </div>
+      ) : (
+        <>
+          {labelElement}
+          {children(wiring)}
+        </>
+      )}
       {hasError && (
-        <p id={errorId} className="text-sm text-field-invalid">
+        <p id={errorId} className={`text-sm text-field-invalid ${messageIndent}`}>
           {error}
         </p>
       )}
       {hasHint && (
-        <p id={hintId} className="text-sm text-text-muted">
+        <p id={hintId} className={`text-sm text-text-muted ${messageIndent}`}>
           {hint}
         </p>
       )}

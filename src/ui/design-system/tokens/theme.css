@@ -64,7 +64,8 @@
   --tk-text-on-accent: #ffffff; /* 11 findings: primary button label */
   --tk-text-link: #7dbbff; /* 11 findings: code file path */
 
-  /* Violet is ONLY for primary buttons, AI actions, the focus ring and the active-tab indicator (ARCHITECTURE §7) */
+  /* Violet is ONLY for primary buttons, AI actions, the focus ring, the active-tab indicator and checked/on selection
+     controls (ARCHITECTURE §7) */
   --tk-accent: #6d5ae6; /* 11 findings: "Create test to confirm" button */
   --tk-accent-hover: #6250dd; /* derived: accent, a step darker (lighter fails 4.5:1 with white text) */
   --tk-accent-pressed: #5644c9; /* derived: accent, two steps darker */

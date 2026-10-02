@@ -35,6 +35,10 @@ const cases = [
   ["px in a feature", feature('"16px"'), false],
   ["an inline style in a feature", { "features/f/F.tsx": "export const F = () => <div style={{ margin: 0 }} />;\n" }, false],
   ["an ignored line", primitive('"#ff0000" // tokens-ignore'), true],
+  ["a class name glued to an expression", { "design-system/primitives/X/X.tsx": "export const x = <p className={`text-sm text-muted${extra}`} />;\n" }, false],
+  ["a class name glued to an expression in a constant", { "design-system/primitives/X/X.tsx": "const BOX = `size-4 text-muted${extra}`;\n" }, false],
+  ["an id-like template ending in a dash", { "design-system/primitives/X/X.tsx": "const id = `item-${n}`;\n" }, true],
+  ["class names separated from an expression", { "design-system/primitives/X/X.tsx": "export const x = <p className={`text-sm ${extra} text-muted`} />;\n" }, true],
   ["a state preview in a story", { "design-system/primitives/X/X.stories.tsx": 'export const s = { "data-preview-state": "hover" };\n' }, true],
   ["a state preview in a component", primitive('{ "data-preview-state": "hover" }'), false],
 ];

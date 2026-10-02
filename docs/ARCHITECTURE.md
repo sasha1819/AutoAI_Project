@@ -77,7 +77,7 @@ Four tiers, each may only use the tier above it:
 
 Rules:
 - Features never contain raw colors, pixel values, or inline `style`. `npm run tokens:check` fails if they do.
-- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet = AI actions and primary buttons only, plus the keyboard focus ring and the active-tab indicator (as in the mockups).
+- Status colors live in ONE place (StatusPill / SeverityTag map domain status -> token). Green = passed, red = failed, blue = running, yellow = flaky/warning, gray = not run. Violet = AI actions and primary buttons only, plus the keyboard focus ring, the active-tab indicator and the on/checked state of selection controls (Checkbox, Switch, radio), as in the mockups (5, 8).
 - Every primitive/pattern has all states designed: default, hover, focus-visible, disabled, loading, error, empty (where relevant).
 - Accessibility baseline: keyboard reachable, visible focus, labels on inputs, role/aria on custom widgets, contrast from tokens.
 - A story per component state (Storybook). Build the component in the story first, then use it in a screen.

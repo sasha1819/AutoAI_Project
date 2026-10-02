@@ -12,6 +12,11 @@ const EXT = /\.(tsx?|css|scss)$/;
 const rules = [
   { re: /#[0-9a-fA-F]{3,8}\b/, msg: "raw hex color" },
   { re: /\b(rgba?|hsla?|oklch|oklab)\(/, msg: "raw color function" },
+  // Tailwind finds classes by reading the source: "text-red${x}" is one unknown word, so the class is never built.
+  // Any template literal: class strings also live in constants (BOX, FIELD_LOOK). Checked line by line, so a glued
+  // name inside a template spanning several lines would slip through (none exist today). "item-${n}" (ends in "-") is not a
+  // class name and is allowed; "${a}${b}" is allowed.
+  { re: /`[^`]*[A-Za-z0-9\])]\$\{/, msg: "class name glued to an expression (Tailwind will not see it): add a space" },
   // Any arbitrary value (bg-[red], w-[3em], p-[3px]) except one of our token variables (w-[var(--tk-...)]).
   { re: /\b[a-z][a-z0-9-]*-\[(?!var\(--tk-)[^\]]*\]/, msg: "tailwind arbitrary value (add a token instead)" },
   // Arbitrary properties ([color:red]); a TypeScript index type ([key: string]) has a space and is not matched.

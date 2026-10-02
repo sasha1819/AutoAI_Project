@@ -3,6 +3,7 @@
 export {
   FIELD_HEIGHT,
   FIELD_LOOK,
+  FIELD_STATES,
   FieldFrame,
   type FieldSize,
   type FieldWiring,
