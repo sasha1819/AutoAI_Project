@@ -71,7 +71,7 @@ TestCase · Run (status) · Step · Diagnosis · Confidence · ReviewStatus (`co
 ## 7. UI and design system (design never lives inside logic or screens)
 Four tiers, each may only use the tier above it:
 1. `tokens/` — the ONLY place with raw colors, spacing, radii, font sizes, shadows (CSS variables + Tailwind theme). Dark theme first, theme-switchable.
-2. `primitives/` — Button, IconButton, Input, Select, Checkbox, Switch, Badge, Tabs, Tooltip, Popover, Modal, Card, ProgressBar, Table, Spinner, EmptyState, CodeBlock, Toast, Icon.
+2. `primitives/` — Button, IconButton, Input, Select, Checkbox, Switch, Badge, Tabs, Tooltip, Popover, Modal, Card, ProgressBar, Table, Spinner, EmptyState, CodeBlock, Toast, Icon. Internals shared by several primitives (the field look, the list look) live in `primitives/_name/` folders: not components, so no stories of their own, and screens may not import them (deps rule `features-use-public-primitives`).
 3. `patterns/` — reusable combinations built from primitives: StatusPill, SeverityTag, FindingCard, StepRow, RunLogLine, RequirementTag, AiActionButton, ConfidenceMeter, SidebarList.
 4. `features/<name>/` — screens. They compose patterns and primitives, hold view state only, call the outside world through one hook per feature (`useX`) that talks to the IPC contract.
 

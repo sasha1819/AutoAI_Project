@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import type { NonEmpty } from "../../accessibility/accessible-name.ts";
-import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "./field-frame.tsx";
+import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
 
 export type InputSize = FieldSize;
 export type InputType = "text" | "search" | "email" | "url" | "password";

@@ -26,6 +26,8 @@ const cases = [
   ["missing component file", { ...both, ...without(full("primitives", "Button"), "/Button.tsx") }, false],
   ["a loose component file", { ...both, "design-system/primitives/Button.tsx": "" }, false],
   ["a missing tier folder", { "design-system/primitives/.gitkeep": "" }, false],
+  ["an internals folder (_name) without stories", { ...both, "design-system/primitives/_field/field-frame.tsx": "" }, true],
+  ["a component folder still needs everything", { ...both, "design-system/primitives/Field/field-frame.tsx": "" }, false],
 ];
 
 const problems = [];

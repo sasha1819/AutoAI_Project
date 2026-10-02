@@ -56,6 +56,7 @@ const illegal = [
   ["ui-libraries-only-in-ui", { "adapters/fs/c35.ts": uses("lucide-react") }],
   ["features-use-the-design-system", { "ui/features/c36/x.ts": uses("@radix-ui/react-dialog") }],
   ["features-use-the-design-system", { "ui/features/c37/x.ts": uses("lucide-react") }],
+  ["features-use-public-primitives", { "ui/features/c38/x.ts": uses("../../design-system/primitives/_field/c38t.ts"), "ui/design-system/primitives/_field/c38t.ts": leaf }],
 ];
 
 const legal = {

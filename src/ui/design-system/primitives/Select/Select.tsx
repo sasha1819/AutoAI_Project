@@ -1,7 +1,7 @@
 import * as RadixSelect from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { isBlank, type NonEmpty } from "../../accessibility/accessible-name.ts";
-import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../Input/index.ts";
+import { FIELD_HEIGHT, FIELD_LOOK, FieldFrame, type FieldSize } from "../_field/index.ts";
 
 export type SelectOption = {
   /** What onValueChange receives. Non-empty and unique within the list. */

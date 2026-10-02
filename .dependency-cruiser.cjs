@@ -43,6 +43,8 @@ module.exports = {
       from: { path: '^src/', pathNot: '^src/ui/' }, to: { path: '^node_modules/(react|react-dom|@radix-ui|lucide-react|@fontsource)/' } },
     { name: 'features-use-the-design-system', comment: 'ADR 0006: screens use our primitives, never Radix or the icon package directly', severity: 'error',
       from: { path: '^src/ui/features/' }, to: { path: '^node_modules/(@radix-ui|lucide-react)/' } },
+    { name: 'features-use-public-primitives', comment: 'primitives/_x folders are internals shared by primitives; screens use the components', severity: 'error',
+      from: { path: '^src/ui/features/' }, to: { path: '^src/ui/design-system/primitives/_' } },
     { name: 'test-fakes-only-in-tests', comment: 'services/testing holds fake ports; only *.test.ts files (excluded from this cruise) may use them', severity: 'error',
       from: { path: '^src/', pathNot: '^src/services/testing/' }, to: { path: '^src/services/testing/' } },
     { name: 'ui-no-electron', comment: 'the renderer reaches the main process only through the preload bridge', severity: 'error',

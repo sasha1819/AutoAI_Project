@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Every design-system component is a folder with its component, its stories (one per state), its behaviour test
 // and an index (ARCHITECTURE §7, ADR 0006). Fails when any of the four is missing, or when a component file sits
-// loose outside a folder. Usage: node scripts/check-stories.mjs [ui-root]   (default: src/ui)
+// loose outside a folder. A folder starting with "_" holds internals shared by several components (the field look,
+// the list look) and is not a component itself. Usage: node scripts/check-stories.mjs [ui-root]   (default: src/ui)
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
@@ -19,7 +20,7 @@ for (const tier of TIERS) {
     continue;
   }
   for (const name of entries) {
-    if (name.startsWith(".")) continue;
+    if (name.startsWith(".") || name.startsWith("_")) continue;
     const path = join(tier, name);
     if (!statSync(path).isDirectory()) {
       problems.push(`${relative(process.cwd(), path)}: components live in their own folder (${name.replace(/\..*$/, "")}/)`);
