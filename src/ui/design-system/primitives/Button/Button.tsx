@@ -1,6 +1,6 @@
-import { LoaderCircle } from "lucide-react";
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "./button-look.ts";
+import { Spinner } from "../Spinner/index.ts";
 
 export type { ButtonVariant };
 
@@ -39,6 +39,9 @@ const WEIGHT: Record<ButtonVariant, string> = {
   ghost: "font-medium",
 };
 
+// The spinner takes the icon's place at the icon's size.
+const SPINNER_SIZE: Record<ButtonSize, "sm" | "md"> = { sm: "sm", md: "sm", lg: "md", xl: "md" };
+
 const SIZE: Record<ButtonSize, string> = {
   sm: "h-7 gap-1.5 px-2.5 text-sm [&_svg]:size-3.5",
   md: "h-7.5 gap-2 px-3 text-sm [&_svg]:size-3.5",
@@ -59,12 +62,8 @@ export function Button({
   children,
   ...rest
 }: ButtonProps) {
-  // TODO(M4): use the Spinner and Icon primitives once they exist (design review, Button).
-  const lead = loading ? (
-    <LoaderCircle className="animate-spin motion-reduce:animate-none" />
-  ) : (
-    icon
-  );
+  // TODO(M4): use the Icon primitive once it exists (design review, Button).
+  const lead = loading ? <Spinner decorative size={SPINNER_SIZE[size]} /> : icon;
   return (
     <button
       {...rest}

@@ -1,7 +1,7 @@
-import { LoaderCircle } from "lucide-react";
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 import { BUTTON_BASE, BUTTON_VARIANT, type ButtonVariant, pressHandler } from "../Button/index.ts";
+import { Spinner } from "../Spinner/index.ts";
 
 export type IconButtonSize = "sm" | "md";
 
@@ -56,7 +56,6 @@ export function IconButton<Label extends string>({
   ...rest
 }: IconButtonProps<Label>) {
   // TODO(M4): show the label in the Tooltip primitive once it exists, so mouse users can read it too.
-  // TODO(M4): use the Spinner primitive once it exists (same as Button).
   assertAccessibleName(label, "IconButton");
   return (
     <button
@@ -74,7 +73,7 @@ export function IconButton<Label extends string>({
       onClick={pressHandler(loading, onClick)}
     >
       <span aria-hidden="true" className="inline-flex">
-        {loading ? <LoaderCircle className="animate-spin motion-reduce:animate-none" /> : icon}
+        {loading ? <Spinner decorative size={size} /> : icon}
       </span>
     </button>
   );
