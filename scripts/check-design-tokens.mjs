@@ -42,6 +42,17 @@ let problems = 0;
 // (border-b-, from-, divide-, ring-offset-, accent-, …), the ! prefix, var(--tk-accent) and var(--color-accent).
 // text-on-accent is white, not violet, and is not matched.
 const VIOLET = /(?<!on)-(?:-tk-|-color-)?(?:accent(?:-[a-z]+)*|focus-ring|ai-[a-z]+(?:-[a-z]+)*)\b/;
+// ARCHITECTURE §7: status colours are mapped from domain values in ONE place. Only these files may name them.
+// A name built in a template (`bg-status-${tone}`) is caught too: Tailwind emits it from the full names elsewhere.
+const STATUS = /(?:^|[^\w-])[a-z!-]*-(?:-tk-|-color-)?status-(?:[a-z-]+\b|\$\{)/;
+const STATUS_FILES = new Set([
+  "design-system/primitives/_badge/tone-badge.tsx", // the tone looks, for StatusPill and SeverityTag
+]);
+// field-invalid is red (an alias of status-failed) and belongs to the form-field frame only.
+const FIELD_INVALID = /field-invalid\b/;
+const FIELD_INVALID_FILES = new Set(["design-system/primitives/_field/field-frame.tsx"]);
+// A file on a list may be tested by name: its own X.test.tsx beside it shares the allowance.
+const allowedIn = (files, file) => files.has(relative(ROOT, file).split(sep).join("/").replace(/\.test(\.tsx?)$/, "$1"));
 const VIOLET_FILES = new Set([
   "design-system/primitives/Button/button-look.ts", // 1. primary buttons
   "design-system/primitives/_field/field-frame.tsx", // 3. focus ring of every form control
@@ -83,7 +94,15 @@ for (const file of walk(ROOT)) {
         console.error(`${relative(process.cwd(), file)}:${i + 1}  unknown token ${m[1]} (not defined in tokens)`);
       }
     }
-    if (VIOLET.test(line) && !VIOLET_FILES.has(relative(ROOT, file).split(sep).join("/"))) {
+    if (STATUS.test(line) && !allowedIn(STATUS_FILES, file)) {
+      problems++;
+      console.error(`${relative(process.cwd(), file)}:${i + 1}  status colour outside StatusPill / SeverityTag (ARCHITECTURE §7)`);
+    }
+    if (FIELD_INVALID.test(line) && !allowedIn(FIELD_INVALID_FILES, file)) {
+      problems++;
+      console.error(`${relative(process.cwd(), file)}:${i + 1}  field-invalid outside the form-field frame (ARCHITECTURE §7)`);
+    }
+    if (VIOLET.test(line) && !allowedIn(VIOLET_FILES, file)) {
       problems++;
       console.error(`${relative(process.cwd(), file)}:${i + 1}  violet outside its closed list of uses (ARCHITECTURE §7)`);
     }
