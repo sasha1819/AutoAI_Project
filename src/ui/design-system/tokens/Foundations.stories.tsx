@@ -133,6 +133,7 @@ const TYPE: readonly { readonly className: string; readonly label: string }[] = 
   { className: "text-display font-bold", label: "display 40 · product name" },
   { className: "text-2xl font-bold", label: "2xl 28 · stat numbers" },
   { className: "text-xl font-bold", label: "xl 22 · page title" },
+  { className: "text-heading font-bold", label: "heading 18 · empty-state / dialog title" },
   { className: "text-lg font-semibold", label: "lg 15 · section title" },
   { className: "text-md", label: "md 13 · body" },
   { className: "text-sm font-medium", label: "sm 12 · buttons, meta" },
@@ -163,6 +164,7 @@ export const Radii: StoryObj = {
         { className: "rounded-tag", label: "tag 5" },
         { className: "rounded-control", label: "control 6" },
         { className: "rounded-card", label: "card 8" },
+        { className: "rounded-tile", label: "tile 16" },
         { className: "rounded-full", label: "full" },
       ].map((r) => (
         <div key={r.label} className="flex flex-col items-center gap-2">

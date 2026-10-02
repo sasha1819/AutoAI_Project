@@ -140,6 +140,10 @@
   --text-md--line-height: 20px;
   --text-lg: 15px; /* 13 readiness: section titles */
   --text-lg--line-height: 22px;
+  /* 9 empty state: "No test cases yet" (cap height 13). For a heading that leads an area without being the page
+     title (xl): empty states, later dialog titles. Not a general body size. */
+  --text-heading: 18px;
+  --text-heading--line-height: 24px;
   --text-xl: 22px; /* 11 findings: page title */
   --text-xl--line-height: 28px;
   --text-2xl: 28px; /* 13 readiness: stat numbers */
@@ -150,6 +154,7 @@
   --radius-control: 6px; /* 11 findings: buttons, inputs */
   --radius-card: 8px; /* 11 findings: finding card */
   --radius-tag: 5px; /* 11 findings: severity tag */
+  --radius-tile: 16px; /* 9 empty state: the 64px icon tile */
   --radius-full: 9999px; /* 1 welcome: platform chips */
 }
 
