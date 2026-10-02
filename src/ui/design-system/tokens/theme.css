@@ -263,6 +263,11 @@
   opacity: var(--tk-opacity-disabled);
 }
 
+/* Code is shown as typed: JetBrains Mono would draw "=>" as an arrow and "!=" as a symbol (CodeBlock). */
+@utility ligatures-none {
+  font-variant-ligatures: none;
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);
