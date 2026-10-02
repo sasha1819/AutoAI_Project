@@ -48,6 +48,7 @@ const TEXT = [
   "text-secondary",
   "text-muted",
   "text-link",
+  "code-ref",
   "ai-text",
   "status-passed",
   "status-failed",
@@ -71,6 +72,7 @@ const GRAPHIC_PAIRS = [
   ["progress-active", "progress-track"],
   ["progress-passed", "progress-track"],
   ["progress-failed", "progress-track"],
+  ["meter-fill", "meter-track"],
 ] as const;
 // Tokens whose value is not a single hex colour (rgb with alpha, shadows, numbers).
 const NOT_HEX = new Set(["opacity-disabled", "scrim", "shadow-overlay"]);
@@ -130,6 +132,10 @@ describe("design tokens", () => {
     it("status dots, field edges and the focus ring are visible (3:1, WCAG non-text contrast)", () => {
       for (const graphic of [
         "status-neutral",
+        "status-passed",
+        "status-failed",
+        "status-warning",
+        "status-running",
         "focus-ring",
         "border-field",
         "border-field-hover",

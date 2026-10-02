@@ -47,6 +47,7 @@ const VIOLET = /(?<!on)-(?:-tk-|-color-)?(?:accent(?:-[a-z]+)*|focus-ring|ai-[a-
 const STATUS = /(?:^|[^\w-])[a-z!-]*-(?:-tk-|-color-)?status-(?:[a-z-]+\b|\$\{)/;
 const STATUS_FILES = new Set([
   "design-system/primitives/_badge/tone-badge.tsx", // the tone looks, for StatusPill and SeverityTag
+  "design-system/primitives/_badge/tone-glyph.tsx", // the same tones as a glyph or a dot, for StatusPill
 ]);
 // Tokens owned by one component (ARCHITECTURE §7): field-invalid is red (an alias of status-failed) for the
 // form-field frame; progress-* (passed green, failed red) for ProgressBar; toast-error-icon (red) for the Toast card.
@@ -55,6 +56,7 @@ const OWNED = [
   // A template-built name (`text-field-${x}`) is caught too, as for status colours.
   { re: /field-(?:invalid\b|\$\{)/, files: new Set(["design-system/primitives/_field/field-frame.tsx"]), owner: "the form-field frame" },
   { re: /progress-(?:track\b|active\b|passed\b|failed\b|\$\{)/, files: new Set(["design-system/primitives/ProgressBar/ProgressBar.tsx"]), owner: "ProgressBar" },
+  { re: /meter-(?:track\b|fill\b|\$\{)/, files: new Set(["design-system/patterns/ConfidenceMeter/ConfidenceMeter.tsx"]), owner: "ConfidenceMeter" },
   { re: /toast-(?:error-(?:icon\b|\$\{)|\$\{)/, files: new Set(["design-system/primitives/Toast/Toast.tsx"]), owner: "the Toast card" },
 ];
 // A file on a list may be tested by name: its own X.test.tsx beside it shares the allowance.
@@ -70,6 +72,7 @@ const VIOLET_FILES = new Set([
   "design-system/primitives/CodeBlock/CodeBlock.tsx", // 3. focus ring on the scrollable code
   "design-system/primitives/Modal/Modal.tsx", // 3. focus ring on the dialog when it takes focus itself
   "design-system/patterns/AiChip/AiChip.tsx", // 2. the AI chip and the AI mark before an AI panel's title
+  "design-system/patterns/SidebarList/SidebarList.tsx", // 3. focus ring on a row (inset, as the Select list)
 ]);
 
 // The token variables that exist: a var(--tk-...) anywhere else must name one of them.

@@ -66,6 +66,8 @@ const cases = [
   ["toast token built in a template", feature('`text-toast-${part}`'), false],
   ["a focus ring cancelled by outline-none", primitive('"outline-none focus-visible:outline-2 focus-visible:outline-focus-ring"'), false],
   ["outline-none on a panel with no focus ring", primitive('"outline-none rounded-card"'), true],
+  ["meter fill in ConfidenceMeter", { "design-system/patterns/ConfidenceMeter/ConfidenceMeter.tsx": 'const x = "bg-meter-fill";\n' }, true],
+  ["meter fill borrowed by a screen", feature('"bg-meter-fill"'), false],
   ["toast token built partway in a template", feature('`text-toast-error-${k}`'), false],
   ["field-invalid built in a template", feature('`text-field-${state}`'), false],
   ["a status colour chosen by a screen", feature('"text-status-failed"'), false],

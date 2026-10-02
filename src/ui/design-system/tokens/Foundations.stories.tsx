@@ -26,7 +26,8 @@ const GROUPS: readonly { readonly title: string; readonly swatches: readonly Swa
       { name: "text-primary", className: "bg-text-primary", use: "titles, body" },
       { name: "text-secondary", className: "bg-text-secondary", use: "subtitles, labels" },
       { name: "text-muted", className: "bg-text-muted", use: "meta text (lightened for 4.5:1)" },
-      { name: "text-link", className: "bg-text-link", use: "file paths, links" },
+      { name: "text-link", className: "bg-text-link", use: "links" },
+      { name: "code-ref", className: "bg-code-ref", use: "a file path shown as text, not a link" },
       {
         name: "text-on-accent",
         className: "bg-text-on-accent",

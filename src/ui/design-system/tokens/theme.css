@@ -61,6 +61,9 @@
   --tk-progress-active: var(--tk-text-secondary);
   --tk-progress-passed: var(--tk-status-passed);
   --tk-progress-failed: var(--tk-status-failed);
+  /* ConfidenceMeter only (tokens:check): how sure the AI is, never a status colour or violet (§7). */
+  --tk-meter-track: var(--tk-progress-track);
+  --tk-meter-fill: var(--tk-text-secondary);
   /* Toast only (tokens:check): the icon of an error toast; the card stays neutral, the word "Error" says it too. */
   --tk-toast-error-icon: var(--tk-status-failed);
 
@@ -73,6 +76,8 @@
   --tk-text-muted: #81889b;
   --tk-text-on-accent: #ffffff; /* 11 findings: primary button label */
   --tk-text-link: #7dbbff; /* 11 findings: code file path */
+  /* A code location shown as text, not a link (11: the evidence file under a finding); same blue as the mockup. */
+  --tk-code-ref: var(--tk-text-link);
 
   /* Violet: only the five uses in ARCHITECTURE §7 (primary buttons, AI controls and the AI chip/panel, the focus
      indicator, the active-tab underline, checked/on Checkbox/Switch/radio); a closed list, enforced by tokens:check */
@@ -179,12 +184,15 @@
   --color-progress-passed: var(--tk-progress-passed);
   --color-progress-failed: var(--tk-progress-failed);
   --color-toast-error-icon: var(--tk-toast-error-icon);
+  --color-meter-track: var(--tk-meter-track);
+  --color-meter-fill: var(--tk-meter-fill);
 
   --color-text-primary: var(--tk-text-primary);
   --color-text-secondary: var(--tk-text-secondary);
   --color-text-muted: var(--tk-text-muted);
   --color-text-on-accent: var(--tk-text-on-accent);
   --color-text-link: var(--tk-text-link);
+  --color-code-ref: var(--tk-code-ref);
 
   --color-accent: var(--tk-accent);
   --color-accent-hover: var(--tk-accent-hover);
