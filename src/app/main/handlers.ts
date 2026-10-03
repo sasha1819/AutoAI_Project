@@ -9,7 +9,12 @@ import type { DomainError } from "../../core/domain/domain-error.ts";
 import type { Result } from "../../core/domain/result.ts";
 import type { ExternalLink } from "../../contracts/links.ts";
 import type { aiKeyStatus, checkAiKey, saveAiKey } from "../../services/connect-ai.ts";
-import type { ScanInput, createScanRunner } from "../../services/scan-with-stored-key.ts";
+import type { ExtractRequirementsError } from "../../services/extract-requirements.ts";
+import type { ScanResult } from "../../services/scan-project.ts";
+import type { ScanInput, ScanWithStoredKeyError } from "../../services/scan-with-stored-key.ts";
+import type { PrdSummary } from "../../services/summarize-prds.ts";
+
+type NotPicked = DomainError<"FOLDER_NOT_PICKED">;
 
 /** What the handlers need: one call per channel, built in compose.ts from the services (same result types). */
 export type AppServices = {
@@ -24,7 +29,14 @@ export type AppServices = {
   readonly openLink: (
     url: ExternalLink,
   ) => Promise<Result<undefined, DomainError<"LINK_NOT_OPENED">>>;
-  readonly scan: (input: ScanInput) => ReturnType<ReturnType<typeof createScanRunner>["scan"]>;
+  /** Only folders picked in the dialog (FOLDER_NOT_PICKED otherwise). */
+  readonly readPrds: (
+    prdFolder: string,
+  ) => Promise<Result<PrdSummary, ExtractRequirementsError | NotPicked>>;
+  /** Only folders picked in the dialog (FOLDER_NOT_PICKED otherwise). */
+  readonly scan: (
+    input: ScanInput,
+  ) => Promise<Result<ScanResult, ScanWithStoredKeyError | NotPicked>>;
 };
 
 export type Push = <E extends EventChannel>(channel: E, event: ChannelEvent<E>) => void;
@@ -57,6 +69,10 @@ export function createHandlers(services: AppServices): Handlers {
     "project:pick-folder": async (raw) => {
       const { purpose } = invokeChannels["project:pick-folder"].request.parse(raw);
       return { path: await services.pickFolder(purpose) };
+    },
+    "project:read-prds": async (raw) => {
+      const { prdFolder } = invokeChannels["project:read-prds"].request.parse(raw);
+      return services.readPrds(prdFolder);
     },
     "app:info": (raw) => {
       invokeChannels["app:info"].request.parse(raw);

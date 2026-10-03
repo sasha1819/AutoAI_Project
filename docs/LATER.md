@@ -15,6 +15,7 @@
 - [ ] Private/self-hosted models, pluggable AI providers
 - [ ] Team features
 - [ ] Claude subscription login (needs Anthropic approval): Anthropic's Agent SDK docs say third-party developers may not offer claude.ai login or subscription rate limits unless previously approved. MVP is bring-your-own API key only (decided 2026-10-03).
+- [ ] Drag PRD files or a folder into Add project (mockup 3's drop card; Electron `webUtils.getPathForFile`, and the dropped path must count as picked); MVP picks folders with the system dialog only (decided 2026-10-03)
 - [ ] Bedrock / Vertex / Foundry providers via the AiProvider port (new adapters behind the same port; decided 2026-10-03)
 - [ ] AutoAI-managed credits (decided 2026-10-03)
 - [ ] PRD parser: smarter handling of unstructured prose PRDs (likely a future AI-assisted extraction step, not mechanical paragraph splitting). CONFIRMED, not hypothetical (2026-09-28): `docs/PRD.md` itself, a real doc-editor export with numbered lines and no `#` headings or "Area 1.2" tags, yields 0 requirements with the current parser. The fixtures include one requirement in that style so the accuracy test counts the gap.

@@ -22,6 +22,8 @@ const services = (over: Partial<AppServices> = {}): AppServices => ({
   pickFolder: () => Promise.resolve("/chosen"),
   openLink: () => Promise.resolve(ok(undefined)),
   mockAi: false,
+  readPrds: () =>
+    Promise.resolve(ok({ files: [{ file: "a.md", requirements: 0 }], requirements: 0 })),
   scan: () => Promise.resolve(ok(emptyScan)),
   ...over,
 });
@@ -69,6 +71,27 @@ describe("IPC handlers", () => {
         "project:pick-folder"
       ]({ purpose: "prds" }, noPush),
     ).toStrictEqual({ path: null });
+  });
+
+  it("project:read-prds passes the folder to the service and its answer back", async () => {
+    const seen: string[] = [];
+    const readPrds: AppServices["readPrds"] = (folder) => {
+      seen.push(folder);
+      return Promise.resolve(ok({ files: [], requirements: 0 }));
+    };
+    expect(
+      await createHandlers(services({ readPrds }))["project:read-prds"](
+        { prdFolder: "/p" },
+        noPush,
+      ),
+    ).toStrictEqual(ok({ files: [], requirements: 0 }));
+    expect(seen).toStrictEqual(["/p"]);
+    const refused = err({ code: "FOLDER_NOT_PICKED", message: "pick it" } as const);
+    expect(
+      await createHandlers(services({ readPrds: () => Promise.resolve(refused) }))[
+        "project:read-prds"
+      ]({ prdFolder: "/etc" }, noPush),
+    ).toStrictEqual(refused);
   });
 
   it("scan:run streams progress on scan:progress and answers the report", async () => {
@@ -160,6 +183,7 @@ describe("IPC handlers", () => {
     ["ai:status", { extra: true }],
     ["project:pick-folder", { purpose: "home" }],
     ["scan:run", { repoRoot: "" }],
+    ["project:read-prds", { prdFolder: "" }],
   ] as const)(
     "a request that breaks the %s contract throws (a bug in the screen)",
     async (channel, request) => {

@@ -1,4 +1,5 @@
 import { isHiddenPath } from "./hidden-path.ts";
+import { isVendoredPath } from "./vendored-path.ts";
 
 const SOURCE_EXTENSION = /\.(tsx?|jsx?|mjs|cjs|vue|svelte|html)$/i;
 const NOT_SOURCE_SUFFIX = /\.(d\.ts|min\.js|(test|spec)\.[cm]?[jt]sx?)$/i;
@@ -7,18 +8,7 @@ const NOT_SOURCE_SUFFIX = /\.(d\.ts|min\.js|(test|spec)\.[cm]?[jt]sx?)$/i;
 const TOOL_CONFIG =
   /(^|\/)((playwright|vitest|jest|cypress|eslint|prettier|stylelint|commitlint)\.config|karma\.conf)\.[cm]?[jt]s$/i;
 // Tests are skipped too: otherwise AutoAI's own generated specs (tests/autoai) would feed back into matching.
-const SKIPPED_FOLDERS = new Set([
-  "node_modules",
-  "dist",
-  "build",
-  "out",
-  "coverage",
-  "vendor",
-  "test",
-  "tests",
-  "__tests__",
-  "e2e",
-]);
+const TEST_FOLDERS = new Set(["test", "tests", "__tests__", "e2e"]);
 
 /** True when a repo-relative path is application code worth reading to judge a requirement. */
 export function isSourceFile(path: string): boolean {
@@ -26,8 +16,9 @@ export function isSourceFile(path: string): boolean {
     !SOURCE_EXTENSION.test(path) ||
     NOT_SOURCE_SUFFIX.test(path) ||
     TOOL_CONFIG.test(path) ||
-    isHiddenPath(path)
+    isHiddenPath(path) ||
+    isVendoredPath(path)
   )
     return false;
-  return !path.split("/").some((segment) => SKIPPED_FOLDERS.has(segment));
+  return !path.split("/").some((segment) => TEST_FOLDERS.has(segment));
 }

@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { aiCheckKey, aiSaveKey, aiStatus } from "./ai.ts";
 import { appInfo } from "./app.ts";
 import { linkOpen } from "./links.ts";
-import { projectPickFolder } from "./project.ts";
+import { projectPickFolder, projectReadPrds } from "./project.ts";
 import { ScanProgressEvent, scanRun } from "./scan.ts";
 
 /** Every request/reply channel between the screens and main (ADR 0007). Main validates requests, the preload replies. */
@@ -11,6 +11,7 @@ export const invokeChannels = {
   "ai:save-key": aiSaveKey,
   "ai:check-key": aiCheckKey,
   "project:pick-folder": projectPickFolder,
+  "project:read-prds": projectReadPrds,
   "scan:run": scanRun,
   "link:open": linkOpen,
   "app:info": appInfo,
@@ -27,6 +28,14 @@ export type ChannelResponse<C extends InvokeChannel> = z.infer<
   (typeof invokeChannels)[C]["response"]
 >;
 
+/** The error codes a channel's reply can carry (its closed list). */
+export type ChannelFailureCode<C extends InvokeChannel> =
+  ChannelResponse<C> extends infer R
+    ? R extends { readonly ok: false; readonly error: { readonly code: infer K } }
+      ? K
+      : never
+    : never;
+
 /** Every channel main pushes on. */
 export const eventChannels = { "scan:progress": ScanProgressEvent } as const;
 export type EventChannel = keyof typeof eventChannels;
@@ -40,6 +49,7 @@ export const parseResponse: {
   "ai:save-key": (v) => invokeChannels["ai:save-key"].response.parse(v),
   "ai:check-key": (v) => invokeChannels["ai:check-key"].response.parse(v),
   "project:pick-folder": (v) => invokeChannels["project:pick-folder"].response.parse(v),
+  "project:read-prds": (v) => invokeChannels["project:read-prds"].response.parse(v),
   "scan:run": (v) => invokeChannels["scan:run"].response.parse(v),
   "link:open": (v) => invokeChannels["link:open"].response.parse(v),
   "app:info": (v) => invokeChannels["app:info"].response.parse(v),

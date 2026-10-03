@@ -34,6 +34,8 @@ describe("IPC contracts", () => {
     ["ai:save-key", { key: "k".repeat(5000) }],
     ["ai:save-key", { key: "x", extra: true }],
     ["project:pick-folder", { purpose: "anything" }],
+    ["project:read-prds", { prdFolder: "" }],
+    ["project:read-prds", { prdFolder: "/p", extra: true }],
     ["scan:run", { repoRoot: "", prdFolder: "prds" }],
   ] as const)("refuses a bad %s request", (channel, request) => {
     expect(invokeChannels[channel].request.safeParse(request).success).toBe(false);

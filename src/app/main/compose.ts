@@ -9,7 +9,9 @@ import { createMemorySecretStore } from "../../adapters/mock/memory-secret-store
 import { createMockAiProvider } from "../../adapters/mock/mock-ai-provider.ts";
 import { aiKeyStatus, checkAiKey, saveAiKey } from "../../services/connect-ai.ts";
 import { createScanRunner } from "../../services/scan-with-stored-key.ts";
+import { summarizePrds } from "../../services/summarize-prds.ts";
 import type { AppServices } from "./handlers.ts";
+import { createPickedFolders, NOT_PICKED } from "./picked-folders.ts";
 
 /**
  * The app's composition root (like src/cli/compose.ts): the only place it creates adapters and hands them to
@@ -45,12 +47,20 @@ export function composeApp(env: {
           ...(env.fetch === undefined ? {} : { fetch: env.fetch, maxRetries: 0 }),
         });
   const scanRunner = createScanRunner({ secretStore, repoReader, aiProviderFor });
+  // Main reads only the folders the user picked in the dialog (ADR 0007), whatever path a screen sends.
+  const picked = createPickedFolders();
   return {
     aiStatus: () => aiKeyStatus({ secretStore }),
     saveAiKey: (key) => saveAiKey({ secretStore, aiProviderFor }, { key }),
     checkAiKey: () => checkAiKey({ secretStore, aiProviderFor }),
     mockAi,
-    pickFolder: env.pickFolder,
+    pickFolder: async (purpose) => {
+      const path = await env.pickFolder(purpose);
+      if (path !== null) picked.remember(purpose, path);
+      return path;
+    },
+    readPrds: async (prdFolder) =>
+      picked.allows("prds", prdFolder) ? summarizePrds({ repoReader }, { prdFolder }) : NOT_PICKED,
     openLink: async (url) => {
       try {
         await env.openExternal(url);
@@ -62,6 +72,6 @@ export function composeApp(env: {
         };
       }
     },
-    scan: (input) => scanRunner.scan(input),
+    scan: async (input) => (picked.allowsScan(input) ? scanRunner.scan(input) : NOT_PICKED),
   };
 }

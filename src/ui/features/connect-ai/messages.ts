@@ -1,10 +1,7 @@
-import type { ChannelResponse } from "../../../contracts/channels.ts";
+import type { ChannelFailureCode } from "../../../contracts/channels.ts";
 
-type FailureCode<R> = R extends { readonly ok: false; readonly error: { readonly code: infer C } }
-  ? C
-  : never;
-export type SaveKeyCode = FailureCode<ChannelResponse<"ai:save-key">>;
-export type StatusCode = FailureCode<ChannelResponse<"ai:status">>;
+export type SaveKeyCode = ChannelFailureCode<"ai:save-key">;
+export type StatusCode = ChannelFailureCode<"ai:status">;
 
 /**
  * What each failure means to the user, in words, with what to do next. One entry per code in the contract: a new

@@ -2,7 +2,13 @@ import { z } from "zod";
 import { Finding } from "../core/domain/finding.ts";
 import { Requirement } from "../core/domain/requirement.ts";
 import { ScanProgress } from "../core/domain/scan-progress.ts";
-import { AI_CODES, REPO_READ_CODES, SCAN_WARNING_CODES, SECRET_STORE_CODES } from "./codes.ts";
+import {
+  AI_CODES,
+  FOLDER_CODES,
+  REPO_READ_CODES,
+  SCAN_WARNING_CODES,
+  SECRET_STORE_CODES,
+} from "./codes.ts";
 import { resultSchema } from "./result.ts";
 
 // Scan: one call that answers when the scan is done, with progress pushed on scan:progress meanwhile.
@@ -28,11 +34,15 @@ export const ScanReport = z.strictObject({
 export type ScanReport = z.infer<typeof ScanReport>;
 
 export const scanRun = {
-  /** prdFolder null: the project has no PRDs (PRD Flow 1 edge case); the scan then has nothing to compare. */
+  /**
+   * Folders the user picked (anything else is FOLDER_NOT_PICKED). prdFolder null: the project has no PRDs (PRD
+   * Flow 1 edge case); the scan then has nothing to compare.
+   */
   request: z.strictObject({ repoRoot: z.string().min(1), prdFolder: z.string().min(1).nullable() }),
   response: resultSchema(ScanReport, [
     "NO_KEY",
     "SCAN_BUSY",
+    ...FOLDER_CODES,
     ...REPO_READ_CODES,
     ...SECRET_STORE_CODES,
   ]),

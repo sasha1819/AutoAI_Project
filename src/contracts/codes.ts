@@ -28,3 +28,9 @@ export const SCAN_WARNING_CODES = [
   "NO_PRD_FILES",
   "BATCH_NOT_SCANNED",
 ] as const;
+
+/** Main reads only folders the user chose in the system dialog (ADR 0007); any other path is refused. */
+export const FOLDER_CODES = ["FOLDER_NOT_PICKED"] as const;
+
+/** Reading a PRD folder (mirrors ExtractRequirementsError): no PRD files in it, or a read failure. */
+export const PRD_READ_CODES = ["NO_PRD_FILES", ...REPO_READ_CODES] as const;

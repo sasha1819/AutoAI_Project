@@ -16,6 +16,8 @@ describe("isPrdFile", () => {
     [".hidden.md", false],
     [".git/COMMIT.md", false],
     ["drafts/.old/cart.md", false],
+    ["node_modules/react/README.md", false],
+    ["web/dist/CHANGELOG.md", false],
   ])("%s -> %s", (path, expected) => {
     expect(isPrdFile(path)).toBe(expected);
   });

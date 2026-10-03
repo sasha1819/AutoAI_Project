@@ -114,3 +114,10 @@ progress. ADR 0006 deferred Electron to its own ADR; this is it.
   never touched) behind the same ports; nothing else may import them (deps rule
   `mock-adapters-only-in-composition`). The window title and a "MOCK AI" badge show it. Fake keys in code are
   assembled at runtime.
+- Picked folders only (2026-10-03, Add project): main reads only folders the user chose in the system dialog this
+  session, for the purpose they were chosen for (`app/main/picked-folders.ts`, wired in compose); `scan:run` and
+  `project:read-prds` refuse any other path with `FOLDER_NOT_PICKED` before reading anything. Before, `scan:run`
+  accepted any path a screen sent.
+- `project:read-prds` (2026-10-03): parses a picked PRD folder with no AI (`services/summarize-prds.ts`) and answers
+  per-file requirement counts, so Add project can say "no PRD files" or "0 requirements" (plain-prose PRDs) before a
+  paid scan. PRD files are never read from dependency or build folders (`core/rules/vendored-path.ts`).

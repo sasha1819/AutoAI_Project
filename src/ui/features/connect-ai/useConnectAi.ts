@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ANTHROPIC_CONSOLE } from "../../../contracts/links.ts";
-import { bridge } from "../../app/bridge.ts";
+import { BROKEN_MESSAGE, bridge } from "../../app/bridge.ts";
 import { SAVE_KEY_MESSAGE, STATUS_MESSAGE } from "./messages.ts";
 
 /** Whether Claude is connected: still asking, no usable key yet, or connected (a key that worked when saved). */
@@ -24,10 +24,6 @@ export type ConnectAi = {
   readonly openConsole: () => void;
 };
 
-// A reply that breaks its contract, or no preload: a bug, not an expected failure. The screen must not hang on it,
-// so it says so plainly; the error itself is still reported (console), not swallowed.
-const BROKEN = "Something went wrong inside AutoAI. Restart it and try again.";
-
 /** The Connect AI screen's one hook: the only code here that talks to main. */
 export function useConnectAi(): ConnectAi {
   const [connection, setConnection] = useState<Connection>("loading");
@@ -50,7 +46,7 @@ export function useConnectAi(): ConnectAi {
         // No preload, or a reply that broke its contract (a bug): reported, and the screen still moves on.
         console.error(e);
         if (!live) return;
-        setNotice(BROKEN);
+        setNotice(BROKEN_MESSAGE);
         setConnection("missing");
       }
     };
@@ -79,7 +75,7 @@ export function useConnectAi(): ConnectAi {
       return false;
     } catch (e) {
       console.error(e);
-      setError(BROKEN);
+      setError(BROKEN_MESSAGE);
       return false;
     } finally {
       setSaving(false);
@@ -98,7 +94,7 @@ export function useConnectAi(): ConnectAi {
           setNotice("Couldn't open your browser. Go to console.anthropic.com to create a key.");
       } catch (e) {
         console.error(e);
-        setNotice(BROKEN);
+        setNotice(BROKEN_MESSAGE);
       }
     };
     void open();

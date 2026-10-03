@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -115,5 +115,49 @@ describe("composeApp wires the real services and adapters to the handlers", () =
     expect(await h["ai:status"]({}, push)).toStrictEqual({ ok: true, value: { configured: true } });
     expect(await h["app:info"]({}, push)).toStrictEqual({ mockAi: true });
     expect(keychain.used).toBe(0);
+  });
+
+  it("main reads only folders picked in the dialog: anything else is FOLDER_NOT_PICKED, before any read", async () => {
+    const root = mkdtempSync(join(tmpdir(), "autoai-picked-"));
+    const prds = join(root, "docs");
+    mkdirSync(prds);
+    writeFileSync(join(prds, "cart.md"), "Cart 2.4: Codes are case-insensitive.");
+    writeFileSync(join(prds, "vision.md"), "We want a fast checkout.");
+    const answers: (string | null)[] = [root, prds];
+    const h = createHandlers(
+      composeApp({
+        userDataDir: mkdtempSync(join(tmpdir(), "autoai-compose-")),
+        safeStorage,
+        pickFolder: () => Promise.resolve(answers.shift() ?? null),
+        openExternal: () => Promise.resolve(),
+        mockAi: false,
+        fetch: () => Promise.reject(new Error("no network in this test")),
+      }),
+    );
+    const refusedRead = await h["project:read-prds"]({ prdFolder: prds }, push);
+    expect(refusedRead.ok ? null : refusedRead.error.code).toBe("FOLDER_NOT_PICKED");
+    const refusedScan = await h["scan:run"]({ repoRoot: root, prdFolder: null }, push);
+    expect(refusedScan.ok ? null : refusedScan.error.code).toBe("FOLDER_NOT_PICKED");
+
+    await h["project:pick-folder"]({ purpose: "repo" }, push);
+    await h["project:pick-folder"]({ purpose: "prds" }, push);
+    expect(await h["project:read-prds"]({ prdFolder: prds }, push)).toStrictEqual({
+      ok: true,
+      value: {
+        files: [
+          { file: "cart.md", requirements: 1 },
+          { file: "vision.md", requirements: 0 },
+        ],
+        requirements: 1,
+      },
+    });
+    // The repo picked as a PRD folder, or a PRD folder sent as the repo: still refused.
+    const swapped = await h["project:read-prds"]({ prdFolder: root }, push);
+    expect(swapped.ok ? null : swapped.error.code).toBe("FOLDER_NOT_PICKED");
+    const outside = await h["scan:run"]({ repoRoot: root, prdFolder: tmpdir() }, push);
+    expect(outside.ok ? null : outside.error.code).toBe("FOLDER_NOT_PICKED");
+    // A picked pair reaches the scan service (no key saved here, so it stops at NO_KEY, before any AI call).
+    const scanned = await h["scan:run"]({ repoRoot: root, prdFolder: prds }, push);
+    expect(scanned.ok ? null : scanned.error.code).toBe("NO_KEY");
   });
 });

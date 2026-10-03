@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "../design-system/primitives/Badge/index.ts";
 import { EmptyState } from "../design-system/primitives/EmptyState/index.ts";
 import { ToastProvider } from "../design-system/primitives/Toast/index.ts";
+import { AddProject } from "../features/add-project/index.ts";
 import { ConnectAi } from "../features/connect-ai/index.ts";
 import { WelcomeView } from "../features/welcome/index.ts";
 import { useAppInfo } from "./useAppInfo.ts";
 
 /** The onboarding steps of PRD Flow 1, in order. Screens are added here one at a time (M5). */
-type Screen = "welcome" | "connect-ai" | "add-project";
+type Screen = "welcome" | "connect-ai" | "add-project" | "scan";
 
 /**
  * The app's root: providers shared by every screen, and which screen shows. When the screen changes, focus moves
@@ -62,10 +63,18 @@ export function App() {
           />
         )}
         {screen === "add-project" && (
-          // Temporary: replaced by the Add project screen (the next M5 step).
+          <AddProject
+            onScan={() => {
+              setScreen("scan");
+            }}
+          />
+        )}
+        {screen === "scan" && (
+          // Temporary: replaced by the scan progress screen (the next M5 step), which will keep the Project that
+          // onScan receives (dropped here). Nothing is scanned yet.
           <div className="flex h-full items-center justify-center">
             <EmptyState
-              title="Add your project"
+              title="Next: scan progress"
               description="This screen is the next one to be built."
             />
           </div>
