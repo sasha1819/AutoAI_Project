@@ -33,6 +33,7 @@ describe("ConnectAiView", () => {
     onCancelReplace: vi.fn(),
     onContinue: vi.fn(),
     onOpenConsole: vi.fn(),
+    onSetUpLater: vi.fn(),
   };
 
   it("no key yet: an empty password field, and Check and save waits for text", () => {
@@ -54,6 +55,19 @@ describe("ConnectAiView", () => {
     expect(keyField().getAttribute("aria-describedby")).toContain(
       screen.getByText("Anthropic didn't accept this key.").id,
     );
+  });
+
+  it("no key yet: Set up later goes on without one; it is not offered while replacing a key", async () => {
+    const onSetUpLater = vi.fn();
+    const { rerender } = render(<ConnectAiView {...base} onSetUpLater={onSetUpLater} />);
+    await userEvent.click(screen.getByRole("button", { name: "Set up later" }));
+    expect(onSetUpLater).toHaveBeenCalledOnce();
+    rerender(<ConnectAiView {...base} keyText="sk-typed" saving />);
+    expect(screen.getByRole("button", { name: "Set up later" }).hasAttribute("disabled")).toBe(
+      true,
+    );
+    rerender(<ConnectAiView {...base} connection="connected" replacing />);
+    expect(screen.queryByRole("button", { name: "Set up later" })).toBeNull();
   });
 
   it("connected: no key field at all, Continue, and a way to replace the key", () => {
@@ -85,7 +99,7 @@ describe("ConnectAi with the bridge", () => {
     const user = userEvent.setup();
     const fake = installFakeBridge({ "ai:status": status(false), "ai:save-key": saved });
     const onContinue = vi.fn();
-    render(<ConnectAi onContinue={onContinue} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={onContinue} />);
     await user.type(await screen.findByLabelText("Anthropic API key"), "sk-ant-good");
     await user.click(screen.getByRole("button", { name: "Check and save" }));
     await waitFor(() => {
@@ -102,7 +116,7 @@ describe("ConnectAi with the bridge", () => {
   it("a rejected key: a clear inline error, focus back on the field, and no retry", async () => {
     const user = userEvent.setup();
     const fake = installFakeBridge({ "ai:status": status(false), "ai:save-key": rejected });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.type(await screen.findByLabelText("Anthropic API key"), "sk-ant-wrong{Enter}");
     expect(await screen.findByText(SAVE_KEY_MESSAGE.AI_AUTH_FAILED)).toBeTruthy();
     expect(document.activeElement).toBe(keyField());
@@ -116,7 +130,7 @@ describe("ConnectAi with the bridge", () => {
 
   it("a saved key is never asked for or shown: only ai:status is called, and there is no key field", async () => {
     const fake = installFakeBridge({ "ai:status": status(true) });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     expect(await screen.findByRole("button", { name: "Continue" })).toBeTruthy();
     expect(screen.queryByLabelText("Anthropic API key")).toBeNull();
     expect(fake.calls.map((c) => c.channel)).toStrictEqual(["ai:status"]);
@@ -125,7 +139,7 @@ describe("ConnectAi with the bridge", () => {
   it("replacing a key starts from an empty field, and Cancel goes back without saving", async () => {
     const user = userEvent.setup();
     const fake = installFakeBridge({ "ai:status": status(true) });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.click(await screen.findByRole("button", { name: "Replace key" }));
     expect(keyField().value).toBe("");
     // The button that was used is gone: focus moves into the field; the old key is still the connected one.
@@ -142,7 +156,7 @@ describe("ConnectAi with the bridge", () => {
   it("a rejected key, then Cancel and Replace again: an empty field with no old error", async () => {
     const user = userEvent.setup();
     installFakeBridge({ "ai:status": status(true), "ai:save-key": rejected });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.click(await screen.findByRole("button", { name: "Replace key" }));
     await user.type(keyField(), "sk-ant-wrong{Enter}");
     expect(await screen.findByText(SAVE_KEY_MESSAGE.AI_AUTH_FAILED)).toBeTruthy();
@@ -159,7 +173,7 @@ describe("ConnectAi with the bridge", () => {
       "ai:status": () => Promise.reject(new Error("bad reply")),
       "ai:save-key": () => Promise.reject(new Error("bad reply")),
     });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     expect(await screen.findByText(/Something went wrong inside AutoAI/)).toBeTruthy();
     await user.type(keyField(), "sk-ant-any{Enter}");
     expect(await screen.findAllByText(/Something went wrong inside AutoAI/)).toHaveLength(2);
@@ -173,7 +187,7 @@ describe("ConnectAi with the bridge", () => {
   it("replacing a key that is accepted: says the new key was saved", async () => {
     const user = userEvent.setup();
     installFakeBridge({ "ai:status": status(true), "ai:save-key": saved });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.click(await screen.findByRole("button", { name: "Replace key" }));
     await user.type(keyField(), "sk-ant-new{Enter}");
     expect(await screen.findByText("New key saved.")).toBeTruthy();
@@ -182,7 +196,7 @@ describe("ConnectAi with the bridge", () => {
 
   it("no preload at all: the screen still moves on, and says so", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     expect(await screen.findByText(/Something went wrong inside AutoAI/)).toBeTruthy();
     expect(log).toHaveBeenCalled();
     log.mockRestore();
@@ -195,7 +209,7 @@ describe("ConnectAi with the bridge", () => {
       "link:open": () =>
         Promise.resolve<ChannelResponse<"link:open">>({ ok: true, value: { opened: true } }),
     });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.click(
       await screen.findByRole("button", {
         name: "Create one in the Anthropic Console (opens in your browser)",
@@ -226,7 +240,7 @@ describe("ConnectAi with the bridge", () => {
     const user = userEvent.setup();
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     installFakeBridge({ "ai:status": status(false), "link:open": answer });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     await user.click(
       await screen.findByRole("button", {
         name: "Create one in the Anthropic Console (opens in your browser)",
@@ -251,6 +265,7 @@ describe("ConnectAi with the bridge", () => {
           onCancelReplace: vi.fn(),
           onContinue: vi.fn(),
           onOpenConsole: vi.fn(),
+          onSetUpLater: vi.fn(),
         }}
       />,
     );
@@ -259,7 +274,7 @@ describe("ConnectAi with the bridge", () => {
 
   it("says plainly that API usage is billed separately from a Claude subscription", () => {
     installFakeBridge({ "ai:status": status(false) });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     expect(
       screen.getByText(/billed by Anthropic, separately from any Claude Pro or Max subscription/),
     ).toBeTruthy();
@@ -273,7 +288,7 @@ describe("ConnectAi with the bridge", () => {
           error: { code: "SECRET_STORE_UNAVAILABLE", message: "no keyring" },
         }),
     });
-    render(<ConnectAi onContinue={vi.fn()} />);
+    render(<ConnectAi onSetUpLater={vi.fn()} onContinue={vi.fn()} />);
     expect(await screen.findByText(/can't read a saved key/)).toBeTruthy();
     expect(keyField().value).toBe("");
   });

@@ -15,6 +15,7 @@ const base: ConnectAiViewProps = {
   onCancelReplace: noop,
   onContinue: noop,
   onOpenConsole: noop,
+  onSetUpLater: noop,
 };
 const Frame = (Story: () => ReactNode) => <div className="h-screen bg-canvas">{Story()}</div>;
 

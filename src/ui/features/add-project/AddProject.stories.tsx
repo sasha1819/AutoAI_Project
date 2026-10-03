@@ -2,12 +2,14 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { BROKEN_MESSAGE } from "../../app/bridge.ts";
 import { AddProjectView, type AddProjectViewProps } from "./AddProject.tsx";
-import { READ_PRDS_MESSAGE } from "./messages.ts";
+import { READ_PRDS_MESSAGE, SCAN_MESSAGE } from "./messages.ts";
 
 const noop = () => undefined;
 const repo = "/Users/sam/code/web-app";
 const prdFolder = "/Users/sam/code/web-app/docs/prds";
 const base: AddProjectViewProps = {
+  ai: { kind: "connected" },
+  onConnectAi: noop,
   repoFolder: null,
   prdFolder: null,
   prds: { kind: "none" },
@@ -107,4 +109,20 @@ export const UnreadablePrdFolder: Story = {
 };
 export const BrokenDialog: Story = {
   args: { notice: BROKEN_MESSAGE },
+};
+const noKey = { kind: "missing", message: SCAN_MESSAGE.NO_KEY } as const;
+export const NoKeyNothingChosen: Story = { args: { ai: noKey } };
+export const NoKeyYet: Story = { args: { ...PrdsRead.args, ai: noKey } };
+export const SavedKeyUnreadable: Story = {
+  args: {
+    ...ProjectChosen.args,
+    ai: { kind: "missing", message: SCAN_MESSAGE.SECRET_STORE_UNAVAILABLE },
+  },
+};
+export const CheckingConnection: Story = {
+  args: { ...ProjectChosen.args, ai: { kind: "checking" } },
+};
+export const NoKeyNarrowWindow: Story = {
+  args: { ...NoKeyYet.args },
+  decorators: [(Story) => <div className="w-100">{Story()}</div>],
 };

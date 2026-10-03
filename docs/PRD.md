@@ -58,7 +58,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
     2
     Connect AI
     User pastes a Claude API key
-    Validate the key with a lightweight test call; store it locally (OS keychain, not plain text); block Continue until valid
+    Validate the key with a lightweight test call; store it locally (OS keychain, not plain text); block Continue until valid (2026-10-03: an optional "Set up later" skips to Add project; AI actions stay disabled until a key is saved)
     3
     Add project
     User points to a local repo folder and drags in PRD files (or connects Google Docs/Notion — stretch, MVP = local files only)

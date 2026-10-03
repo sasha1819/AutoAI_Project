@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import type { PrdSummary } from "../../../contracts/project.ts";
 import { FolderField } from "../../design-system/patterns/FolderField/index.ts";
 import { PageColumn } from "../../design-system/patterns/PageColumn/index.ts";
@@ -7,9 +7,19 @@ import { Button } from "../../design-system/primitives/Button/index.ts";
 import { Card } from "../../design-system/primitives/Card/index.ts";
 import { Check } from "../../design-system/primitives/Icon/index.ts";
 import { Spinner } from "../../design-system/primitives/Spinner/index.ts";
-import { type PrdState, type Project, useAddProject } from "./useAddProject.ts";
+import { CHECKING_CONNECTION } from "./messages.ts";
+import {
+  type AiState,
+  type ChosenFolders,
+  type PrdState,
+  type Project,
+  useAddProject,
+} from "./useAddProject.ts";
 
 export type AddProjectViewProps = {
+  /** Without a key, Scan is disabled and the screen offers the way back to Connect Claude. */
+  readonly ai: AiState;
+  readonly onConnectAi: () => void;
   readonly repoFolder: string | null;
   readonly prdFolder: string | null;
   readonly prds: PrdState;
@@ -35,7 +45,8 @@ const NOTHING_TO_COMPARE = "You can still scan without them; there will be nothi
  * plain prose (0 requirements), is said plainly before any scan. Scanning itself is the next screen.
  */
 export function AddProjectView(props: AddProjectViewProps) {
-  const { repoFolder, prdFolder, prds, picking, notice, project } = props;
+  const { ai, repoFolder, prdFolder, prds, picking, notice, project } = props;
+  const noteId = useId();
   return (
     <PageColumn>
       <h1 className="text-xl font-bold text-text-primary">Add your project</h1>
@@ -74,20 +85,43 @@ export function AddProjectView(props: AddProjectViewProps) {
         {notice !== undefined && <p className="mt-3 text-sm text-text-secondary">{notice}</p>}
       </div>
 
-      <div className="mt-10 flex items-center gap-6">
+      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
         <Button
           size="xl"
-          disabled={project === null}
+          // Mirrors the service's NO_KEY (the real check), so the UI never reaches that error.
+          disabled={project === null || ai.kind !== "connected"}
+          aria-describedby={noteId}
           onClick={() => {
             if (project !== null) props.onScan(project);
           }}
         >
           Scan project
         </Button>
-        <p className="text-sm text-text-muted">{scanNote(prds, repoFolder)}</p>
+        {/* A live region: the change from checking to "Connect Claude to scan" is announced. */}
+        <p id={noteId} role="status" className="flex items-center gap-1.5 text-sm text-text-muted">
+          {scanNoteFor(ai, prds, repoFolder)}
+        </p>
+        {ai.kind === "missing" && (
+          <Button variant="secondary" size="xl" onClick={props.onConnectAi}>
+            Connect Claude
+          </Button>
+        )}
       </div>
     </PageColumn>
   );
+}
+
+/** The line beside Scan: why it cannot run yet, or what it will do. */
+function scanNoteFor(ai: AiState, prds: PrdState, repoFolder: string | null) {
+  if (ai.kind === "checking")
+    return (
+      <>
+        <Spinner decorative size="sm" />
+        {CHECKING_CONNECTION}
+      </>
+    );
+  if (ai.kind === "missing") return ai.message;
+  return scanNote(prds, repoFolder);
 }
 
 /** What Scan will do, so nobody starts a scan without knowing whether it uses their API key. */
@@ -191,10 +225,23 @@ function Notice({ title, children }: { readonly title: string; readonly children
 }
 
 /** The Add project screen: its hook and its view. */
-export function AddProject({ onScan }: { readonly onScan: (project: Project) => void }) {
-  const p = useAddProject();
+export function AddProject({
+  folders,
+  onFoldersChange,
+  onScan,
+  onConnectAi,
+}: {
+  /** Folders chosen on an earlier visit (the app keeps them while the user connects Claude). */
+  readonly folders: ChosenFolders;
+  readonly onFoldersChange: (folders: ChosenFolders) => void;
+  readonly onScan: (project: Project) => void;
+  readonly onConnectAi: () => void;
+}) {
+  const p = useAddProject(folders, onFoldersChange);
   return (
     <AddProjectView
+      ai={p.ai}
+      onConnectAi={onConnectAi}
       repoFolder={p.repoFolder}
       prdFolder={p.prdFolder}
       prds={p.prds}

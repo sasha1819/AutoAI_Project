@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "../design-system/primitives/Badge/index.ts";
 import { EmptyState } from "../design-system/primitives/EmptyState/index.ts";
 import { ToastProvider } from "../design-system/primitives/Toast/index.ts";
-import { AddProject } from "../features/add-project/index.ts";
+import { AddProject, type ChosenFolders } from "../features/add-project/index.ts";
 import { ConnectAi } from "../features/connect-ai/index.ts";
 import { WelcomeView } from "../features/welcome/index.ts";
 import { useAppInfo } from "./useAppInfo.ts";
@@ -16,6 +16,8 @@ type Screen = "welcome" | "connect-ai" | "add-project" | "scan";
  */
 export function App() {
   const [screen, setScreen] = useState<Screen>("welcome");
+  // Kept here so a visit to Connect Claude from Add project does not lose the chosen folders.
+  const [folders, setFolders] = useState<ChosenFolders>({ repoFolder: null, prdFolder: null });
   const { mockAi } = useAppInfo();
   const main = useRef<HTMLElement>(null);
   const first = useRef(true);
@@ -60,12 +62,20 @@ export function App() {
             onContinue={() => {
               setScreen("add-project");
             }}
+            onSetUpLater={() => {
+              setScreen("add-project");
+            }}
           />
         )}
         {screen === "add-project" && (
           <AddProject
+            folders={folders}
+            onFoldersChange={setFolders}
             onScan={() => {
               setScreen("scan");
+            }}
+            onConnectAi={() => {
+              setScreen("connect-ai");
             }}
           />
         )}

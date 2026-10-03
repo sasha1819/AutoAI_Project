@@ -37,7 +37,11 @@ export function createScanRunner(deps: Deps): {
         const loaded = await deps.secretStore.load();
         if (!loaded.ok) return loaded;
         if (loaded.value === null)
-          return err({ code: "NO_KEY", message: "Connect your AI provider first." });
+          // Internal text: screens word NO_KEY themselves (add-project SCAN_MESSAGE).
+          return err({
+            code: "NO_KEY",
+            message: "No API key is configured. Connect Claude to scan.",
+          });
         return await scanProject(
           { repoReader: deps.repoReader, aiProvider: deps.aiProviderFor(loaded.value) },
           input,

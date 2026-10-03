@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChannelResponse } from "../../../contracts/channels.ts";
 import { installFakeBridge, removeFakeBridge } from "../../app/testing/fake-bridge.ts";
 import { AddProject, AddProjectView, type AddProjectViewProps } from "./AddProject.tsx";
-import { READ_PRDS_MESSAGE } from "./messages.ts";
+import { READ_PRDS_MESSAGE, SCAN_MESSAGE } from "./messages.ts";
 
 type ReadPrds = ChannelResponse<"project:read-prds">;
 const summary = (files: [string, number][]): ReadPrds => ({
@@ -14,6 +14,9 @@ const summary = (files: [string, number][]): ReadPrds => ({
     requirements: files.reduce((n, [, r]) => n + r, 0),
   },
 });
+const NONE = { repoFolder: null, prdFolder: null };
+const connected = () =>
+  Promise.resolve<ChannelResponse<"ai:status">>({ ok: true, value: { configured: true } });
 const status = () =>
   screen
     .getAllByRole("status")
@@ -29,6 +32,8 @@ describe("AddProjectView", () => {
   const base: AddProjectViewProps = {
     repoFolder: null,
     prdFolder: null,
+    ai: { kind: "connected" },
+    onConnectAi: vi.fn(),
     prds: { kind: "none" },
     picking: null,
     onChooseRepo: vi.fn(),
@@ -104,6 +109,43 @@ describe("AddProjectView", () => {
     expect(onScan).toHaveBeenCalledWith({ repoRoot: "/r", prdFolder: "/p" });
   });
 
+  it("no key: Scan is disabled with 'Connect Claude to scan' and a way back; PRDs are still read", async () => {
+    const onConnectAi = vi.fn();
+    render(
+      <AddProjectView
+        {...base}
+        ai={{ kind: "missing", message: SCAN_MESSAGE.NO_KEY }}
+        onConnectAi={onConnectAi}
+        repoFolder="/r"
+        prdFolder="/p"
+        prds={{
+          kind: "read",
+          summary: { files: [{ file: "cart.md", requirements: 4 }], requirements: 4 },
+        }}
+        project={{ repoRoot: "/r", prdFolder: "/p" }}
+      />,
+    );
+    expect(scanButton().hasAttribute("disabled")).toBe(true);
+    const note = document.getElementById(scanButton().getAttribute("aria-describedby") ?? "");
+    expect(note?.textContent).toBe(SCAN_MESSAGE.NO_KEY);
+    expect(status()).toContain("Found 4 requirements in 1 PRD file.");
+    await userEvent.click(screen.getByRole("button", { name: "Connect Claude" }));
+    expect(onConnectAi).toHaveBeenCalledOnce();
+  });
+
+  it("while the connection is checked, Scan waits", () => {
+    render(
+      <AddProjectView
+        {...base}
+        ai={{ kind: "checking" }}
+        repoFolder="/r"
+        project={{ repoRoot: "/r", prdFolder: null }}
+      />,
+    );
+    expect(scanButton().hasAttribute("disabled")).toBe(true);
+    expect(screen.getByText("Checking your Claude connection…")).toBeTruthy();
+  });
+
   it("reading: busy, and Scan waits", () => {
     render(<AddProjectView {...base} repoFolder="/r" prdFolder="/p" prds={{ kind: "reading" }} />);
     expect(status()).toContain("Reading your PRDs…");
@@ -131,15 +173,86 @@ describe("AddProjectView", () => {
   });
 });
 
+describe("Add project wording", () => {
+  it("says 'Connect Claude to scan' when no key is saved (the requested words)", () => {
+    expect(SCAN_MESSAGE.NO_KEY).toBe("Connect Claude to scan.");
+  });
+});
+
 describe("AddProject (with its hook)", () => {
+  it("a saved key that cannot be read says why, keeps Scan off and offers the way back", async () => {
+    installFakeBridge({
+      "ai:status": () =>
+        Promise.resolve<ChannelResponse<"ai:status">>({
+          ok: false,
+          error: { code: "SECRET_STORE_UNAVAILABLE", message: "no keychain" },
+        }),
+    });
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
+    expect(await screen.findByText(SCAN_MESSAGE.SECRET_STORE_UNAVAILABLE)).toBeTruthy();
+    expect(scanButton().hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("button", { name: "Connect Claude" })).toBeTruthy();
+  });
+
+  it("a broken ai:status reply is said as a bug, and Scan stays off", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    installFakeBridge({ "ai:status": () => Promise.reject(new Error("contract broken")) });
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
+    await waitFor(() => {
+      expect(status()).toContain("Something went wrong inside AutoAI");
+    });
+    expect(scanButton().hasAttribute("disabled")).toBe(true);
+  });
+
+  it("folders kept from an earlier visit show again, and the PRD folder is read again", async () => {
+    const bridge = installFakeBridge({
+      "ai:status": connected,
+      "project:read-prds": () => Promise.resolve(summary([["cart.md", 3]])),
+    });
+    const onFoldersChange = vi.fn();
+    render(
+      <AddProject
+        folders={{ repoFolder: "/r", prdFolder: "/p" }}
+        onFoldersChange={onFoldersChange}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("/r")).toBeTruthy();
+    await waitFor(() => {
+      expect(status()).toContain("Found 3 requirements in 1 PRD file.");
+    });
+    expect(bridge.calls.filter((c) => c.channel === "project:read-prds")).toStrictEqual([
+      { channel: "project:read-prds", request: { prdFolder: "/p" } },
+    ]);
+    expect(scanButton().hasAttribute("disabled")).toBe(false);
+  });
+
   it("folders come only from the dialog; the chosen PRD folder is read at once, and Scan gets both", async () => {
     const picks: (string | null)[] = ["/work/shop", "/work/shop/docs"];
     const bridge = installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
       "project:read-prds": () => Promise.resolve(summary([["cart.md", 3]])),
     });
     const onScan = vi.fn();
-    render(<AddProject onScan={onScan} />);
+    render(
+      <AddProject folders={NONE} onFoldersChange={vi.fn()} onConnectAi={vi.fn()} onScan={onScan} />,
+    );
     expect(screen.queryByRole("textbox")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "Choose folder: Project folder" }));
@@ -153,6 +266,7 @@ describe("AddProject (with its hook)", () => {
     await userEvent.click(scanButton());
     expect(onScan).toHaveBeenCalledWith({ repoRoot: "/work/shop", prdFolder: "/work/shop/docs" });
     expect(bridge.calls).toStrictEqual([
+      { channel: "ai:status", request: {} },
       { channel: "project:pick-folder", request: { purpose: "repo" } },
       { channel: "project:pick-folder", request: { purpose: "prds" } },
       { channel: "project:read-prds", request: { prdFolder: "/work/shop/docs" } },
@@ -162,9 +276,17 @@ describe("AddProject (with its hook)", () => {
   it("a cancelled dialog keeps the folder chosen before", async () => {
     const picks: (string | null)[] = ["/work/shop", null];
     installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
     });
-    render(<AddProject onScan={vi.fn()} />);
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
     const choose = screen.getByRole("button", { name: "Choose folder: Project folder" });
     await userEvent.click(choose);
     await screen.findByText("/work/shop");
@@ -177,6 +299,7 @@ describe("AddProject (with its hook)", () => {
   it("no PRD files: NO_PRD_FILES becomes the 'no PRD files' state, and Scan scans the code alone", async () => {
     const picks: (string | null)[] = ["/r", "/empty"];
     installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
       "project:read-prds": () =>
         Promise.resolve<ReadPrds>({
@@ -185,7 +308,9 @@ describe("AddProject (with its hook)", () => {
         }),
     });
     const onScan = vi.fn();
-    render(<AddProject onScan={onScan} />);
+    render(
+      <AddProject folders={NONE} onFoldersChange={vi.fn()} onConnectAi={vi.fn()} onScan={onScan} />,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Choose folder: Project folder" }));
     await screen.findByText("/r");
     await userEvent.click(
@@ -200,10 +325,18 @@ describe("AddProject (with its hook)", () => {
   it("while the PRDs are read, choosing again is ignored (one read at a time)", async () => {
     const picks: (string | null)[] = ["/p"];
     installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
       "project:read-prds": () => new Promise<ReadPrds>(() => undefined),
     });
-    render(<AddProject onScan={vi.fn()} />);
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
     await userEvent.click(
       screen.getByRole("button", { name: "Choose folder: PRD folder (optional)" }),
     );
@@ -221,6 +354,7 @@ describe("AddProject (with its hook)", () => {
   it("a PRD folder that could not be read blocks Scan until the user picks again", async () => {
     const picks: (string | null)[] = ["/r", "/locked"];
     installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
       "project:read-prds": () =>
         Promise.resolve<ReadPrds>({
@@ -228,7 +362,14 @@ describe("AddProject (with its hook)", () => {
           error: { code: "PATH_UNREADABLE", message: "EACCES" },
         }),
     });
-    render(<AddProject onScan={vi.fn()} />);
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Choose folder: Project folder" }));
     await screen.findByText("/r");
     await userEvent.click(
@@ -240,12 +381,50 @@ describe("AddProject (with its hook)", () => {
     expect(scanButton().hasAttribute("disabled")).toBe(true);
   });
 
+  it("no key saved: folders and PRDs still work, Scan stays disabled, and scan:run is never called", async () => {
+    const picks: (string | null)[] = ["/r", "/p"];
+    const bridge = installFakeBridge({
+      "ai:status": () =>
+        Promise.resolve<ChannelResponse<"ai:status">>({ ok: true, value: { configured: false } }),
+      "project:pick-folder": () => Promise.resolve({ path: picks.shift() ?? null }),
+      "project:read-prds": () => Promise.resolve(summary([["cart.md", 2]])),
+    });
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
+    await screen.findByText("Connect Claude to scan.");
+    await userEvent.click(screen.getByRole("button", { name: "Choose folder: Project folder" }));
+    await screen.findByText("/r");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Choose folder: PRD folder (optional)" }),
+    );
+    await waitFor(() => {
+      expect(status()).toContain("Found 2 requirements in 1 PRD file.");
+    });
+    expect(scanButton().hasAttribute("disabled")).toBe(true);
+    await userEvent.click(scanButton());
+    expect(bridge.calls.map((c) => c.channel)).not.toContain("scan:run");
+  });
+
   it("a broken reply says so instead of hanging", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     installFakeBridge({
+      "ai:status": connected,
       "project:pick-folder": () => Promise.reject(new Error("contract broken")),
     });
-    render(<AddProject onScan={vi.fn()} />);
+    render(
+      <AddProject
+        folders={NONE}
+        onFoldersChange={vi.fn()}
+        onConnectAi={vi.fn()}
+        onScan={vi.fn()}
+      />,
+    );
     await userEvent.click(screen.getByRole("button", { name: "Choose folder: Project folder" }));
     await waitFor(() => {
       expect(status()).toContain("Something went wrong inside AutoAI");

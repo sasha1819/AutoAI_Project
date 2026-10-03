@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PrdSummary } from "../../../contracts/project.ts";
 import { BROKEN_MESSAGE, bridge } from "../../app/bridge.ts";
-import { READ_PRDS_MESSAGE } from "./messages.ts";
+import { READ_PRDS_MESSAGE, SCAN_MESSAGE } from "./messages.ts";
 
 /** What the chosen PRD folder holds, read before any scan (parsing only: no AI, no cost). */
 export type PrdState =
@@ -11,9 +11,25 @@ export type PrdState =
   | { readonly kind: "no-files" }
   | { readonly kind: "failed"; readonly message: string };
 
+/**
+ * Whether Claude is connected: AI actions (scan) need a key; adding a project and reading PRDs do not. "missing"
+ * carries why, in words: no key yet, or a saved key that cannot be read.
+ */
+export type AiState =
+  | { readonly kind: "checking" }
+  | { readonly kind: "connected" }
+  | { readonly kind: "missing"; readonly message: string };
+
+/** The folders chosen so far, kept by the app while the user visits Connect Claude and comes back. */
+export type ChosenFolders = {
+  readonly repoFolder: string | null;
+  readonly prdFolder: string | null;
+};
+
 export type Project = { readonly repoRoot: string; readonly prdFolder: string | null };
 
 export type AddProject = {
+  readonly ai: AiState;
   readonly repoFolder: string | null;
   readonly prdFolder: string | null;
   readonly prds: PrdState;
@@ -28,12 +44,41 @@ export type AddProject = {
 };
 
 /** The Add project screen's one hook: the only code here that talks to main. */
-export function useAddProject(): AddProject {
-  const [repoFolder, setRepoFolder] = useState<string | null>(null);
-  const [prdFolder, setPrdFolder] = useState<string | null>(null);
+export function useAddProject(
+  initial: ChosenFolders,
+  onFoldersChange: (folders: ChosenFolders) => void,
+): AddProject {
+  const [repoFolder, setRepoFolder] = useState<string | null>(initial.repoFolder);
+  const [prdFolder, setPrdFolder] = useState<string | null>(initial.prdFolder);
   const [prds, setPrds] = useState<PrdState>({ kind: "none" });
   const [picking, setPicking] = useState<"repo" | "prds" | null>(null);
   const [notice, setNotice] = useState<string | undefined>(undefined);
+  const [ai, setAi] = useState<AiState>({ kind: "checking" });
+
+  useEffect(() => {
+    let live = true;
+    const ask = async () => {
+      let next: AiState;
+      try {
+        const reply = await bridge().invoke("ai:status", {});
+        next = !reply.ok
+          ? { kind: "missing", message: SCAN_MESSAGE[reply.error.code] }
+          : reply.value.configured
+            ? { kind: "connected" }
+            : { kind: "missing", message: SCAN_MESSAGE.NO_KEY };
+      } catch (e) {
+        // A broken reply is a bug: said as one (the notice), and Scan stays off.
+        console.error(e);
+        if (live) setNotice(BROKEN_MESSAGE);
+        next = { kind: "missing", message: SCAN_MESSAGE.NO_KEY };
+      }
+      if (live) setAi(next);
+    };
+    void ask();
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const pick = useCallback(async (purpose: "repo" | "prds"): Promise<string | null> => {
     setPicking(purpose);
@@ -84,10 +129,20 @@ export function useAddProject(): AddProject {
 
   // The folders as chosen: the scan service decides what "no PRD files" means. A folder that could not be read
   // blocks Scan until the user picks again, instead of quietly scanning without it.
+  // The app keeps the folders across Connect Claude; main still allows them (picked this session).
+  useEffect(() => {
+    onFoldersChange({ repoFolder, prdFolder });
+  }, [repoFolder, prdFolder, onFoldersChange]);
+  // Coming back with a PRD folder: read it again (free, no AI) so the summary shows as before.
+  const initialPrds = useRef(initial.prdFolder);
+  useEffect(() => {
+    if (initialPrds.current !== null) void readPrds(initialPrds.current);
+  }, [readPrds]);
+
   const project =
     repoFolder === null || prds.kind === "reading" || prds.kind === "failed"
       ? null
       : { repoRoot: repoFolder, prdFolder };
 
-  return { repoFolder, prdFolder, prds, picking, notice, chooseRepo, choosePrds, project };
+  return { ai, repoFolder, prdFolder, prds, picking, notice, chooseRepo, choosePrds, project };
 }

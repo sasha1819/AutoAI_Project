@@ -28,6 +28,8 @@ export type ConnectAiViewProps = {
   readonly onContinue: () => void;
   /** Opens the Anthropic Console in the browser, for someone without a key yet. */
   readonly onOpenConsole: () => void;
+  /** Goes on to Add project without a key: AI actions stay disabled until Claude is connected. */
+  readonly onSetUpLater: () => void;
 };
 
 /**
@@ -149,6 +151,16 @@ export function ConnectAiView(props: ConnectAiViewProps) {
                   Cancel
                 </Button>
               )}
+              {!replacing && (
+                <Button
+                  variant="secondary"
+                  size="xl"
+                  disabled={saving}
+                  onClick={props.onSetUpLater}
+                >
+                  Set up later
+                </Button>
+              )}
               <Button size="xl" type="submit" loading={saving} disabled={keyText.trim() === ""}>
                 Check and save
               </Button>
@@ -170,7 +182,13 @@ export function ConnectAiView(props: ConnectAiViewProps) {
 }
 
 /** The Connect AI screen: its hook and its view. The typed key lives only here, and is cleared once saved. */
-export function ConnectAi({ onContinue }: { readonly onContinue: () => void }) {
+export function ConnectAi({
+  onContinue,
+  onSetUpLater,
+}: {
+  readonly onContinue: () => void;
+  readonly onSetUpLater: () => void;
+}) {
   const ai = useConnectAi();
   const [keyText, setKeyText] = useState("");
   const [replacing, setReplacing] = useState(false);
@@ -202,6 +220,7 @@ export function ConnectAi({ onContinue }: { readonly onContinue: () => void }) {
       }}
       onContinue={onContinue}
       onOpenConsole={ai.openConsole}
+      onSetUpLater={onSetUpLater}
     />
   );
 }

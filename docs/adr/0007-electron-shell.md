@@ -121,3 +121,6 @@ progress. ADR 0006 deferred Electron to its own ADR; this is it.
 - `project:read-prds` (2026-10-03): parses a picked PRD folder with no AI (`services/summarize-prds.ts`) and answers
   per-file requirement counts, so Add project can say "no PRD files" or "0 requirements" (plain-prose PRDs) before a
   paid scan. PRD files are never read from dependency or build folders (`core/rules/vendored-path.ts`).
+- Set up later (2026-10-03, user request): onboarding can continue to Add project without a key. Adding a project and
+  reading PRDs need no key; AI actions are disabled in the screens with the NO_KEY wording, and `scan:run`'s
+  `NO_KEY` stays as the backstop. The key rules above are unchanged.
