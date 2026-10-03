@@ -4,7 +4,8 @@ import type { AiProvider } from "../core/ports/ai-provider.ts";
 
 /**
  * Wraps an AiProvider and saves every request with its result to `<dir>/<runId>-<n>.json` (ADR 0002: real
- * recordings for the parser tests). Opt-in via `scan --record`; the API key is never part of a request.
+ * recordings for the parser tests); the API key is never part of a request. It saves failed calls too, so use it only
+ * through recordRun (staged-recording.ts), which records into a temporary folder and keeps only fully successful runs.
  */
 export function recordingAiProvider(inner: AiProvider, dir: string, runId: string): AiProvider {
   let calls = 0;

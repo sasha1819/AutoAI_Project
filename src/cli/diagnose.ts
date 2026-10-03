@@ -4,6 +4,7 @@ import { Run } from "../core/domain/run.ts";
 import { KEY_HELP, readAiOptions } from "./ai-options.ts";
 import { parseCliArgs, timeStamp } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
+import { notRecordedLine } from "./staged-recording.ts";
 import { errorLine, runCostUsd } from "./format-ai.ts";
 import { formatDiagnosis } from "./format-diagnosis.ts";
 import { readJsonFile } from "./json-file.ts";
@@ -64,13 +65,19 @@ async function main(): Promise<number> {
     return 1;
   }
 
-  const result = await composeCli().diagnoseFailure(
+  const { result, recording } = await composeCli().diagnoseFailure(
     { run, findings: scan.findings },
     ai,
     args.record === undefined ? undefined : { dir: args.record, runId: timeStamp(new Date()) },
   );
+  // --record saves only a run that fully succeeded; otherwise say why, after the result (which is paid for).
+  const notRecorded =
+    recording && !recording.ok
+      ? notRecordedLine(`--record ${args.record ?? ""}`, recording.error)
+      : null;
   if (!result.ok) {
     console.error(errorLine(result.error));
+    if (notRecorded) console.error(notRecorded);
     return 1;
   }
   const outProblem = args.out === undefined ? null : await writeJsonFile(args.out, result.value);
@@ -81,7 +88,8 @@ async function main(): Promise<number> {
       ? JSON.stringify(result.value, null, 2)
       : formatDiagnosis(result.value, runCostUsd([result.value.model], result.value.usage)),
   );
-  return outProblem ? 1 : 0;
+  if (notRecorded) console.error(notRecorded);
+  return outProblem || notRecorded ? 1 : 0;
 }
 
 process.exitCode = await main();

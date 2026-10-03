@@ -40,7 +40,7 @@ describe("recordExtraction", () => {
       "AI_AUTH_FAILED",
     ],
     ["a rate limit", { code: "AI_RATE_LIMITED", message: "429" }, "AI_RATE_LIMITED"],
-    ["a refusal", { code: "AI_REFUSED", message: "refused" }, "EXTRACTION_FAILED"],
+    ["a refusal", { code: "AI_REFUSED", message: "refused" }, "AI_REFUSED"],
   ] as const)(
     "%s: fails with its code and message, and the folder is unchanged",
     async (_, error, code) => {

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Records Claude's diagnoses of the three real failures in fixtures/diagnosis (see its README).
-// For each case: copies the sample shop to a temp folder, runs the spec with the real runner (retry included), saves
-// the run, then diagnoses it with the real Claude adapter and records the prompt and answer.
+// For each case: copies the sample shop to a temp folder, runs the spec with the real runner (retry included), then
+// diagnoses it with the real Claude adapter. The run and the recording are saved only when the diagnosis succeeded;
+// on any failure it prints "<case>: not recorded. <CODE>: <message>", exits 1, and leaves that case's files as they were.
 // Usage: node scripts/record-diagnoses.mjs [--runs-only]
 //   --runs-only  runs the tests and saves the runs, but calls no AI (free).
 // Needs ANTHROPIC_API_KEY for the diagnoses (about $0.10 for all three).
@@ -15,8 +16,8 @@ import { createPlaywrightTestRunner } from "../src/adapters/playwright/playwrigh
 import { Finding } from "../src/core/domain/finding.ts";
 import { RunId } from "../src/core/domain/ids.ts";
 import { readAiOptions } from "../src/cli/ai-options.ts";
-import { recordingAiProvider } from "../src/cli/recording-ai-provider.ts";
-import { diagnoseFailure } from "../src/services/diagnose-failure.ts";
+import { recordDiagnosis } from "../src/cli/record-diagnosis.ts";
+import { notRecordedLine } from "../src/cli/staged-recording.ts";
 import { runTest } from "../src/services/run-test.ts";
 
 const ROOT = process.cwd();
@@ -28,6 +29,11 @@ const CASES = [
   { name: "environment-account-3-1", spec: "account-3-1-order-history.spec.ts", config: "login-setup.playwright.config.mjs" },
 ];
 const runsOnly = process.argv.includes("--runs-only");
+/** Nothing of this case was saved: say why and stop with status 1 (earlier cases' recordings stay). */
+const fail = (name, problem) => {
+  console.error(notRecordedLine(name, problem));
+  process.exitCode = 1;
+};
 const findings = JSON.parse(readFileSync(join(ROOT, "fixtures/baselines/m1-scan-result.json"), "utf8")).findings.map(
   (f) => Finding.parse(f),
 );
@@ -55,22 +61,37 @@ try {
       { repoRoot: repo, specPath: `tests/autoai/${c.spec}`, runId: RunId.parse(c.name) },
       () => undefined,
     );
-    if (!ran.ok) throw new Error(`${c.name}: the run did not finish: ${ran.error.code} ${ran.error.message}`);
-    if (ran.value.status !== "failed") throw new Error(`${c.name}: expected a confirmed failure, got ${ran.value.status}`);
+    if (!ran.ok) {
+      fail(c.name, ran.error);
+      break;
+    }
+    if (ran.value.status !== "failed") {
+      fail(c.name, { code: "NOT_A_CONFIRMED_FAILURE", message: `expected a confirmed failure, got ${ran.value.status}` });
+      break;
+    }
     // Local screenshot paths are machine-specific and never sent to the AI; the repo path becomes a placeholder.
     const saved = JSON.parse(
       JSON.stringify(ran.value).replaceAll(repo, "<repo>").replaceAll(join(work, "artifacts"), "<artifacts>"),
     );
-    writeFileSync(join(FIXTURES, "runs", `${c.name}.json`), `${JSON.stringify(saved, null, 2)}\n`);
+    const runFile = join(FIXTURES, "runs", `${c.name}.json`);
     const last = ran.value.attempts.at(-1);
     console.log(`${c.name}: ${ran.value.status}; failed step: ${last?.failure?.step ?? "(none)"}`);
-    if (runsOnly) continue;
+    if (runsOnly) {
+      writeFileSync(runFile, `${JSON.stringify(saved, null, 2)}\n`);
+      continue;
+    }
 
-    rmSync(join(RECORDINGS, `${c.name}-1.json`), { force: true });
-    rmSync(join(RECORDINGS, `${c.name}-2.json`), { force: true });
-    const aiProvider = recordingAiProvider(createClaudeAiProvider(ai), RECORDINGS, c.name);
-    const diagnosed = await diagnoseFailure({ repoReader: createFsRepoReader(), aiProvider }, { run: ran.value, findings });
-    if (!diagnosed.ok) throw new Error(`${c.name}: ${diagnosed.error.code} ${diagnosed.error.message}`);
+    // The run and its recording belong together (the replay rebuilds the prompt from the run): both are saved only
+    // when the diagnosis succeeded, and nothing is deleted before that (recordRun).
+    const diagnosed = await recordDiagnosis(
+      { aiProvider: createClaudeAiProvider(ai), repoReader: createFsRepoReader() },
+      { run: ran.value, findings, recordingsDir: RECORDINGS, name: c.name },
+    );
+    if (!diagnosed.ok) {
+      fail(c.name, diagnosed.error);
+      break;
+    }
+    writeFileSync(runFile, `${JSON.stringify(saved, null, 2)}\n`);
     const d = diagnosed.value;
     const cost = approximateCostUsd(d.model, d.usage) ?? 0;
     totalCost += cost;
@@ -81,7 +102,7 @@ try {
         d.diagnosis.notes.map((n) => `\n     note: ${n}`).join(""),
     );
   }
-  if (!runsOnly) console.log(`Total ~$${totalCost.toFixed(3)}`);
+  if (!runsOnly && process.exitCode !== 1) console.log(`Total ~$${totalCost.toFixed(3)}`);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

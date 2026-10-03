@@ -2,6 +2,7 @@ import { z } from "zod";
 import { KEY_HELP, readAiOptions } from "./ai-options.ts";
 import { parseCliArgs, timeStamp } from "./cli-args.ts";
 import { composeCli } from "./compose.ts";
+import { notRecordedLine } from "./staged-recording.ts";
 import { runCostUsd } from "./format-ai.ts";
 import { formatScan } from "./format-scan.ts";
 import { writeJsonFile } from "./output.ts";
@@ -42,13 +43,19 @@ async function main(): Promise<number> {
     return 2;
   }
 
-  const result = await composeCli().scanProject(
+  const { result, recording } = await composeCli().scanProject(
     { repoRoot: args.repo, prdFolder: args.prds },
     ai,
     args.record === undefined ? undefined : { dir: args.record, runId: timeStamp(new Date()) },
   );
+  // --record saves only a run that fully succeeded; otherwise say why, after the result (which is paid for).
+  const notRecorded =
+    recording && !recording.ok
+      ? notRecordedLine(`--record ${args.record ?? ""}`, recording.error)
+      : null;
   if (!result.ok) {
     console.error(`${result.error.code}: ${result.error.message}`);
+    if (notRecorded) console.error(notRecorded);
     return 1;
   }
   const scan = result.value;
@@ -60,7 +67,8 @@ async function main(): Promise<number> {
       ? JSON.stringify(scan, null, 2)
       : formatScan(scan, runCostUsd(scan.models, scan.usage)),
   );
-  return scan.stoppedBy || outProblem ? 1 : 0;
+  if (notRecorded) console.error(notRecorded);
+  return scan.stoppedBy || outProblem || notRecorded ? 1 : 0;
 }
 
 process.exitCode = await main();

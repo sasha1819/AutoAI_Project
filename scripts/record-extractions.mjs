@@ -10,6 +10,7 @@ import { approximateCostUsd } from "../src/adapters/claude/pricing.ts";
 import { createFsRepoReader } from "../src/adapters/fs/fs-repo-reader.ts";
 import { readAiOptions } from "../src/cli/ai-options.ts";
 import { recordExtraction } from "../src/cli/record-extraction.ts";
+import { notRecordedLine } from "../src/cli/staged-recording.ts";
 import { usageOf } from "../src/services/ask-ai.ts";
 
 const ROOT = process.cwd();
@@ -30,7 +31,7 @@ for (const c of CASES) {
     { prdFolder: c.folder, file: c.file, recordingsDir: RECORDINGS, name: c.name },
   );
   if (!recorded.ok) {
-    console.error(`${c.name}: not recorded. ${recorded.error.code}: ${recorded.error.message}`);
+    console.error(notRecordedLine(c.name, recorded.error));
     process.exit(1);
   }
   const { extracted: result, tally } = recorded.value;

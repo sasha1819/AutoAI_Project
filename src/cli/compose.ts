@@ -13,7 +13,19 @@ import { generateTests } from "../services/generate-tests.ts";
 import { type DiagnoseFailureInput, diagnoseFailure } from "../services/diagnose-failure.ts";
 import { type RunTestInput, runTest } from "../services/run-test.ts";
 import { scanProject } from "../services/scan-project.ts";
-import { recordingAiProvider } from "./recording-ai-provider.ts";
+import type { Result } from "../core/domain/result.ts";
+import { type RecordingProblem, recordRun } from "./staged-recording.ts";
+
+/** How a --record run went: saved files, or why nothing was saved; null when --record was not given. */
+export type RecordingOutcome = Result<
+  { readonly files: readonly string[] },
+  RecordingProblem
+> | null;
+
+/** A result with how its --record went, typed once for every recorded command. */
+function recorded<T>(result: T, recording: RecordingOutcome) {
+  return { result, recording };
+}
 
 /** Terminal composition root: the only place the CLI creates adapters and hands them to services. */
 export function composeCli() {
@@ -21,14 +33,30 @@ export function composeCli() {
   return {
     extractRequirements: (input: { readonly prdFolder: string }) =>
       extractRequirements({ repoReader }, input),
-    scanProject: (
+    scanProject: async (
       input: { readonly repoRoot: string; readonly prdFolder: string },
       ai: ClaudeAiProviderOptions,
       record?: { readonly dir: string; readonly runId: string },
     ) => {
       const claude = createClaudeAiProvider(ai);
-      const aiProvider = record ? recordingAiProvider(claude, record.dir, record.runId) : claude;
-      return scanProject({ repoReader, aiProvider }, input);
+      const scan = (aiProvider: typeof claude) => scanProject({ repoReader, aiProvider }, input);
+      if (!record) return recorded(await scan(claude), null);
+      // Recorded only when the whole scan succeeded: no failed call, not stopped, every area answered.
+      const run = await recordRun({
+        inner: claude,
+        dir: record.dir,
+        name: record.runId,
+        run: scan,
+        failureOf: (r) =>
+          !r.ok
+            ? r.error
+            : (r.value.stoppedBy ??
+              r.value.warnings.find(
+                (w) => w.code === "BATCH_NOT_SCANNED" || w.code === "EXTRACTION_FAILED",
+              ) ??
+              null),
+      });
+      return recorded(run.value, run.recording);
     },
     generateTests: (
       input: { readonly repoRoot: string; readonly findings: readonly Finding[] },
@@ -45,14 +73,23 @@ export function composeCli() {
       ),
     runTest: (input: RunTestInput, onStep: (event: StepEvent) => void, artifactsDir: string) =>
       runTest({ testRunner: createPlaywrightTestRunner({ artifactsDir }) }, input, onStep),
-    diagnoseFailure: (
+    diagnoseFailure: async (
       input: DiagnoseFailureInput,
       ai: ClaudeAiProviderOptions,
       record?: { readonly dir: string; readonly runId: string },
     ) => {
       const claude = createClaudeAiProvider(ai);
-      const aiProvider = record ? recordingAiProvider(claude, record.dir, record.runId) : claude;
-      return diagnoseFailure({ repoReader, aiProvider }, input);
+      const diagnose = (aiProvider: typeof claude) =>
+        diagnoseFailure({ repoReader, aiProvider }, input);
+      if (!record) return recorded(await diagnose(claude), null);
+      const run = await recordRun({
+        inner: claude,
+        dir: record.dir,
+        name: record.runId,
+        run: diagnose,
+        failureOf: (r) => (r.ok ? null : r.error),
+      });
+      return recorded(run.value, run.recording);
     },
   };
 }
