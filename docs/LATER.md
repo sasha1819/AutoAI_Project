@@ -14,6 +14,9 @@
 - [ ] Accounts, plans, credits, Stripe/Paddle billing
 - [ ] Private/self-hosted models, pluggable AI providers
 - [ ] Team features
+- [ ] Claude subscription login (needs Anthropic approval): Anthropic's Agent SDK docs say third-party developers may not offer claude.ai login or subscription rate limits unless previously approved. MVP is bring-your-own API key only (decided 2026-10-03).
+- [ ] Bedrock / Vertex / Foundry providers via the AiProvider port (new adapters behind the same port; decided 2026-10-03)
+- [ ] AutoAI-managed credits (decided 2026-10-03)
 - [ ] PRD parser: smarter handling of unstructured prose PRDs (likely a future AI-assisted extraction step, not mechanical paragraph splitting). CONFIRMED, not hypothetical (2026-09-28): `docs/PRD.md` itself, a real doc-editor export with numbered lines and no `#` headings or "Area 1.2" tags, yields 0 requirements with the current parser. The fixtures include one requirement in that style so the accuracy test counts the gap.
 - [ ] .docx PRD input (PRD 4.2) — start with markdown/plain text; docx needs a parser dependency + ADR (decided 2026-09-28)
 - [ ] Run Playwright setup projects (auth-dependent test flows). MVP runs only the user's Chromium project, so setup-project dependencies (e.g. a login step) don't run (ADR 0005, decided 2026-09-29).
