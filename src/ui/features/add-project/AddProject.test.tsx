@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChannelResponse } from "../../../contracts/channels.ts";
 import { installFakeBridge, removeFakeBridge } from "../../app/testing/fake-bridge.ts";
 import { AddProject, AddProjectView, type AddProjectViewProps } from "./AddProject.tsx";
-import { READ_PRDS_MESSAGE, SCAN_MESSAGE } from "./messages.ts";
+import { READ_PRDS_MESSAGE, KEY_MESSAGE } from "./messages.ts";
 
 type ReadPrds = ChannelResponse<"project:read-prds">;
 const summary = (files: [string, number][]): ReadPrds => ({
@@ -114,7 +114,7 @@ describe("AddProjectView", () => {
     render(
       <AddProjectView
         {...base}
-        ai={{ kind: "missing", message: SCAN_MESSAGE.NO_KEY }}
+        ai={{ kind: "missing", message: KEY_MESSAGE.NO_KEY }}
         onConnectAi={onConnectAi}
         repoFolder="/r"
         prdFolder="/p"
@@ -127,7 +127,7 @@ describe("AddProjectView", () => {
     );
     expect(scanButton().hasAttribute("disabled")).toBe(true);
     const note = document.getElementById(scanButton().getAttribute("aria-describedby") ?? "");
-    expect(note?.textContent).toBe(SCAN_MESSAGE.NO_KEY);
+    expect(note?.textContent).toBe(KEY_MESSAGE.NO_KEY);
     expect(status()).toContain("Found 4 requirements in 1 PRD file.");
     await userEvent.click(screen.getByRole("button", { name: "Connect Claude" }));
     expect(onConnectAi).toHaveBeenCalledOnce();
@@ -175,7 +175,7 @@ describe("AddProjectView", () => {
 
 describe("Add project wording", () => {
   it("says 'Connect Claude to scan' when no key is saved (the requested words)", () => {
-    expect(SCAN_MESSAGE.NO_KEY).toBe("Connect Claude to scan.");
+    expect(KEY_MESSAGE.NO_KEY).toBe("Connect Claude to scan.");
   });
 });
 
@@ -196,7 +196,7 @@ describe("AddProject (with its hook)", () => {
         onScan={vi.fn()}
       />,
     );
-    expect(await screen.findByText(SCAN_MESSAGE.SECRET_STORE_UNAVAILABLE)).toBeTruthy();
+    expect(await screen.findByText(KEY_MESSAGE.SECRET_STORE_UNAVAILABLE)).toBeTruthy();
     expect(scanButton().hasAttribute("disabled")).toBe(true);
     expect(screen.getByRole("button", { name: "Connect Claude" })).toBeTruthy();
   });

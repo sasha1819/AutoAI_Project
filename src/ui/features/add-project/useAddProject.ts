@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PrdSummary } from "../../../contracts/project.ts";
 import { BROKEN_MESSAGE, bridge } from "../../app/bridge.ts";
-import { READ_PRDS_MESSAGE, SCAN_MESSAGE } from "./messages.ts";
+import { READ_PRDS_MESSAGE, KEY_MESSAGE } from "./messages.ts";
 
 /** What the chosen PRD folder holds, read before any scan (parsing only: no AI, no cost). */
 export type PrdState =
@@ -62,15 +62,15 @@ export function useAddProject(
       try {
         const reply = await bridge().invoke("ai:status", {});
         next = !reply.ok
-          ? { kind: "missing", message: SCAN_MESSAGE[reply.error.code] }
+          ? { kind: "missing", message: KEY_MESSAGE[reply.error.code] }
           : reply.value.configured
             ? { kind: "connected" }
-            : { kind: "missing", message: SCAN_MESSAGE.NO_KEY };
+            : { kind: "missing", message: KEY_MESSAGE.NO_KEY };
       } catch (e) {
         // A broken reply is a bug: said as one (the notice), and Scan stays off.
         console.error(e);
         if (live) setNotice(BROKEN_MESSAGE);
-        next = { kind: "missing", message: SCAN_MESSAGE.NO_KEY };
+        next = { kind: "missing", message: KEY_MESSAGE.NO_KEY };
       }
       if (live) setAi(next);
     };

@@ -15,6 +15,7 @@
 - [ ] Accounts, plans, credits, Stripe/Paddle billing
 - [ ] Private/self-hosted models, pluggable AI providers
 - [ ] Team features
+- [ ] Cancel a running scan: needs a `scan:cancel` channel and an abort through the AiProvider port (port change + ADR). MVP scans are bounded: calls scale with the area count, said before Scan ("Claude compares N requirements"), one scan at a time (SCAN_BUSY), stops on auth / rate-limit errors with no retry, and quitting the app ends it (decided 2026-10-03). Revisit with ADR 0008, where extraction makes the call count unknown before the scan.
 - [ ] Claude subscription login (needs Anthropic approval): Anthropic's Agent SDK docs say third-party developers may not offer claude.ai login or subscription rate limits unless previously approved. MVP is bring-your-own API key only (decided 2026-10-03).
 - [ ] Drag PRD files or a folder into Add project (mockup 3's drop card; Electron `webUtils.getPathForFile`, and the dropped path must count as picked); MVP picks folders with the system dialog only (decided 2026-10-03)
 - [ ] Bedrock / Vertex / Foundry providers via the AiProvider port (new adapters behind the same port; decided 2026-10-03)

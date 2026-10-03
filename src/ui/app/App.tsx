@@ -4,11 +4,12 @@ import { EmptyState } from "../design-system/primitives/EmptyState/index.ts";
 import { ToastProvider } from "../design-system/primitives/Toast/index.ts";
 import { AddProject, type ChosenFolders } from "../features/add-project/index.ts";
 import { ConnectAi } from "../features/connect-ai/index.ts";
+import { Scan, type ScanTarget } from "../features/scan/index.ts";
 import { WelcomeView } from "../features/welcome/index.ts";
 import { useAppInfo } from "./useAppInfo.ts";
 
 /** The onboarding steps of PRD Flow 1, in order. Screens are added here one at a time (M5). */
-type Screen = "welcome" | "connect-ai" | "add-project" | "scan";
+type Screen = "welcome" | "connect-ai" | "add-project" | "scan" | "results";
 
 /**
  * The app's root: providers shared by every screen, and which screen shows. When the screen changes, focus moves
@@ -18,6 +19,8 @@ export function App() {
   const [screen, setScreen] = useState<Screen>("welcome");
   // Kept here so a visit to Connect Claude from Add project does not lose the chosen folders.
   const [folders, setFolders] = useState<ChosenFolders>({ repoFolder: null, prdFolder: null });
+  // What Scan was pressed for; each visit to the scan screen starts one scan of it.
+  const [target, setTarget] = useState<ScanTarget | null>(null);
   const { mockAi } = useAppInfo();
   const main = useRef<HTMLElement>(null);
   const first = useRef(true);
@@ -71,7 +74,8 @@ export function App() {
           <AddProject
             folders={folders}
             onFoldersChange={setFolders}
-            onScan={() => {
+            onScan={(project) => {
+              setTarget(project);
               setScreen("scan");
             }}
             onConnectAi={() => {
@@ -79,12 +83,26 @@ export function App() {
             }}
           />
         )}
-        {screen === "scan" && (
-          // Temporary: replaced by the scan progress screen (the next M5 step), which will keep the Project that
-          // onScan receives (dropped here). Nothing is scanned yet.
+        {screen === "scan" && target !== null && (
+          <Scan
+            target={target}
+            onSeeResults={() => {
+              setScreen("results");
+            }}
+            onBack={() => {
+              setScreen("add-project");
+            }}
+            onConnectAi={() => {
+              setScreen("connect-ai");
+            }}
+          />
+        )}
+        {screen === "results" && (
+          // Temporary: replaced by the Wow summary (the next M5 screen), which will receive the report that
+          // onSeeResults gets (dropped here for now).
           <div className="flex h-full items-center justify-center">
             <EmptyState
-              title="Next: scan progress"
+              title="Next: Wow summary"
               description="This screen is the next one to be built."
             />
           </div>
