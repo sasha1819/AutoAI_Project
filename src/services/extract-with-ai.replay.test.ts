@@ -31,6 +31,13 @@ const Recording = z.object({
   }),
 });
 type Recording = z.infer<typeof Recording>;
+// What an old recorder saved for a failed call; recordExtraction no longer writes these.
+const FailedCall = z.object({
+  result: z.object({
+    ok: z.literal(false),
+    error: z.object({ code: z.string(), message: z.string() }),
+  }),
+});
 
 function replay(recording: Recording): AiProvider & { readonly asked: AiRequest[] } {
   const asked: AiRequest[] = [];
@@ -61,7 +68,13 @@ describe("extraction replay against real Claude recordings", () => {
     it.skipIf(!existsSync(path))(
       `${c.name}: same prompt, the real answer parses, and the planted requirement is found (record first: node scripts/record-extractions.mjs)`,
       async () => {
-        const recording = Recording.parse(JSON.parse(readFileSync(path, "utf8")));
+        const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
+        const failed = FailedCall.safeParse(raw);
+        if (failed.success)
+          throw new Error(
+            `${path} holds a failed call (${failed.data.result.error.code}: ${failed.data.result.error.message}), not an answer. Delete it and record again.`,
+          );
+        const recording = Recording.parse(raw);
         const text = readFileSync(join(FIXTURES, "sample-prds", c.file), "utf8");
         const ai = replay(recording);
         const result = await extractWithAi(

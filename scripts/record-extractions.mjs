@@ -4,15 +4,13 @@
 // real Claude adapter and saves the exact request and answer.
 // Usage: node scripts/record-extractions.mjs
 // Needs ANTHROPIC_API_KEY (one call per case, a few cents in all). Re-run after changing the extraction prompt.
-import { rmSync } from "node:fs";
 import { join } from "node:path";
 import { createClaudeAiProvider } from "../src/adapters/claude/claude-ai-provider.ts";
 import { approximateCostUsd } from "../src/adapters/claude/pricing.ts";
 import { createFsRepoReader } from "../src/adapters/fs/fs-repo-reader.ts";
 import { readAiOptions } from "../src/cli/ai-options.ts";
-import { recordingAiProvider } from "../src/cli/recording-ai-provider.ts";
-import { newAiTally, usageOf } from "../src/services/ask-ai.ts";
-import { extractWithAi } from "../src/services/extract-with-ai.ts";
+import { recordExtraction } from "../src/cli/record-extraction.ts";
+import { usageOf } from "../src/services/ask-ai.ts";
 
 const ROOT = process.cwd();
 const RECORDINGS = join(ROOT, "fixtures", "recorded", "claude-extraction");
@@ -26,14 +24,16 @@ if (ai === null) {
 }
 let totalCost = 0;
 for (const c of CASES) {
-  rmSync(join(RECORDINGS, `${c.name}-1.json`), { force: true });
-  rmSync(join(RECORDINGS, `${c.name}-2.json`), { force: true });
-  const tally = newAiTally();
-  const result = await extractWithAi(
-    { repoReader: createFsRepoReader(), aiProvider: recordingAiProvider(createClaudeAiProvider(ai), RECORDINGS, c.name) },
-    { prdFolder: c.folder, files: [c.file], tally, onProgress: () => undefined },
+  // Recorded only when the call succeeded: a failed call is printed, nothing in fixtures/ changes, and we exit 1.
+  const recorded = await recordExtraction(
+    { aiProvider: createClaudeAiProvider(ai), repoReader: createFsRepoReader() },
+    { prdFolder: c.folder, file: c.file, recordingsDir: RECORDINGS, name: c.name },
   );
-  if (result.stoppedBy) throw new Error(`${c.name}: ${result.stoppedBy.code} ${result.stoppedBy.message}`);
+  if (!recorded.ok) {
+    console.error(`${c.name}: not recorded. ${recorded.error.code}: ${recorded.error.message}`);
+    process.exit(1);
+  }
+  const { extracted: result, tally } = recorded.value;
   const usage = usageOf(tally);
   const cost = approximateCostUsd([...tally.models][0] ?? "", usage) ?? 0;
   totalCost += cost;
@@ -43,6 +43,5 @@ for (const c of CASES) {
   );
   for (const r of result.requirements) console.log(`  compare  ${r.tag}: ${r.text} (line ${r.source.line}, ${r.extraction?.confidence})`);
   for (const r of result.needsReview) console.log(`  review   ${r.area}: ${r.text} (line ${r.source.line}, ${r.confidence})`);
-  for (const w of result.warnings) console.log(`  warning  ${w.code}: ${w.message}`);
 }
 console.log(`Total ~$${totalCost.toFixed(3)}`);
