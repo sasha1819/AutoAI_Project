@@ -1,6 +1,6 @@
 # ADR 0008 — AI-assisted requirement extraction for unstructured PRDs
 
-Status: proposed (2026-10-03), waiting for the user's approval. Nothing here is built yet.
+Status: accepted (user, 2026-10-03), with the user's answers to the open questions recorded in §3, §5 and §8.
 
 ## Context
 The PRD parser (`core/parsing/prd.ts`) is mechanical: it finds requirements under `#` headings and in tagged lines
@@ -13,13 +13,15 @@ It adds a new AI call to the scan path, so it must keep the matcher's rules (CLA
 - every claim is backed by evidence that is checked against the source text;
 - a confidence below 0.7 means `needs_review`, never shown as fact.
 
-## Decision (proposed)
+## Decision
 
 ### 1. When it runs
 - **Only for a PRD file that the parser reads as 0 requirements.** Files the parser handles are not sent. A parsed
   requirement stays exact and free, and the AI never second-guesses a structured PRD.
 - **Only during a scan (`scan:run`), with the user's key.** `project:read-prds` stays free and AI-free. Add project
-  says in advance which files will be read by Claude, and roughly what that costs (see 5).
+  says in advance how many files Claude will read and how many extra calls that means (see 5).
+- **Always on, no switch** (user decision): every PRD file that parses to 0 requirements is read by Claude, unless it
+  is over the size cap (see 5).
 - **Never in mock mode with a real key.** The mock AiProvider answers extraction prompts with clearly marked mock items.
 
 ### 2. Where the pieces go (no new port, no new dependency)
@@ -27,10 +29,10 @@ It adds a new AI call to the scan path, so it must keep the matcher's rules (CLA
 | --- | --- |
 | Prompt text | `core/prompts/extraction.ts` (pure; the PRD text is escaped like the matcher's inputs) |
 | Answer schema and validation | `core/parsing/extraction.ts` (zod; invalid → `INVALID_AI_OUTPUT`, one retry through `askUntilValid`) |
-| Review decision | `core/rules/confidence.ts` (the same `CONFIDENCE_THRESHOLD = 0.7`) plus a new `reviewExtracted` beside `reviewFinding` |
+| Review decision | `core/rules/extraction.ts` `judgeExtracted`, with the same `CONFIDENCE_THRESHOLD = 0.7` from `confidence.ts` |
 | Evidence check | `core/rules/evidence.ts` `verifyEvidence`, reused: the quote must appear in the PRD within the cited lines ± 2 |
-| Size cap | `core/rules/prompt-budget.ts` (a file over the budget is split by line ranges, never truncated silently) |
-| Orchestration | `services/extract-requirements.ts` gains an optional AI step; `scanProject` calls it before matching |
+| Size cap and the three-way decision | `core/rules/extraction.ts` (a file over the cap is not sent; the user is told why) |
+| Orchestration | `services/extract-with-ai.ts` (new); `scanProject` calls it before matching |
 | AI call | the existing `AiProvider.complete` port (`adapters/claude`), structured output |
 
 ### 3. What Claude returns, and what is checked
@@ -38,42 +40,48 @@ Per file: a list of items `{ area, title, text, quote, lines: [start, end], conf
 - **Evidence:** `quote` must be a verbatim span of the PRD (whitespace-normalised, ≥ 8 characters, ≤ 30 lines),
   inside `lines` ± 2. These are the matcher's limits, reused.
 - **Paraphrase:** `text` may restate the requirement plainly; `quote` is what proves it is in the spec.
-- **Review status:**
-  - an item with a verified quote and confidence ≥ 0.7 is `confirmed`;
-  - otherwise it is `needs_review`, with reasons (`low_confidence`, `evidence_unverified`), exactly as findings.
+- **Three outcomes** (user decision):
+  - **dropped:** the quote fails the verbatim check. The item is discarded completely: it is not shown and not
+    compared (only counted).
+  - **a requirement:** the quote is verified and confidence ≥ 0.7. It becomes a Requirement and is compared with the
+    code like a parsed one.
+  - **needs your review:** the quote is verified and confidence < 0.7. It is shown on the results as "found, not
+    compared, needs your review" and is **never** sent to the matcher (a test proves it).
 - **No invention:** an item without a quote is invalid output (schema), not a low-confidence item.
 
 ### 4. Domain change
-`Requirement` gains an origin, so screens and reports can tell them apart:
-- `{ origin: "parsed" }`, as today;
-- `{ origin: "extracted", confidence, reviewStatus, reasons, evidence }`.
+- `Requirement` gains an optional `extraction: { confidence, quote }`, present only on a requirement Claude found, so
+  screens and reports can tell them apart. Its tag is `"<area> (AI) <n>"`, so it can never collide with a written
+  tag; its source line is the quote's first line.
+- A new `RequirementCandidate` (area, text, source, quote, confidence) holds the "needs your review" items. The scan
+  result lists them separately (`needsReview`); they are never Requirements, so the matcher cannot receive them.
 
-The tag of an extracted item is `"<area> (AI) <n>"`, so it can never collide with a written tag. The source line is
-the quote's first line.
-
-### 5. Cost and consent
-- One call per plain-prose file (or per part of a large one). A typical 2–5 page PRD is about 2–6k input tokens and
-  1–2k output tokens at the default model (ADR 0002).
-- Add project shows "N files are plain prose: during the scan Claude reads them to find requirements" before Scan.
+### 5. Cost, consent and the size cap
+- One call per plain-prose file (one more only if its answer is invalid, the shared retry policy). A typical 2–5
+  page PRD is about 2–6k input tokens and 1–2k output tokens at the default model (ADR 0002).
+- **Before Scan** (user decision), the note beside Scan on Add project says how many files Claude will read and how
+  many extra calls that means. `project:read-prds` reports, per file, whether Claude will read it.
+- **Size cap per file** (user decision): a file over `MAX_EXTRACTION_CHARS` is not sent. Add project names it and
+  says why, with its size and the limit, and what to do (split it, or add headings so it parses without Claude); the
+  scan reports it as a warning (`PRD_TOO_LARGE`). No file is split or cut silently.
 - The scan report counts these calls and tokens in `usage`, like matching.
 
 ### 6. Progress and results
-- `ScanProgress` gains `{ stage: "extracting", file, part, parts }` between `prds_read` and `reading_code`.
+- `ScanProgress` gains `{ stage: "extracting", file, index, total }` and `{ stage: "extracted", requirements, needsReview }`
+  between `prds_read` and `reading_code`.
 - Extracted requirements carry their review status into the Wow summary and the findings screen.
 
 ### 7. Accuracy
 - The fixture `checkout.md` already holds a requirement in this style (`expected-findings.json`).
 - The `scan-evaluator` agent measures it: every planted requirement found, zero invented ones (no unverified quote
   accepted as confirmed).
-- Recorded replies (`fixtures/recorded`) keep the normal test runs offline.
+- Real recorded answers (`fixtures/recorded/claude-extraction`, made by the user with `scripts/record-extractions.mjs`)
+  are replayed offline, like the scan and diagnosis recordings: the prompt must match byte for byte and the real
+  answer must still parse.
 
-## Open questions for the user
-1. **Are `needs_review` extracted requirements matched against the code?**
-   - Option A (proposed): yes. Their findings inherit `needs_review`, so nothing from an uncertain extraction is
-     shown as fact.
-   - Option B: no. They are listed for the user to confirm first, which needs a confirm action and screen work.
-2. **Is extraction always on for plain-prose files, or a switch on Add project?**
-   - Proposed: always on, since the cost is said before Scan.
+## 8. Answers to the open questions (user, 2026-10-03)
+1. Needs-review extracted items are not compared (see §3, "needs your review"). Unverified quotes are dropped.
+2. Extraction is always on for files that parse to 0 requirements, with no switch; the cost is said before Scan.
 
 ## Consequences
 - Plain-prose PRDs stop being a dead end, at a small, stated cost.

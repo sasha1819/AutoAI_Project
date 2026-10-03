@@ -1,6 +1,6 @@
 import type { ScanProgress } from "../../../core/domain/scan-progress.ts";
 import type { PillStatus } from "../../design-system/patterns/StatusPill/index.ts";
-import { plural } from "./wording.ts";
+import { plural } from "../../design-system/wording/index.ts";
 
 /** A progress event with when it arrived (ms), so each step can say how long it took. */
 export type Timed = { readonly at: number; readonly progress: ScanProgress };
@@ -27,6 +27,8 @@ export type ScanSteps = {
   } | null;
   /** One short line for screen readers about the stage the scan is in now (said once per stage). */
   readonly now: string;
+  /** Claude is reading plain-prose PRDs right now (ADR 0008), not yet comparing. */
+  readonly extracting: boolean;
 };
 
 type Of<S extends ScanProgress["stage"]> = Timed & {
@@ -43,7 +45,12 @@ export function scanSteps(events: readonly Timed[], outcome: ScanOutcome): ScanS
   const find = <S extends ScanProgress["stage"]>(stage: S) =>
     events.find((e): e is Of<S> => e.progress.stage === stage);
   const prdsStart = find("reading_prds") ?? events[0];
-  const prdsRead = find("prds_read");
+  const parsedRead = find("prds_read");
+  // Plain-prose PRDs read by Claude (ADR 0008): reading the PRDs ends when Claude has read them too.
+  const extracting = events.filter((e): e is Of<"extracting"> => e.progress.stage === "extracting");
+  const lastExtracting = extracting.at(-1);
+  const extracted = find("extracted");
+  const prdsRead = extracting.length > 0 ? (extracted ? parsedRead : undefined) : parsedRead;
   const codeStart = find("reading_code");
   const codeRead = find("code_read");
   const matching = events.filter((e): e is Of<"matching"> => e.progress.stage === "matching");
@@ -68,14 +75,39 @@ export function scanSteps(events: readonly Timed[], outcome: ScanOutcome): ScanS
   const took = (from: Timed | undefined, to: Timed) =>
     withDuration(from === undefined ? undefined : to.at - from.at);
 
+  const prdsName = (): string => {
+    if (prdsRead === undefined) return "Read your PRDs";
+    const { prdFiles, requirements } = prdsRead.progress;
+    if (!extracted) return `Read your PRDs: ${prdSummary(prdFiles, requirements)}`;
+    // Plain-prose files were read by Claude (ADR 0008): say how many, then what Claude found.
+    const prose = lastExtracting?.progress.total ?? 0;
+    const written =
+      requirements === 0
+        ? `${plural(prose, "file")} in prose`
+        : `${plural(requirements, "requirement")} in ${plural(prdFiles, "file")}`;
+    const found = extracted.progress.requirements + extracted.progress.needsReview;
+    const review = extracted.progress.needsReview;
+    const byClaude =
+      found === 0
+        ? "Claude found none"
+        : `Claude found ${plural(found, requirements === 0 ? "requirement" : "more requirement")}${review > 0 ? ` (${String(review)} for your review)` : ""}`;
+    return `Read your PRDs: ${written}; ${byClaude}`;
+  };
+  const where = lastExtracting
+    ? `${lastExtracting.progress.file} (${String(lastExtracting.progress.index)} of ${String(lastExtracting.progress.total)})`
+    : "";
   const prds: ScanStep = prdsRead
-    ? {
+    ? { id: "prds", name: prdsName(), status: "passed", ...took(prdsStart, extracted ?? prdsRead) }
+    : {
         id: "prds",
-        name: `Read your PRDs: ${prdSummary(prdsRead.progress.prdFiles, prdsRead.progress.requirements)}`,
-        status: "passed",
-        ...took(prdsStart, prdsRead),
-      }
-    : { id: "prds", name: "Read your PRDs", status: open("prds") };
+        name:
+          lastExtracting === undefined
+            ? "Read your PRDs"
+            : outcome === "running"
+              ? `Read your PRDs: Claude is reading ${where}`
+              : `Read your PRDs: stopped while Claude read ${where}`,
+        status: open("prds"),
+      };
 
   const code: ScanStep = codeRead
     ? {
@@ -92,7 +124,14 @@ export function scanSteps(events: readonly Timed[], outcome: ScanOutcome): ScanS
     compareStep =
       done === undefined
         ? { id: "compare", name: "Compare with Claude", status: open("compare") }
-        : { id: "compare", name: "Compare with Claude: nothing to compare", status: "not_run" };
+        : outcome === "stopped"
+          ? // Claude stopped while reading the PRDs, before any area was compared.
+            {
+              id: "compare",
+              name: "Compare with Claude: stopped before comparing",
+              status: "failed",
+            }
+          : { id: "compare", name: "Compare with Claude: nothing to compare", status: "not_run" };
   } else {
     const { area, batch, batches } = lastMatch.progress;
     const where = `${area}, area ${String(batch)} of ${String(batches)}`;
@@ -118,16 +157,23 @@ export function scanSteps(events: readonly Timed[], outcome: ScanOutcome): ScanS
           area: done === undefined ? lastMatch.progress.area : null,
         };
   const now =
-    current === "prds"
-      ? "Reading your PRDs."
-      : current === "code"
-        ? "Reading your code."
-        : current === "compare" && lastMatch !== undefined
-          ? `Comparing area ${String(lastMatch.progress.batch)} of ${String(lastMatch.progress.batches)}.`
-          : current === "compare"
-            ? "Getting ready to compare."
-            : "";
-  return { steps: [prds, code, compareStep], compare, now };
+    current === "prds" && lastExtracting !== undefined
+      ? `Claude is reading ${lastExtracting.progress.file}, file ${String(lastExtracting.progress.index)} of ${String(lastExtracting.progress.total)}.`
+      : current === "prds"
+        ? "Reading your PRDs."
+        : current === "code"
+          ? "Reading your code."
+          : current === "compare" && lastMatch !== undefined
+            ? `Comparing area ${String(lastMatch.progress.batch)} of ${String(lastMatch.progress.batches)}.`
+            : current === "compare"
+              ? "Getting ready to compare."
+              : "";
+  return {
+    steps: [prds, code, compareStep],
+    compare,
+    now,
+    extracting: outcome === "running" && current === "prds" && lastExtracting !== undefined,
+  };
 }
 
 function prdSummary(files: number, requirements: number): string {

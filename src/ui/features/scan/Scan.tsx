@@ -8,7 +8,7 @@ import { ArrowRight } from "../../design-system/primitives/Icon/index.ts";
 import { ProgressBar } from "../../design-system/primitives/ProgressBar/index.ts";
 import { STOPPED_MESSAGE, type ScanCode, WARNING_MESSAGE } from "./messages.ts";
 import { type ScanOutcome, scanSteps, type Timed } from "./scan-steps.ts";
-import { plural } from "./wording.ts";
+import { plural } from "../../design-system/wording/index.ts";
 import { type ScanTarget, useScan } from "./useScan.ts";
 
 export type ScanViewProps = {
@@ -44,7 +44,7 @@ const KEY_CODES: ReadonlySet<ScanCode> = new Set<ScanCode>([
  */
 export function ScanView(props: ScanViewProps) {
   const { repoRoot, events, outcome, report, error, errorCode } = props;
-  const { steps, compare, now } = scanSteps(events, outcome);
+  const { steps, compare, now, extracting } = scanSteps(events, outcome);
   const running = outcome === "running";
   const summaryId = useId();
   // The way out of a key problem: before the scan (a key code) or during it (Anthropic rejected the key).
@@ -101,8 +101,10 @@ export function ScanView(props: ScanViewProps) {
           <>
             <p className="sr-only">{now}</p>
             <p>
-              Claude compares your PRDs with the relevant code, one area at a time. This can take a
-              few minutes; keep AutoAI open.
+              {extracting
+                ? "Claude reads your PRDs written as prose to find requirements, one file at a time."
+                : "Claude compares your PRDs with the relevant code, one area at a time."}{" "}
+              This can take a few minutes; keep AutoAI open.
             </p>
           </>
         ) : (
@@ -163,6 +165,20 @@ function ReportLines({ report }: { readonly report: ScanReport }) {
         {plural(report.findings.length, "finding")}
         {report.notScanned.length > 0 ? `, ${String(report.notScanned.length)} not scanned` : ""}.
       </p>
+      {report.needsReview.length > 0 && (
+        <p>
+          {report.needsReview.length === 1
+            ? "1 requirement Claude found needs your review, so it was not compared. It is listed in the results."
+            : `${String(report.needsReview.length)} requirements Claude found need your review, so they were not compared. They are listed in the results.`}
+        </p>
+      )}
+      {report.extraction.dropped > 0 && (
+        <p>
+          {report.extraction.dropped === 1
+            ? "1 requirement Claude found was left out: its quote was not in your PRD."
+            : `${String(report.extraction.dropped)} requirements Claude found were left out: their quote was not in your PRD.`}
+        </p>
+      )}
       {kinds.map((code) => (
         <p key={code}>{WARNING_MESSAGE[code]}</p>
       ))}

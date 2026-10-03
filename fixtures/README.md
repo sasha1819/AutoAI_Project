@@ -12,3 +12,7 @@ Rules:
 1. Nothing inside `sample-repo/` may hint at the answers (no "bug", "mismatch", requirement tags, TODOs). The scan engine reads that folder, and a hint would make the accuracy number meaningless.
 2. After editing any fixture file, run `npm test`. `src/cli/fixtures.test.ts` checks that the key matches the PRDs, the parser and the cited lines. `fixtures/sample-repo.test.mjs` checks that the planted bugs are real and the correct features work.
 3. Prettier formats `sample-repo`, so re-check the evidence line numbers after a format run (the test will tell you).
+
+Recorded answers (`recorded/`): real Claude replies, replayed offline by the tests so a prompt change is caught.
+- `claude/`: scan matching; `claude-diagnosis/`: diagnoses (`scripts/record-diagnoses.mjs`).
+- `claude-extraction/`: requirements Claude found in the plain-prose `checkout.md` (ADR 0008), made with `node scripts/record-extractions.mjs` and your `ANTHROPIC_API_KEY`. Until it exists, `src/services/extract-with-ai.replay.test.ts` is skipped.

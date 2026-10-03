@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from "react";
 import type { PrdSummary } from "../../../contracts/project.ts";
+import { plural } from "../../design-system/wording/index.ts";
 import { FolderField } from "../../design-system/patterns/FolderField/index.ts";
 import { PageColumn } from "../../design-system/patterns/PageColumn/index.ts";
 import { Badge } from "../../design-system/primitives/Badge/index.ts";
@@ -31,8 +32,6 @@ export type AddProjectViewProps = {
   readonly project: Project | null;
   readonly onScan: (project: Project) => void;
 };
-
-const plural = (n: number, word: string): string => `${String(n)} ${word}${n === 1 ? "" : "s"}`;
 
 // How AutoAI finds requirements, said wherever it found none: the parser reads headings and tagged lines only.
 const FORMAT_HELP =
@@ -85,7 +84,7 @@ export function AddProjectView(props: AddProjectViewProps) {
         {notice !== undefined && <p className="mt-3 text-sm text-text-secondary">{notice}</p>}
       </div>
 
-      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         <Button
           size="xl"
           // Mirrors the service's NO_KEY (the real check), so the UI never reaches that error.
@@ -97,21 +96,25 @@ export function AddProjectView(props: AddProjectViewProps) {
         >
           Scan project
         </Button>
-        {/* A live region: the change from checking to "Connect Claude to scan" is announced. */}
-        <p id={noteId} role="status" className="flex items-center gap-1.5 text-sm text-text-muted">
-          {scanNoteFor(ai, prds, repoFolder)}
-        </p>
         {ai.kind === "missing" && (
           <Button variant="secondary" size="xl" onClick={props.onConnectAi}>
             Connect Claude
           </Button>
         )}
       </div>
+      {/* Under the actions (it can be two lines); a live region, so a change in what Scan will do is announced. */}
+      <p
+        id={noteId}
+        role="status"
+        className="mt-3 flex items-center gap-1.5 text-sm text-text-muted"
+      >
+        {scanNoteFor(ai, prds, repoFolder)}
+      </p>
     </PageColumn>
   );
 }
 
-/** The line beside Scan: why it cannot run yet, or what it will do. */
+/** The line under Scan: why it cannot run yet, or what it will do. */
 function scanNoteFor(ai: AiState, prds: PrdState, repoFolder: string | null) {
   if (ai.kind === "checking")
     return (
@@ -124,34 +127,55 @@ function scanNoteFor(ai: AiState, prds: PrdState, repoFolder: string | null) {
   return scanNote(prds, repoFolder);
 }
 
-/** What Scan will do, so nobody starts a scan without knowing whether it uses their API key. */
+const BILLED = "Uses your API key (billed by Anthropic).";
+
+/** What Scan will do, so nobody starts a scan without knowing whether it uses their API key, and how much. */
 function scanNote(prds: PrdState, repoFolder: string | null): string {
   if (repoFolder === null) return "Choose your project's folder to scan it.";
   if (prds.kind === "reading") return "Scan waits until your PRDs are read.";
   if (prds.kind === "failed") return "Choose a PRD folder AutoAI can read to scan.";
-  if (prds.kind === "read" && prds.summary.requirements > 0)
-    return `Claude compares ${plural(prds.summary.requirements, "requirement")} with your code, using your API key (billed by Anthropic).`;
-  // True of scanProject today: with no requirements it has no batches, so it asks the AI nothing.
+  const parsed = prds.kind === "read" ? prds.summary.requirements : 0;
+  const prose = prds.kind === "read" ? proseFiles(prds.summary).length : 0;
+  // ADR 0008: the extra calls are said before Scan (user decision); the count comes from core/rules.
+  const calls = prds.kind === "read" ? prds.summary.extraCalls : 0;
+  const reads = `Claude reads ${plural(prose, "PRD file")} written as prose (${plural(calls, "extra call")})`;
+  if (prose > 0 && parsed > 0)
+    return `${reads}, then compares what it finds and the ${plural(parsed, "requirement")} with your code. ${BILLED}`;
+  if (prose > 0) return `${reads}, then compares what it finds with your code. ${BILLED}`;
+  if (parsed > 0)
+    return `Claude compares ${plural(parsed, "requirement")} with your code. ${BILLED}`;
+  // True of scanProject: with no requirements and nothing for Claude to read, it asks the AI nothing.
   return "With no requirements, the scan only reads your code. It makes no AI calls.";
 }
 
+const proseFiles = (summary: PrdSummary) => summary.files.filter((f) => f.claude === "will_read");
+const tooLarge = (summary: PrdSummary) => summary.files.filter((f) => f.claude === "too_large");
+
+// One sentence for what happens to prose PRDs, used wherever they are named (ADR 0008).
+const QUOTE_RULE =
+  "Each requirement it finds must be quoted from your PRD; the ones it is unsure of are listed for your review and not compared.";
+
 /** What the chosen PRD folder holds. The first line is a live region: it is short and always there. */
 function PrdFindings({ prds }: { readonly prds: PrdState }) {
+  if (prds.kind === "none") return <p role="status" />;
+  const prose = prds.kind === "read" ? proseFiles(prds.summary) : [];
   return (
-    <div className={`flex flex-col gap-3 ${prds.kind === "none" ? "" : "mt-3"}`}>
+    <div className="mt-3 flex flex-col gap-3">
       <p role="status" className="flex items-center gap-1.5 text-sm text-text-secondary">
         {prdSummaryLine(prds)}
       </p>
-      {prds.kind === "read" && prds.summary.requirements > 0 && (
-        <FileList files={prds.summary.files} />
-      )}
+      {prds.kind === "read" && prds.summary.requirements > 0 && <FileList summary={prds.summary} />}
       {prds.kind === "read" && prds.summary.requirements === 0 && (
-        <Notice title="No requirements found">
-          <p>
-            AutoAI read {plural(prds.summary.files.length, "PRD file")} but found no requirements in{" "}
-            {prds.summary.files.length === 1 ? "it" : "them"}. {FORMAT_HELP}
-          </p>
-          <p>Add headings to your PRDs, then choose the folder again. {NOTHING_TO_COMPARE}</p>
+        <Notice
+          title={prose.length > 0 ? "Your PRDs are written as prose" : "No requirements found"}
+        >
+          <p>{FORMAT_HELP}</p>
+          {prose.length > 0 ? (
+            <ProseLine files={prose.map((f) => f.file)} />
+          ) : (
+            <p>Add headings to your PRDs, then choose the folder again. {NOTHING_TO_COMPARE}</p>
+          )}
+          <TooLargeLines summary={prds.summary} />
         </Notice>
       )}
       {prds.kind === "no-files" && (
@@ -167,6 +191,32 @@ function PrdFindings({ prds }: { readonly prds: PrdState }) {
   );
 }
 
+/** Which files Claude reads, and the rule its findings follow (one wording everywhere). */
+function ProseLine({ files }: { readonly files: readonly string[] }) {
+  return (
+    <p>
+      {files.join(", ")} {files.length === 1 ? "is" : "are"} written as prose, so Claude reads{" "}
+      {files.length === 1 ? "it" : "them"} during the scan. {QUOTE_RULE}
+    </p>
+  );
+}
+
+/** Files over the size cap: named, with their size and the limit, and what to do (never cut silently). */
+function TooLargeLines({ summary }: { readonly summary: PrdSummary }) {
+  return (
+    <>
+      {tooLarge(summary).map((f) => (
+        <p key={f.file}>
+          {f.file} is too large for Claude to read ({f.chars.toLocaleString("en-US")} characters;
+          the limit is {summary.maxChars.toLocaleString("en-US")}). Split it into smaller files, or
+          add headings so AutoAI can read it without Claude.
+        </p>
+      ))}
+    </>
+  );
+}
+
+/** The short line announced when the PRDs are read. What Scan will do with them is said once, under Scan. */
 function prdSummaryLine(prds: PrdState) {
   switch (prds.kind) {
     case "none":
@@ -178,10 +228,17 @@ function prdSummaryLine(prds: PrdState) {
           Reading your PRDs…
         </>
       );
-    case "read":
-      return prds.summary.requirements === 0
-        ? `No requirements found in ${plural(prds.summary.files.length, "PRD file")}.`
-        : `Found ${plural(prds.summary.requirements, "requirement")} in ${plural(prds.summary.files.length, "PRD file")}.`;
+    case "read": {
+      const { requirements, files } = prds.summary;
+      const found =
+        requirements === 0
+          ? `No requirements found in ${plural(files.length, "PRD file")}.`
+          : `Found ${plural(requirements, "requirement")} in ${plural(files.length, "PRD file")}.`;
+      const large = tooLarge(prds.summary).length;
+      return large === 0
+        ? found
+        : `${found} ${plural(large, "file")} ${large === 1 ? "is" : "are"} too large for Claude.`;
+    }
     case "no-files":
       return "No PRD files in this folder.";
     case "failed":
@@ -190,24 +247,31 @@ function prdSummaryLine(prds: PrdState) {
   }
 }
 
-function FileList({ files }: { readonly files: PrdSummary["files"] }) {
-  const empty = files.filter((f) => f.requirements === 0).map((f) => f.file);
+const CLAIM: Record<PrdSummary["files"][number]["claude"], string> = {
+  not_needed: "",
+  will_read: " · read by Claude",
+  too_large: " · too large for Claude",
+};
+
+function FileList({ summary }: { readonly summary: PrdSummary }) {
+  const prose = proseFiles(summary);
   return (
     <>
       <ul className="flex flex-wrap gap-2" aria-label="PRD files">
-        {files.map((f) => (
+        {summary.files.map((f) => (
           <li key={f.file}>
             <Badge
-              label={`${f.file} · ${plural(f.requirements, "requirement")}`}
+              label={`${f.file} · ${plural(f.requirements, "requirement")}${CLAIM[f.claude]}`}
               {...(f.requirements > 0 ? { icon: Check } : {})}
             />
           </li>
         ))}
       </ul>
-      {empty.length > 0 && (
-        <p className="text-sm text-text-muted">
-          No requirements in {empty.join(", ")}. {FORMAT_HELP}
-        </p>
+      {(prose.length > 0 || tooLarge(summary).length > 0) && (
+        <div className="flex flex-col gap-1 text-sm text-text-muted">
+          {prose.length > 0 && <ProseLine files={prose.map((f) => f.file)} />}
+          <TooLargeLines summary={summary} />
+        </div>
       )}
     </>
   );

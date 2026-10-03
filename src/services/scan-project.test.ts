@@ -255,3 +255,122 @@ describe("scanProject", () => {
     expect(result.ok ? null : result.error.code).toBe(code);
   });
 });
+
+describe("scanProject with a plain-prose PRD (ADR 0008)", () => {
+  const vision = [
+    "Our shop vision",
+    "",
+    "Shoppers can apply the discount code SAVE10 at checkout.",
+    "We would like checkout to feel friendly and calm.",
+    "Orders of $50 or more ship free.",
+  ].join("\n");
+  const extracted = JSON.stringify({
+    requirements: [
+      {
+        area: "Cart",
+        text: "The discount code SAVE10 can be applied at checkout.",
+        quote: {
+          lines: [3, 3],
+          snippet: "Shoppers can apply the discount code SAVE10 at checkout.",
+        },
+        confidence: 0.9,
+      },
+      {
+        area: "Checkout",
+        text: "Checkout feels friendly and calm.",
+        quote: { lines: [4, 4], snippet: "We would like checkout to feel friendly and calm." },
+        confidence: 0.4,
+      },
+      {
+        area: "Shipping",
+        text: "Shipping is free for every order.",
+        quote: { lines: [5, 5], snippet: "Every order ships free of charge." },
+        confidence: 0.95,
+      },
+    ],
+  });
+  const matched = answer({ requirement: "R1", type: "match", severity: null });
+
+  it("a needs-review requirement never reaches the matcher; a dropped one is nowhere", async () => {
+    const ai = scriptedAiProvider(extracted, matched);
+    const result = await scanProject(
+      { repoReader: inMemoryRepoReader({ repo, prds: { "vision.md": vision } }), aiProvider: ai },
+      input,
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    const [extraction, matching] = ai.requests;
+    expect(extraction?.user).toContain('<prd file="vision.md">');
+    expect(ai.requests).toHaveLength(2);
+
+    // Compared: only the verified, confident one.
+    expect(matching?.user).toContain("The discount code SAVE10 can be applied at checkout.");
+    expect(matching?.user).toContain('tag="Cart (AI) 1"');
+    // Needs review: listed for the user, never in a matching prompt.
+    expect(ai.requests.slice(1).some((r) => r.user.includes("friendly and calm"))).toBe(false);
+    expect(result.value.needsReview.map((c) => c.text)).toStrictEqual([
+      "Checkout feels friendly and calm.",
+    ]);
+    // Dropped (quote not in the PRD): neither compared nor listed, only counted.
+    expect(JSON.stringify(ai.requests.slice(1))).not.toContain("Shipping is free for every order");
+    expect(JSON.stringify(result.value.needsReview)).not.toContain("Shipping is free");
+    expect(result.value.extraction).toStrictEqual({ files: 1, dropped: 1 });
+
+    expect(result.value.requirements.map((r) => r.tag)).toStrictEqual(["Cart (AI) 1"]);
+    expect(result.value.findings.map((f) => f.requirement.tag)).toStrictEqual(["Cart (AI) 1"]);
+    expect(result.value.usage.aiCalls).toBe(2);
+  });
+
+  it("reports extraction progress between reading the PRDs and reading the code", async () => {
+    const stages: string[] = [];
+    await scanProject(
+      {
+        repoReader: inMemoryRepoReader({ repo, prds: { "vision.md": vision } }),
+        aiProvider: scriptedAiProvider(extracted, matched),
+      },
+      { ...input, onProgress: (p) => stages.push(p.stage) },
+    );
+    expect(stages.slice(0, 5)).toStrictEqual([
+      "reading_prds",
+      "prds_read",
+      "extracting",
+      "extracted",
+      "reading_code",
+    ]);
+  });
+
+  it("a PRD over the size cap is not sent to Claude, and the scan says so", async () => {
+    const ai = scriptedAiProvider();
+    const result = await scanProject(
+      {
+        repoReader: inMemoryRepoReader({ repo, prds: { "huge.md": "words ".repeat(20000) } }),
+        aiProvider: ai,
+      },
+      input,
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    expect(ai.requests).toHaveLength(0);
+    expect(result.value.warnings.map((w) => w.code)).toContain("PRD_TOO_LARGE");
+  });
+
+  it("a structured PRD is never sent to Claude for extraction", async () => {
+    const ai = scriptedAiProvider(
+      cartAnswer,
+      answer({ requirement: "R1", type: "match", severity: null }),
+    );
+    await scanProject({ repoReader: inMemoryRepoReader({ repo, prds }), aiProvider: ai }, input);
+    expect(ai.requests.some((r) => r.user.includes("<prd file="))).toBe(false);
+  });
+
+  it("an AI error that stops extraction stops the scan before matching", async () => {
+    const ai = scriptedAiProvider({ code: "AI_AUTH_FAILED", message: "401" });
+    const result = await scanProject(
+      { repoReader: inMemoryRepoReader({ repo, prds: { "vision.md": vision } }), aiProvider: ai },
+      input,
+    );
+    if (!result.ok) throw new Error(result.error.message);
+    expect(result.value.stoppedBy?.code).toBe("AI_AUTH_FAILED");
+    expect(ai.requests).toHaveLength(1);
+    // Stopped on the first file: none was read, and the report does not claim otherwise.
+    expect(result.value.extraction.files).toBe(0);
+  });
+});

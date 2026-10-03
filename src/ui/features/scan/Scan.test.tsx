@@ -1,3 +1,4 @@
+import { Confidence } from "../../../core/domain/confidence.ts";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
@@ -22,6 +23,8 @@ const report = (over: Partial<ScanReport> = {}): ScanReport => ({
   ],
   findings: [],
   notScanned: [],
+  needsReview: [],
+  extraction: { files: 0, dropped: 0 },
   warnings: [],
   stoppedBy: null,
   models: ["claude-sonnet-5"],
@@ -87,6 +90,33 @@ describe("ScanView", () => {
     expect(document.activeElement).toBe(see);
     await userEvent.click(see);
     expect(onSeeResults).toHaveBeenCalledWith(done);
+  });
+
+  it("says what Claude found but did not compare, and what it left out", () => {
+    render(
+      <ScanView
+        {...base}
+        outcome="done"
+        report={report({
+          needsReview: [
+            {
+              area: "Checkout",
+              text: "Guests can pay.",
+              source: { file: "vision.md", line: 4 },
+              quote: { lines: [4, 4], snippet: "Guests can pay by card." },
+              confidence: Confidence.parse(0.5),
+            },
+          ],
+          extraction: { files: 1, dropped: 2 },
+        })}
+      />,
+    );
+    expect(statusText()).toContain(
+      "1 requirement Claude found needs your review, so it was not compared. It is listed in the results.",
+    );
+    expect(statusText()).toContain(
+      "2 requirements Claude found were left out: their quote was not in your PRD.",
+    );
   });
 
   it("no AI calls and warnings are said once per kind", () => {

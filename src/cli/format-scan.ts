@@ -36,6 +36,13 @@ export function formatScan(scan: ScanResult, costUsd: number | null): string {
       confirmed("match").map((f) => `  ${f.requirement.tag}  (${source(f.requirement)})`),
     ),
     section(
+      "Found by Claude, not compared, needs your review",
+      scan.needsReview.map(
+        (c) =>
+          `  ${c.area}: ${c.text}  (${c.source.file}:${String(c.source.line)}, confidence ${c.confidence.toFixed(2)})`,
+      ),
+    ),
+    section(
       "Not scanned",
       scan.notScanned.map((r) => `  ${r.tag}  (${source(r)})`),
     ),

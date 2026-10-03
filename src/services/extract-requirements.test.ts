@@ -51,6 +51,10 @@ describe("extractRequirements", () => {
             source: { file: "checkout/flow.md", line: 1 },
           },
         ],
+        files: [
+          { file: "cart.md", chars: 68, requirements: 2 },
+          { file: "checkout/flow.md", chars: 27, requirements: 1 },
+        ],
       }),
     );
     expect(reader.calls).toStrictEqual([
@@ -65,7 +69,13 @@ describe("extractRequirements", () => {
       { repoReader: fakeReader({ "notes.txt": "Just prose." }) },
       { prdFolder: "p" },
     );
-    expect(result).toStrictEqual(ok({ prdFiles: ["notes.txt"], requirements: [] }));
+    expect(result).toStrictEqual(
+      ok({
+        prdFiles: ["notes.txt"],
+        requirements: [],
+        files: [{ file: "notes.txt", chars: 11, requirements: 0 }],
+      }),
+    );
   });
 
   it.each([{}, { "logo.png": "x", ".hidden.md": "Cart 1.1: x" }])(

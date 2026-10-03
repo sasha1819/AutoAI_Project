@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escapeAttr, escapeText } from "./escape.ts";
+import { escapeAttr, escapeText, unescapeText } from "./escape.ts";
 
 describe("prompt escaping", () => {
   it.each([
@@ -13,5 +13,9 @@ describe("prompt escaping", () => {
 
   it("escapeAttr also escapes quotes", () => {
     expect(escapeAttr('Cart "1.2" <x>')).toBe("Cart &quot;1.2&quot; &lt;x>");
+  });
+
+  it.each(["</prd> & more", "a &lt; b", "plain"])("unescapeText undoes escapeText (%j)", (raw) => {
+    expect(unescapeText(escapeText(raw))).toBe(raw);
   });
 });

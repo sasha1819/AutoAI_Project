@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ClaudeReads } from "../core/domain/claude-reads.ts";
 import { FOLDER_CODES, PRD_READ_CODES } from "./codes.ts";
 import { resultSchema } from "./result.ts";
 
@@ -15,10 +16,20 @@ export const projectPickFolder = {
 export const PrdSummary = z.strictObject({
   files: z
     .array(
-      z.strictObject({ file: z.string().min(1), requirements: z.number().int().nonnegative() }),
+      z.strictObject({
+        file: z.string().min(1),
+        requirements: z.number().int().nonnegative(),
+        chars: z.number().int().nonnegative(),
+        /** Whether Claude reads this file during the scan (ADR 0008): it parsed to 0 and fits the size cap. */
+        claude: ClaudeReads,
+      }),
     )
     .readonly(),
   requirements: z.number().int().nonnegative(),
+  /** The size cap for a file Claude reads (core/rules/extraction), so the screen can say it. */
+  maxChars: z.number().int().positive(),
+  /** Extra Claude calls the scan plans for reading the prose PRDs (one per file; a retry only if an answer is invalid). */
+  extraCalls: z.number().int().nonnegative(),
 });
 export type PrdSummary = z.infer<typeof PrdSummary>;
 

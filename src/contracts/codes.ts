@@ -27,6 +27,8 @@ export const SCAN_WARNING_CODES = [
   "SOURCE_FILE_UNREADABLE",
   "NO_PRD_FILES",
   "BATCH_NOT_SCANNED",
+  "PRD_TOO_LARGE",
+  "EXTRACTION_FAILED",
 ] as const;
 
 /** Main reads only folders the user chose in the system dialog (ADR 0007); any other path is refused. */

@@ -1,4 +1,5 @@
 import type { Requirement } from "../domain/requirement.ts";
+import type { InvalidAiOutput } from "../parsing/json.ts";
 import type { AiErrorCode } from "../ports/ai-provider.ts";
 
 /** An answer that fails validation is asked for once more before its batch is reported as not scanned. */
@@ -20,9 +21,10 @@ export type AiErrorAction = "stop_scan" | "skip_batch";
 
 /**
  * What a scan does after an AI error. A bad key, an unknown model, rate limits or an outage would fail every
- * later batch too, so the scan stops (keeping what it already has); a problem with one prompt skips only that batch.
+ * later batch too, so the scan stops (keeping what it already has); a problem with one prompt (including an answer
+ * that stayed invalid after the retry) skips only that batch or file.
  */
-export function aiErrorAction(code: AiErrorCode): AiErrorAction {
+export function aiErrorAction(code: AiErrorCode | InvalidAiOutput["code"]): AiErrorAction {
   switch (code) {
     case "AI_AUTH_FAILED":
     case "AI_MODEL_NOT_FOUND":
@@ -32,6 +34,7 @@ export function aiErrorAction(code: AiErrorCode): AiErrorAction {
     case "AI_OUTPUT_TRUNCATED":
     case "AI_REFUSED":
     case "AI_BAD_REQUEST":
+    case "INVALID_AI_OUTPUT":
       return "skip_batch";
   }
 }

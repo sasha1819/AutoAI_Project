@@ -14,7 +14,8 @@ const NOTE = "Mock AI: no real analysis was done (AUTOAI_MOCK_AI=1, development 
  * A stand-in AiProvider for development without a real key (dev-only; wired only by the app's composition root).
  * A key passes the check when it starts with MOCK_KEY_PREFIX; any other key is rejected exactly as a real one.
  * It answers a scan's matching prompt with low-confidence "match" findings, so every one is marked needs_review and
- * says it is mock; anything else it cannot answer yet.
+ * says it is mock. It answers an extraction prompt (ADR 0008) by quoting the PRD's first two long lines: the first
+ * confidently (compared), the second not (needs review), so both paths can be tried. Anything else it cannot answer.
  */
 export function createMockAiProvider(options: { readonly apiKey: string }): AiProvider {
   const accepted =
@@ -28,9 +29,10 @@ export function createMockAiProvider(options: { readonly apiKey: string }): AiPr
     complete: (request) => {
       if (!accepted) return Promise.resolve(rejected);
       const properties = request.jsonSchema?.["properties"];
-      const asksForFindings =
-        typeof properties === "object" && properties !== null && "findings" in properties;
-      if (!asksForFindings) {
+      const asks = (key: string) =>
+        typeof properties === "object" && properties !== null && key in properties;
+      if (asks("requirements")) return Promise.resolve(ok(answer(mockExtraction(request.user))));
+      if (!asks("findings")) {
         return Promise.resolve(
           err({
             code: "AI_UNAVAILABLE" as const,
@@ -49,13 +51,28 @@ export function createMockAiProvider(options: { readonly apiKey: string }): AiPr
         evidence: null,
         confidence: 0.5,
       }));
-      return Promise.resolve(
-        ok({
-          text: JSON.stringify({ findings }),
-          model: MODEL,
-          usage: { inputTokens: 0, outputTokens: 0 },
-        }),
-      );
+      return Promise.resolve(ok(answer({ findings })));
     },
+  };
+}
+
+function answer(body: unknown) {
+  return { text: JSON.stringify(body), model: MODEL, usage: { inputTokens: 0, outputTokens: 0 } };
+}
+
+// The PRD's numbered lines as the extraction prompt shows them ("   3 | text"); long ones make useful quotes.
+function mockExtraction(user: string) {
+  const lines = [...user.matchAll(/^\s*(\d+) \| (.{20,})$/gm)].slice(0, 2);
+  return {
+    requirements: lines.map((m, i) => {
+      const line = Number(m[1]);
+      const snippet = (m[2] ?? "").trim();
+      return {
+        area: "Mock",
+        text: `Mock AI found: ${snippet}`,
+        quote: { lines: [line, line], snippet },
+        confidence: i === 0 ? 0.8 : 0.5,
+      };
+    }),
   };
 }

@@ -11,6 +11,12 @@ export type ExtractRequirementsError = DomainError<RepoReadErrorCode | "NO_PRD_F
 export type ExtractedRequirements = {
   readonly prdFiles: readonly string[];
   readonly requirements: readonly Requirement[];
+  /** Per PRD file, in order: its size in characters and how many requirements the parser found in it. */
+  readonly files: readonly {
+    readonly file: string;
+    readonly chars: number;
+    readonly requirements: number;
+  }[];
 };
 
 /** Reads every PRD file in a folder and returns its requirements, in file then line order. */
@@ -30,10 +36,13 @@ export async function extractRequirements(
   }
 
   const requirements: Requirement[] = [];
+  const files: ExtractedRequirements["files"][number][] = [];
   for (const file of prdFiles) {
     const read = await deps.repoReader.readText(input.prdFolder, file);
     if (!read.ok) return read;
-    requirements.push(...parsePrd({ file, text: read.value }));
+    const found = parsePrd({ file, text: read.value });
+    requirements.push(...found);
+    files.push({ file, chars: read.value.length, requirements: found.length });
   }
-  return ok({ prdFiles, requirements });
+  return ok({ prdFiles, requirements, files });
 }

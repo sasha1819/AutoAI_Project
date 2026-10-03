@@ -138,4 +138,84 @@ describe("scanSteps", () => {
     );
     expect(names(s).at(-1)).toBe("Compare with Claude: stopped at Cart, area 1 of 2 | failed");
   });
+
+  it("plain-prose PRDs: Claude reading each file, then what it found, before reading the code", () => {
+    const reading = scanSteps(
+      [
+        at(0, { stage: "reading_prds" }),
+        at(5, { stage: "prds_read", prdFiles: 2, requirements: 0 }),
+        at(6, { stage: "extracting", file: "vision.md", index: 1, total: 2 }),
+      ],
+      "running",
+    );
+    expect(names(reading)[0]).toBe(
+      "Read your PRDs: Claude is reading vision.md (1 of 2) | running",
+    );
+    expect(reading.now).toBe("Claude is reading vision.md, file 1 of 2.");
+    const read = scanSteps(
+      [
+        at(0, { stage: "reading_prds" }),
+        at(5, { stage: "prds_read", prdFiles: 2, requirements: 0 }),
+        at(6, { stage: "extracting", file: "vision.md", index: 1, total: 2 }),
+        at(9, { stage: "extracting", file: "roadmap.md", index: 2, total: 2 }),
+        at(20, { stage: "extracted", requirements: 3, needsReview: 1 }),
+        at(21, { stage: "reading_code" }),
+      ],
+      "running",
+    );
+    expect(names(read)[0]).toBe(
+      "Read your PRDs: 2 files in prose; Claude found 4 requirements (1 for your review) | passed",
+    );
+    expect(read.steps[0].durationMs).toBe(20);
+    expect(names(read)[1]).toBe("Read your code | running");
+  });
+
+  it("stopped by Claude while reading the PRDs: compare says it stopped before comparing", () => {
+    const s = scanSteps(
+      [
+        at(0, { stage: "prds_read", prdFiles: 1, requirements: 0 }),
+        at(1, { stage: "extracting", file: "vision.md", index: 1, total: 1 }),
+        at(2, { stage: "extracted", requirements: 0, needsReview: 0 }),
+        at(3, { stage: "code_read", sourceFiles: 2 }),
+        at(4, { stage: "done" }),
+      ],
+      "stopped",
+    );
+    expect(names(s)[2]).toBe("Compare with Claude: stopped before comparing | failed");
+  });
+
+  it("parsed and prose together: Claude's are 'more'; none found says none", () => {
+    const base = [
+      at(0, { stage: "prds_read", prdFiles: 3, requirements: 5 }),
+      at(1, { stage: "extracting", file: "vision.md", index: 1, total: 1 }),
+    ] as const;
+    expect(
+      names(
+        scanSteps(
+          [...base, at(2, { stage: "extracted", requirements: 1, needsReview: 0 })],
+          "running",
+        ),
+      )[0],
+    ).toBe("Read your PRDs: 5 requirements in 3 files; Claude found 1 more requirement | passed");
+    expect(
+      names(
+        scanSteps(
+          [...base, at(2, { stage: "extracted", requirements: 0, needsReview: 0 })],
+          "running",
+        ),
+      )[0],
+    ).toBe("Read your PRDs: 5 requirements in 3 files; Claude found none | passed");
+  });
+
+  it("ended while Claude was reading: the step says it stopped there, in the past tense", () => {
+    const events = [
+      at(0, { stage: "prds_read", prdFiles: 2, requirements: 0 }),
+      at(1, { stage: "extracting", file: "vision.md", index: 1, total: 2 }),
+    ];
+    expect(names(scanSteps(events, "failed"))[0]).toBe(
+      "Read your PRDs: stopped while Claude read vision.md (1 of 2) | failed",
+    );
+    expect(scanSteps(events, "running").extracting).toBe(true);
+    expect(scanSteps(events, "failed").extracting).toBe(false);
+  });
 });

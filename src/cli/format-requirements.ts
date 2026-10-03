@@ -1,10 +1,14 @@
 import type { ExtractedRequirements } from "../services/extract-requirements.ts";
 
 const MAX_WIDTH = 100;
+// A copy of the screens' plural (ui/design-system/wording) on purpose: the terminal command cannot import UI code.
 const plural = (n: number, word: string): string => `${String(n)} ${word}${n === 1 ? "" : "s"}`;
 
 /** Terminal view of extracted requirements: a count, then one line per requirement grouped by area. */
-export function formatRequirements(folder: string, extracted: ExtractedRequirements): string {
+export function formatRequirements(
+  folder: string,
+  extracted: Pick<ExtractedRequirements, "prdFiles" | "requirements">,
+): string {
   const { prdFiles, requirements } = extracted;
   const header = `Found ${plural(requirements.length, "requirement")} in ${plural(prdFiles.length, "PRD file")} (${folder})`;
   if (requirements.length === 0) {

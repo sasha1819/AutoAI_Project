@@ -37,7 +37,9 @@ describe("INVALID_AI_OUTPUT_ATTEMPTS", () => {
 });
 
 describe("aiErrorAction", () => {
-  it.each<[AiErrorCode, "stop_scan" | "skip_batch"]>([
+  it.each<[AiErrorCode | "INVALID_AI_OUTPUT", "stop_scan" | "skip_batch"]>([
+    // An answer that stayed invalid after the retry concerns one prompt only.
+    ["INVALID_AI_OUTPUT", "skip_batch"],
     ["AI_AUTH_FAILED", "stop_scan"],
     ["AI_MODEL_NOT_FOUND", "stop_scan"],
     ["AI_RATE_LIMITED", "stop_scan"],

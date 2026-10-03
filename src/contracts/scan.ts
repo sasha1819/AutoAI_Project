@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Finding } from "../core/domain/finding.ts";
-import { Requirement } from "../core/domain/requirement.ts";
+import { Requirement, RequirementCandidate } from "../core/domain/requirement.ts";
 import { ScanProgress } from "../core/domain/scan-progress.ts";
 import {
   AI_CODES,
@@ -17,6 +17,12 @@ export const ScanReport = z.strictObject({
   prdFiles: z.array(z.string()).readonly(),
   sourceFiles: z.number().int().nonnegative(),
   requirements: z.array(Requirement).readonly(),
+  /** Found by Claude in a plain-prose PRD but not confident enough: not compared, for the user's review (ADR 0008). */
+  needsReview: z.array(RequirementCandidate).readonly(),
+  extraction: z.strictObject({
+    files: z.number().int().nonnegative(),
+    dropped: z.number().int().nonnegative(),
+  }),
   findings: z.array(Finding).readonly(),
   notScanned: z.array(Requirement).readonly(),
   warnings: z

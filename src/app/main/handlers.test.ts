@@ -10,6 +10,8 @@ const emptyScan: ScanResult = {
   requirements: [],
   findings: [],
   notScanned: [],
+  needsReview: [],
+  extraction: { files: 0, dropped: 0 },
   warnings: [{ code: "SOURCE_FILE_UNREADABLE", message: "x.js could not be read" }],
   stoppedBy: null,
   models: ["claude-sonnet-5"],
@@ -23,7 +25,14 @@ const services = (over: Partial<AppServices> = {}): AppServices => ({
   openLink: () => Promise.resolve(ok(undefined)),
   mockAi: false,
   readPrds: () =>
-    Promise.resolve(ok({ files: [{ file: "a.md", requirements: 0 }], requirements: 0 })),
+    Promise.resolve(
+      ok({
+        files: [{ file: "a.md", requirements: 0, chars: 10, claude: "will_read" as const }],
+        requirements: 0,
+        maxChars: 50000,
+        extraCalls: 0,
+      }),
+    ),
   scan: () => Promise.resolve(ok(emptyScan)),
   ...over,
 });
@@ -77,14 +86,14 @@ describe("IPC handlers", () => {
     const seen: string[] = [];
     const readPrds: AppServices["readPrds"] = (folder) => {
       seen.push(folder);
-      return Promise.resolve(ok({ files: [], requirements: 0 }));
+      return Promise.resolve(ok({ files: [], requirements: 0, maxChars: 50000, extraCalls: 0 }));
     };
     expect(
       await createHandlers(services({ readPrds }))["project:read-prds"](
         { prdFolder: "/p" },
         noPush,
       ),
-    ).toStrictEqual(ok({ files: [], requirements: 0 }));
+    ).toStrictEqual(ok({ files: [], requirements: 0, maxChars: 50000, extraCalls: 0 }));
     expect(seen).toStrictEqual(["/p"]);
     const refused = err({ code: "FOLDER_NOT_PICKED", message: "pick it" } as const);
     expect(

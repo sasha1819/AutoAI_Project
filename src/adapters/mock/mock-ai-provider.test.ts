@@ -1,3 +1,5 @@
+import { parseExtractionResponse } from "../../core/parsing/extraction.ts";
+import { buildExtractionPrompt } from "../../core/prompts/extraction.ts";
 import { describe, expect, it } from "vitest";
 import { buildMatchingPrompt } from "../../core/prompts/matching.ts";
 import { parseMatchingResponse } from "../../core/parsing/finding.ts";
@@ -50,5 +52,27 @@ describe("createMockAiProvider", () => {
       user: "u",
     });
     expect(reply.ok ? null : reply.error.code).toBe("AI_UNAVAILABLE");
+  });
+
+  it("answers an extraction prompt with one quoted item to compare and one to review, both verifiable", async () => {
+    const prompt = buildExtractionPrompt({
+      path: "vision.md",
+      text: "Vision\n\nShoppers can apply a discount code at checkout.\nOrders over fifty euros ship for free.",
+    });
+    const ai = createMockAiProvider({ apiKey: mockKey });
+    const reply = await ai.complete({
+      system: prompt.system,
+      user: prompt.user,
+      jsonSchema: prompt.answerSchema,
+    });
+    if (!reply.ok) throw new Error(reply.error.message);
+    const parsed = parseExtractionResponse(reply.value.text, prompt);
+    expect(
+      parsed.ok && [
+        parsed.value.requirements.length,
+        parsed.value.needsReview.length,
+        parsed.value.dropped,
+      ],
+    ).toStrictEqual([1, 1, 0]);
   });
 });

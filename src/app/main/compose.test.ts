@@ -145,10 +145,13 @@ describe("composeApp wires the real services and adapters to the handlers", () =
       ok: true,
       value: {
         files: [
-          { file: "cart.md", requirements: 1 },
-          { file: "vision.md", requirements: 0 },
+          { file: "cart.md", requirements: 1, chars: 37, claude: "not_needed" },
+          // Plain prose: Claude will read it during the scan (ADR 0008); nothing is sent now.
+          { file: "vision.md", requirements: 0, chars: 24, claude: "will_read" },
         ],
         requirements: 1,
+        maxChars: 50000,
+        extraCalls: 1,
       },
     });
     // The repo picked as a PRD folder, or a PRD folder sent as the repo: still refused.

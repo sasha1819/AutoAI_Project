@@ -66,3 +66,8 @@ export async function askUntilValid<T>(
   }
   return err(problem);
 }
+
+/** One line saying why an AI step gave nothing usable, for a scan warning (the code only when it adds something). */
+export function aiProblem(error: AiError | InvalidAiOutput): string {
+  return error.code === "INVALID_AI_OUTPUT" ? error.message : `${error.code}: ${error.message}`;
+}

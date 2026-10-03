@@ -1,6 +1,5 @@
 # LATER (not in MVP) — do not build without asking
 
-- [ ] AI-assisted requirement extraction for unstructured PRDs. SCHEDULED (2026-10-03): BUILD-LOG M5, the task right after scan progress; ADR 0008 (proposed) first, because it adds an AI call to the scan path. smarter handling of unstructured prose PRDs (likely a future AI-assisted extraction step, not mechanical paragraph splitting). CONFIRMED, not hypothetical (2026-09-28): `docs/PRD.md` itself, a real doc-editor export with numbered lines and no `#` headings or "Area 1.2" tags, yields 0 requirements with the current parser. The fixtures include one requirement in that style so the accuracy test counts the gap.
 - [ ] Visual drag-and-drop flow canvas
 - [ ] Mobile (Appium/Maestro) and desktop targets, cross-browser
 - [ ] PR impact screen + GitHub PR comment bot
@@ -15,7 +14,7 @@
 - [ ] Accounts, plans, credits, Stripe/Paddle billing
 - [ ] Private/self-hosted models, pluggable AI providers
 - [ ] Team features
-- [ ] Cancel a running scan: needs a `scan:cancel` channel and an abort through the AiProvider port (port change + ADR). MVP scans are bounded: calls scale with the area count, said before Scan ("Claude compares N requirements"), one scan at a time (SCAN_BUSY), stops on auth / rate-limit errors with no retry, and quitting the app ends it (decided 2026-10-03). Revisit with ADR 0008, where extraction makes the call count unknown before the scan.
+- [ ] Cancel a running scan: needs a `scan:cancel` channel and an abort through the AiProvider port (port change + ADR). MVP scans are bounded: calls scale with the area count, said before Scan ("Claude compares N requirements"), one scan at a time (SCAN_BUSY), stops on auth / rate-limit errors with no retry, and quitting the app ends it (decided 2026-10-03). Extraction (ADR 0008) keeps this true: its calls are said per file before Scan.
 - [ ] Claude subscription login (needs Anthropic approval): Anthropic's Agent SDK docs say third-party developers may not offer claude.ai login or subscription rate limits unless previously approved. MVP is bring-your-own API key only (decided 2026-10-03).
 - [ ] Drag PRD files or a folder into Add project (mockup 3's drop card; Electron `webUtils.getPathForFile`, and the dropped path must count as picked); MVP picks folders with the system dialog only (decided 2026-10-03)
 - [ ] Bedrock / Vertex / Foundry providers via the AiProvider port (new adapters behind the same port; decided 2026-10-03)

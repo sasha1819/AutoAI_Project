@@ -1,6 +1,6 @@
 import type { DomainError } from "../core/domain/domain-error.ts";
 import type { Finding } from "../core/domain/finding.ts";
-import type { Requirement } from "../core/domain/requirement.ts";
+import type { Requirement, RequirementCandidate } from "../core/domain/requirement.ts";
 import type { ScanProgress } from "../core/domain/scan-progress.ts";
 import { err, ok, type Result } from "../core/domain/result.ts";
 import { parseMatchingResponse } from "../core/parsing/finding.ts";
@@ -9,19 +9,30 @@ import type { RepoReadErrorCode, RepoReader } from "../core/ports/repo-reader.ts
 import { buildMatchingPrompt } from "../core/prompts/matching.ts";
 import { aiErrorAction, batchRequirements } from "../core/rules/batching.ts";
 import { fitFilesToBudget } from "../core/rules/prompt-budget.ts";
+import { claudeReadsPrd, MAX_EXTRACTION_CHARS } from "../core/rules/extraction.ts";
 import { indexFiles, rankFilesForBatch } from "../core/rules/relevance.ts";
-import { askUntilValid, newAiTally, usageOf } from "./ask-ai.ts";
+import { aiProblem, askUntilValid, newAiTally, usageOf } from "./ask-ai.ts";
 import { extractRequirements } from "./extract-requirements.ts";
+import { type ExtractionWarning, extractWithAi } from "./extract-with-ai.ts";
 import { loadSourceFiles, type SourceFileWarning } from "./source-files.ts";
 
 export type ScanWarning =
   | SourceFileWarning
-  | { readonly code: "NO_PRD_FILES" | "BATCH_NOT_SCANNED"; readonly message: string };
+  | ExtractionWarning
+  | {
+      readonly code: "NO_PRD_FILES" | "BATCH_NOT_SCANNED" | "PRD_TOO_LARGE";
+      readonly message: string;
+    };
 export type ScanResult = {
   readonly prdFiles: readonly string[];
   /** Source files found in the repo (unreadable ones are also listed in warnings). */
   readonly sourceFiles: number;
+  /** Parsed requirements, then the ones Claude found in plain-prose PRDs (ADR 0008); all were compared. */
   readonly requirements: readonly Requirement[];
+  /** Found by Claude with a verified quote but low confidence: not compared, for the user to review. */
+  readonly needsReview: readonly RequirementCandidate[];
+  /** How Claude's reading of plain-prose PRDs went: files read, and items dropped for a quote not in the PRD. */
+  readonly extraction: { readonly files: number; readonly dropped: number };
   readonly findings: readonly Finding[];
   /** Requirements no valid answer was obtained for (invalid answers, or the scan stopped first). */
   readonly notScanned: readonly Requirement[];
@@ -57,10 +68,50 @@ export async function scanProject(
   }
   // No PRD files is not a failed scan: the project simply has no spec to compare against (PRD onboarding).
   if (!extracted.ok) warnings.push({ code: "NO_PRD_FILES", message: extracted.error.message });
-  const { prdFiles, requirements } = extracted.ok
-    ? extracted.value
-    : { prdFiles: [], requirements: [] };
-  progress({ stage: "prds_read", prdFiles: prdFiles.length, requirements: requirements.length });
+  const {
+    prdFiles,
+    requirements: parsed,
+    files: prds,
+  } = extracted.ok ? extracted.value : { prdFiles: [], requirements: [], files: [] };
+  progress({ stage: "prds_read", prdFiles: prdFiles.length, requirements: parsed.length });
+
+  // Plain-prose PRDs (parsed to 0) are read by Claude, within the size cap (ADR 0008).
+  const tally = newAiTally();
+  const toRead: string[] = [];
+  for (const f of prds) {
+    const reads = claudeReadsPrd({ parsedRequirements: f.requirements, chars: f.chars });
+    if (reads === "will_read") toRead.push(f.file);
+    if (reads === "too_large")
+      warnings.push({
+        code: "PRD_TOO_LARGE",
+        message: `${f.file}: ${String(f.chars)} characters; Claude reads PRD files up to ${String(MAX_EXTRACTION_CHARS)}`,
+      });
+  }
+  const byAi =
+    toRead.length === 0 || input.prdFolder === null
+      ? {
+          requirements: [],
+          needsReview: [],
+          dropped: 0,
+          filesRead: 0,
+          warnings: [],
+          stoppedBy: null,
+        }
+      : await extractWithAi(deps, {
+          prdFolder: input.prdFolder,
+          files: toRead,
+          tally,
+          onProgress: progress,
+        });
+  warnings.push(...byAi.warnings);
+  if (toRead.length > 0)
+    progress({
+      stage: "extracted",
+      requirements: byAi.requirements.length,
+      needsReview: byAi.needsReview.length,
+    });
+  // Only verified, confident requirements are compared; needs-review items never reach the matcher (ADR 0008).
+  const requirements = [...parsed, ...byAi.requirements];
 
   progress({ stage: "reading_code" });
   const loaded = await loadSourceFiles(deps.repoReader, input.repoRoot, {
@@ -75,8 +126,7 @@ export async function scanProject(
   const byPath = new Map(files.map((f) => [f.path, f]));
   const findings: Finding[] = [];
   const notScanned: Requirement[] = [];
-  const tally = newAiTally();
-  let stoppedBy: AiError | null = null;
+  let stoppedBy: AiError | null = byAi.stoppedBy;
 
   const batches = batchRequirements(requirements);
   for (const [i, batch] of batches.entries()) {
@@ -110,13 +160,11 @@ export async function scanProject(
     }
     notScanned.push(...batch);
     const { error } = answer;
-    if (error.code !== "INVALID_AI_OUTPUT" && aiErrorAction(error.code) === "stop_scan") {
+    if (aiErrorAction(error.code) === "stop_scan" && error.code !== "INVALID_AI_OUTPUT") {
       stoppedBy = error;
       continue;
     }
-    const problem =
-      error.code === "INVALID_AI_OUTPUT" ? error.message : `${error.code}: ${error.message}`;
-    warnings.push({ code: "BATCH_NOT_SCANNED", message: `${areaOf(batch)}: ${problem}` });
+    warnings.push({ code: "BATCH_NOT_SCANNED", message: `${areaOf(batch)}: ${aiProblem(error)}` });
   }
 
   progress({ stage: "done" });
@@ -124,6 +172,8 @@ export async function scanProject(
     prdFiles,
     sourceFiles: sourcePaths.length,
     requirements,
+    needsReview: byAi.needsReview,
+    extraction: { files: byAi.filesRead, dropped: byAi.dropped },
     findings,
     notScanned,
     warnings,

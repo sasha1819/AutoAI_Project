@@ -29,6 +29,10 @@ export const SCAN_MESSAGE: Record<ScanCode, string> = {
 export const WARNING_MESSAGE: Record<WarningCode, string> = {
   SOURCE_FILE_UNREADABLE: "Some source files couldn't be read and were skipped.",
   NO_PRD_FILES: "No PRDs were read, so nothing was compared with your code.",
+  PRD_TOO_LARGE:
+    "A PRD file was too large for Claude to read and was skipped. Split it into smaller files, or add headings.",
+  EXTRACTION_FAILED:
+    "Claude couldn't read some plain-prose PRD files; nothing from them was compared. Scan again to retry.",
   BATCH_NOT_SCANNED:
     "Claude couldn't give a valid answer for some areas. Their requirements are listed as not scanned.",
 };

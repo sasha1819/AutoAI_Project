@@ -9,7 +9,8 @@ import { scriptedAiProvider } from "./testing/scripted-ai-provider.ts";
 
 const repoReader = inMemoryRepoReader({
   repo: { "src/a.js": "export const a = 1;" },
-  prds: { "x.md": "# Nothing tagged" },
+  // Empty: no requirements and nothing for Claude to read, so these scans make no AI call.
+  prds: { "x.md": "" },
 });
 const input = { repoRoot: "repo", prdFolder: "prds" };
 

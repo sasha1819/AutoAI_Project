@@ -47,6 +47,7 @@ describe("npm run requirements", { timeout: 20_000 }, () => {
           source: { file: "cart.md", line: 1 },
         },
       ],
+      files: [{ file: "cart.md", chars: expect.any(Number) as number, requirements: 1 }],
     });
   });
 

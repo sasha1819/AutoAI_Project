@@ -11,6 +11,18 @@ export const ScanProgress = z.discriminatedUnion("stage", [
     prdFiles: z.number().int().nonnegative(),
     requirements: z.number().int().nonnegative(),
   }),
+  // Only when a PRD file had no requirements the parser could read (ADR 0008): Claude reads it, one file at a time.
+  z.strictObject({
+    stage: z.literal("extracting"),
+    file: z.string().min(1),
+    index: z.number().int().positive(),
+    total: z.number().int().positive(),
+  }),
+  z.strictObject({
+    stage: z.literal("extracted"),
+    requirements: z.number().int().nonnegative(),
+    needsReview: z.number().int().nonnegative(),
+  }),
   z.strictObject({ stage: z.literal("reading_code") }),
   z.strictObject({ stage: z.literal("code_read"), sourceFiles: z.number().int().nonnegative() }),
   z.strictObject({

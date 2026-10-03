@@ -10,3 +10,11 @@ export function escapeText(value: string): string {
 export function escapeAttr(value: string): string {
   return escapeText(value).replaceAll('"', "&quot;");
 }
+
+/**
+ * Undoes escapeText, for text Claude copied back from inside a prompt's tags (a quote from a PRD), so it can be
+ * checked against the file as written.
+ */
+export function unescapeText(value: string): string {
+  return value.replaceAll("&lt;", "<").replaceAll("&amp;", "&");
+}

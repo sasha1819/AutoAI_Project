@@ -10,8 +10,15 @@ type ReadPrds = ChannelResponse<"project:read-prds">;
 const summary = (files: [string, number][]): ReadPrds => ({
   ok: true,
   value: {
-    files: files.map(([file, requirements]) => ({ file, requirements })),
+    files: files.map(([file, requirements]) => ({
+      file,
+      requirements,
+      chars: 1200,
+      claude: requirements > 0 ? ("not_needed" as const) : ("will_read" as const),
+    })),
     requirements: files.reduce((n, [, r]) => n + r, 0),
+    maxChars: 50000,
+    extraCalls: 0,
   },
 });
 const NONE = { repoFolder: null, prdFolder: null };
@@ -48,7 +55,7 @@ describe("AddProjectView", () => {
     expect(screen.getByText("Choose your project's folder to scan it.")).toBeTruthy();
   });
 
-  it("PRDs in plain prose: says 0 requirements and how to write them, never an empty result", () => {
+  it("PRDs in plain prose: says 0 requirements, that Claude will read them, and the extra calls, before Scan", () => {
     render(
       <AddProjectView
         {...base}
@@ -56,18 +63,88 @@ describe("AddProjectView", () => {
         prdFolder="/p"
         prds={{
           kind: "read",
-          summary: { files: [{ file: "vision.md", requirements: 0 }], requirements: 0 },
+          summary: {
+            files: [{ file: "vision.md", requirements: 0, chars: 1200, claude: "will_read" }],
+            requirements: 0,
+            maxChars: 50000,
+            extraCalls: 1,
+          },
         }}
         project={{ repoRoot: "/r", prdFolder: "/p" }}
       />,
     );
     expect(status()).toContain("No requirements found in 1 PRD file.");
-    expect(screen.getByText("No requirements found")).toBeTruthy();
+    expect(screen.getByText("Your PRDs are written as prose")).toBeTruthy();
+    expect(screen.getByText(/AutoAI finds requirements under headings/)).toBeTruthy();
     expect(
-      screen.getByText(/found no requirements in it\. AutoAI finds requirements under headings/),
+      screen.getByText(
+        /vision\.md is written as prose, so Claude reads it during the scan\. Each requirement it finds must be quoted/,
+      ),
     ).toBeTruthy();
-    expect(screen.getByText(/the scan only reads your code\. It makes no AI calls\./)).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Claude reads 1 PRD file written as prose (1 extra call), then compares what it finds with your code. Uses your API key (billed by Anthropic).",
+      ),
+    ).toBeTruthy();
     expect(screen.queryByRole("list", { name: "PRD files" })).toBeNull();
+  });
+
+  it("a plain-prose file over the size cap is named with its size and the limit, and not read", () => {
+    render(
+      <AddProjectView
+        {...base}
+        repoFolder="/r"
+        prdFolder="/p"
+        prds={{
+          kind: "read",
+          summary: {
+            files: [{ file: "big.md", requirements: 0, chars: 120431, claude: "too_large" }],
+            requirements: 0,
+            maxChars: 50000,
+            extraCalls: 0,
+          },
+        }}
+        project={{ repoRoot: "/r", prdFolder: "/p" }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "big.md is too large for Claude to read (120,431 characters; the limit is 50,000). Split it into smaller files, or add headings so AutoAI can read it without Claude.",
+      ),
+    ).toBeTruthy();
+    expect(status()).toContain(
+      "No requirements found in 1 PRD file. 1 file is too large for Claude.",
+    );
+    expect(screen.getByText(/It makes no AI calls\./)).toBeTruthy();
+  });
+
+  it("parsed and plain-prose files together: both said, with the extra calls", () => {
+    render(
+      <AddProjectView
+        {...base}
+        repoFolder="/r"
+        prdFolder="/p"
+        prds={{
+          kind: "read",
+          summary: {
+            files: [
+              { file: "cart.md", requirements: 4, chars: 900, claude: "not_needed" },
+              { file: "a.md", requirements: 0, chars: 900, claude: "will_read" },
+              { file: "b.md", requirements: 0, chars: 900, claude: "will_read" },
+            ],
+            requirements: 4,
+            maxChars: 50000,
+            extraCalls: 2,
+          },
+        }}
+        project={{ repoRoot: "/r", prdFolder: "/p" }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "Claude reads 2 PRD files written as prose (2 extra calls), then compares what it finds and the 4 requirements with your code. Uses your API key (billed by Anthropic).",
+      ),
+    ).toBeTruthy();
   });
 
   it("a folder with no PRD files says so and what AutoAI reads", () => {
@@ -87,10 +164,12 @@ describe("AddProjectView", () => {
           kind: "read",
           summary: {
             files: [
-              { file: "cart.md", requirements: 12 },
-              { file: "notes.md", requirements: 0 },
+              { file: "cart.md", requirements: 12, chars: 1200, claude: "not_needed" },
+              { file: "notes.md", requirements: 0, chars: 1200, claude: "will_read" },
             ],
             requirements: 12,
+            maxChars: 50000,
+            extraCalls: 1,
           },
         }}
         project={{ repoRoot: "/r", prdFolder: "/p" }}
@@ -101,10 +180,12 @@ describe("AddProjectView", () => {
     const tags = screen.getByRole("list", { name: "PRD files" }).querySelectorAll("li");
     expect([...tags].map((t) => t.textContent)).toStrictEqual([
       "cart.md · 12 requirements",
-      "notes.md · 0 requirements",
+      "notes.md · 0 requirements · read by Claude",
     ]);
-    expect(screen.getByText(/No requirements in notes\.md\./)).toBeTruthy();
-    expect(screen.getByText(/using your API key \(billed by Anthropic\)/)).toBeTruthy();
+    expect(
+      screen.getByText(/notes\.md is written as prose, so Claude reads it during the scan/),
+    ).toBeTruthy();
+    expect(screen.getByText(/Uses your API key \(billed by Anthropic\)/)).toBeTruthy();
     scanButton().click();
     expect(onScan).toHaveBeenCalledWith({ repoRoot: "/r", prdFolder: "/p" });
   });
@@ -120,7 +201,12 @@ describe("AddProjectView", () => {
         prdFolder="/p"
         prds={{
           kind: "read",
-          summary: { files: [{ file: "cart.md", requirements: 4 }], requirements: 4 },
+          summary: {
+            files: [{ file: "cart.md", requirements: 4, chars: 1200, claude: "not_needed" }],
+            requirements: 4,
+            maxChars: 50000,
+            extraCalls: 0,
+          },
         }}
         project={{ repoRoot: "/r", prdFolder: "/p" }}
       />,

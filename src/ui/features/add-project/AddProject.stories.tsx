@@ -50,11 +50,13 @@ export const PrdsRead: Story = {
       kind: "read",
       summary: {
         files: [
-          { file: "accounts.md", requirements: 14 },
-          { file: "billing.md", requirements: 9 },
-          { file: "search.md", requirements: 6 },
+          { file: "accounts.md", requirements: 14, chars: 1200, claude: "not_needed" },
+          { file: "billing.md", requirements: 9, chars: 1200, claude: "not_needed" },
+          { file: "search.md", requirements: 6, chars: 1200, claude: "not_needed" },
         ],
         requirements: 29,
+        maxChars: 50000,
+        extraCalls: 0,
       },
     },
     project: { repoRoot: repo, prdFolder },
@@ -67,10 +69,12 @@ export const SomeFilesWithoutRequirements: Story = {
       kind: "read",
       summary: {
         files: [
-          { file: "accounts.md", requirements: 14 },
-          { file: "vision.md", requirements: 0 },
+          { file: "accounts.md", requirements: 14, chars: 1200, claude: "not_needed" },
+          { file: "vision.md", requirements: 0, chars: 1200, claude: "will_read" },
         ],
         requirements: 14,
+        maxChars: 50000,
+        extraCalls: 1,
       },
     },
   },
@@ -83,10 +87,48 @@ export const PlainProsePrds: Story = {
       kind: "read",
       summary: {
         files: [
-          { file: "vision.md", requirements: 0 },
-          { file: "roadmap.txt", requirements: 0 },
+          { file: "vision.md", requirements: 0, chars: 1200, claude: "will_read" },
+          { file: "roadmap.txt", requirements: 0, chars: 1200, claude: "will_read" },
         ],
         requirements: 0,
+        maxChars: 50000,
+        extraCalls: 2,
+      },
+    },
+    project: { repoRoot: repo, prdFolder },
+  },
+};
+export const PrdTooLarge: Story = {
+  args: {
+    repoFolder: repo,
+    prdFolder,
+    prds: {
+      kind: "read",
+      summary: {
+        files: [{ file: "everything.md", requirements: 0, chars: 120431, claude: "too_large" }],
+        requirements: 0,
+        maxChars: 50000,
+        extraCalls: 0,
+      },
+    },
+    project: { repoRoot: repo, prdFolder },
+  },
+};
+export const ParsedAndPlainProse: Story = {
+  args: {
+    repoFolder: repo,
+    prdFolder,
+    prds: {
+      kind: "read",
+      summary: {
+        files: [
+          { file: "accounts.md", requirements: 14, chars: 4200, claude: "not_needed" },
+          { file: "vision.md", requirements: 0, chars: 3100, claude: "will_read" },
+          { file: "everything.md", requirements: 0, chars: 120431, claude: "too_large" },
+        ],
+        requirements: 14,
+        maxChars: 50000,
+        extraCalls: 1,
       },
     },
     project: { repoRoot: repo, prdFolder },
@@ -125,4 +167,7 @@ export const CheckingConnection: Story = {
 export const NoKeyNarrowWindow: Story = {
   args: { ...NoKeyYet.args },
   decorators: [(Story) => <div className="w-100">{Story()}</div>],
+};
+export const ProsePrdsNoKey: Story = {
+  args: { ...PlainProsePrds.args, ai: noKey },
 };

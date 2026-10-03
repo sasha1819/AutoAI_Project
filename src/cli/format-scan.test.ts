@@ -26,6 +26,8 @@ const base: ScanResult = {
   requirements: [],
   findings: [],
   notScanned: [],
+  needsReview: [],
+  extraction: { files: 0, dropped: 0 },
   warnings: [],
   stoppedBy: null,
   models: ["claude-sonnet-5"],
@@ -33,6 +35,26 @@ const base: ScanResult = {
 };
 
 describe("formatScan", () => {
+  it("lists what Claude found but is not sure of, as not compared", () => {
+    const out = formatScan(
+      {
+        ...base,
+        needsReview: [
+          {
+            area: "Checkout",
+            text: "Guests can pay.",
+            source: { file: "vision.md", line: 4 },
+            quote: { lines: [4, 4], snippet: "Guests can pay by card." },
+            confidence: Confidence.parse(0.5),
+          },
+        ],
+      },
+      null,
+    );
+    expect(out).toContain("Found by Claude, not compared, needs your review (1)");
+    expect(out).toContain("  Checkout: Guests can pay.  (vision.md:4, confidence 0.50)");
+  });
+
   it("leads with confirmed mismatches, then missing features, needs-review items and matches", () => {
     const scan: ScanResult = {
       ...base,
