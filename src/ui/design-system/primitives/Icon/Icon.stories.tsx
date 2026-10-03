@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { CircleAlert, FlaskConical, Folder, List, Settings } from "lucide-react";
+import * as glyphs from "./glyphs.ts";
 import { Icon, type IconSize } from "./Icon.tsx";
 
 const meta: Meta<typeof Icon> = {
@@ -58,5 +59,19 @@ export const TakesTextColour: Story = {
         <Icon glyph={Folder} decorative size="sm" /> Muted
       </span>
     </div>
+  ),
+};
+
+// Every glyph screens may use (glyphs.ts): an addition shows up here in review.
+export const CuratedGlyphs: Story = {
+  render: () => (
+    <ul className="flex flex-wrap gap-4 text-text-secondary">
+      {Object.entries(glyphs).map(([name, glyph]) => (
+        <li key={name} className="flex items-center gap-2">
+          <Icon glyph={glyph} decorative size="md" />
+          <span className="font-mono text-sm">{name}</span>
+        </li>
+      ))}
+    </ul>
   ),
 };

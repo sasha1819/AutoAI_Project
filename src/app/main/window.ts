@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import { isOwnUrl, type RendererSource } from "./own-url.ts";
 
 /** The main window, locked down (ADR 0007): no Node in the page, sandboxed, isolated, no navigating away. */
@@ -15,6 +15,8 @@ export function createMainWindow(source: RendererSource, preloadDir: string): Br
     webPreferences: {
       preload: join(preloadDir, "preload.cjs"),
       contextIsolation: true,
+      // Off at the source in a packaged app; the menu also hides it, but must not be the only gate.
+      devTools: !app.isPackaged,
       nodeIntegration: false,
       sandbox: true,
       webSecurity: true,

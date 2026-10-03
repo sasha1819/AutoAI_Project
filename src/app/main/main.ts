@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { app, BrowserWindow, dialog, ipcMain, safeStorage, session } from "electron";
 import { INVOKE_CHANNELS } from "../../contracts/channels.ts";
 import { composeApp } from "./compose.ts";
+import { installAppMenu } from "./menu.ts";
 import { createHandlers } from "./handlers.ts";
 import { isOwnUrl, type RendererSource } from "./own-url.ts";
 import { createMainWindow } from "./window.ts";
@@ -16,6 +17,7 @@ const source: RendererSource =
 
 app.whenReady().then(
   () => {
+    installAppMenu();
     // The screens ask for no device or notification permissions; refuse any that a page might request.
     session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => {
       callback(false);

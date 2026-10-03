@@ -1,7 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import { assertAccessibleName, type NonEmpty } from "../../accessibility/accessible-name.ts";
 
-/** A glyph from lucide-react (`import { Check } from "lucide-react"`), passed as the component, not an element. */
+/**
+ * A glyph component, passed as the component, not an element. Screens take it from the curated list (`glyphs.ts`,
+ * exported here); the design system may import lucide-react directly.
+ */
 export type IconGlyph = LucideIcon;
 
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl";

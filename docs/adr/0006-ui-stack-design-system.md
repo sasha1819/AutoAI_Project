@@ -23,7 +23,7 @@ M4 builds the design system before any screen (ARCHITECTURE §7): tokens, then p
 - Rejected: hand-rolling focus traps and popover positioning, which is easy to get subtly wrong for keyboard and screen-reader users. React Aria was also considered: it is equally good but heavier, and Radix matches the "unstyled, style it yourself" shape of the tokens.
 
 ### 4. Icons: `lucide-react`, behind one `Icon` primitive
-- The mockups use Lucide-style line icons. `Icon` takes a name from a closed list (`name="play"`), so features never import icon packages directly (deps rule).
+- The mockups use Lucide-style line icons. `Icon` takes a glyph component (`glyph={ArrowRight}`). Screens pick glyphs from one curated list, `primitives/Icon/glyphs.ts`, and never import the icon package (deps rule `features-use-the-design-system`); a glyph is added there when a screen needs it. The list is closed by import path, not by type (amended 2026-10-02, when the first screen needed an icon).
 
 ### 5. Fonts bundled locally, never fetched
 - An Electron app loads no remote content (electron-app skill), so fonts come from `@fontsource/*` packages as local files: a sans (Inter, matching the mockups) and a mono for tags, ids and timings (JetBrains Mono).

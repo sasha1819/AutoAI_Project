@@ -101,5 +101,7 @@ progress. ADR 0006 deferred Electron to its own ADR; this is it.
   verify, since it opens a window). Scripts clear `ELECTRON_RUN_AS_NODE`, which VS Code terminals set.
 - The renderer root lives in `src/ui/app` (ARCHITECTURE §7); deps rules close it to the design system and let screens
   import only its `bridge.ts`; tokens:check holds it to the screens' rules.
-- Open, to decide before the app frame is built: a native window frame with the menus in Electron's `Menu`, or a
-  custom-drawn title bar as mockup 4 draws it.
+- Window frame (user decision, 2026-10-02): the native frame, with the app's menus in the system menu bar
+  (Electron `Menu`, built from standard roles). The screens do not draw a title bar, menus or window buttons; mockup
+  4's drawn title bar (logo, menus, search, window controls) is a recorded deviation. "Devices" and multi-window stay
+  out (not MVP).
