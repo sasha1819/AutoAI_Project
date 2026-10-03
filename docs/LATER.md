@@ -1,7 +1,7 @@
 # LATER (not in MVP) — do not build without asking
 
 - [ ] Visual drag-and-drop flow canvas
-- [ ] Mobile (Appium/Maestro) and desktop targets, cross-browser
+- [ ] Mobile (Appium/Maestro) and desktop targets, cross-browser: ordered in the post-MVP roadmap below
 - [ ] PR impact screen + GitHub PR comment bot
 - [ ] Release Readiness score
 - [ ] Full flaky-test workflow (detail screen, quarantine, root cause)
@@ -25,3 +25,12 @@
 
 When a new idea appears, `/scope-check` adds it here with a one-line reason.
 - Modal `tone="alert"` (role alertdialog, description required) for urgent or destructive confirmations: Radix Dialog's Content accepts a role override, so no new dependency. Deferred from M4 (2026-10-02); today an unmissable step is `dismissible={false}` with role dialog.
+
+## Post-MVP roadmap (order decided 2026-10-03)
+
+Rule: no new target starts until the previous one finds real bugs with zero false positives on its own fixtures.
+
+1. API testing (Playwright API requests; spec-vs-code against API contracts): the closest step from today's web loop, same runner, and API contracts are precise specs to compare code against.
+2. Cross-browser and visual checks: still Playwright (Firefox, WebKit, screenshots), so it widens coverage without a new runner.
+3. Mobile web, then native mobile (Appium or Maestro): mobile web reuses Playwright first; native needs a new runner adapter behind the TestRunner port, so it needs an ADR.
+4. Desktop and hybrid apps: each platform needs its own driver and its own ADR, the largest new surface, so it comes last.
