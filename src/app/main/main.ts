@@ -1,8 +1,9 @@
 import { join } from "node:path";
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, session } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, safeStorage, session, shell } from "electron";
 import { INVOKE_CHANNELS } from "../../contracts/channels.ts";
 import { composeApp } from "./compose.ts";
 import { installAppMenu } from "./menu.ts";
+import { isMockAiMode } from "./mock-mode.ts";
 import { createHandlers } from "./handlers.ts";
 import { isOwnUrl, type RendererSource } from "./own-url.ts";
 import { createMainWindow } from "./window.ts";
@@ -14,6 +15,12 @@ const source: RendererSource =
   devUrl !== undefined && !app.isPackaged
     ? { kind: "dev", url: devUrl }
     : { kind: "file", path: join(here, "renderer", "index.html") };
+
+const mockAi = isMockAiMode({ env: process.env, packaged: app.isPackaged });
+if (mockAi)
+  console.warn(
+    "AutoAI: MOCK AI mode (AUTOAI_MOCK_AI=1). No real AI calls; keys kept in memory only.",
+  );
 
 app.whenReady().then(
   () => {
@@ -27,6 +34,8 @@ app.whenReady().then(
     const services = composeApp({
       userDataDir: app.getPath("userData"),
       safeStorage,
+      mockAi,
+      openExternal: (url) => shell.openExternal(url),
       pickFolder: async (purpose) => {
         const options = {
           title:
@@ -56,9 +65,10 @@ app.whenReady().then(
       });
     }
 
-    window = createMainWindow(source, here);
+    window = createMainWindow(source, here, mockAi);
     app.on("activate", () => {
-      if (BrowserWindow.getAllWindows().length === 0) window = createMainWindow(source, here);
+      if (BrowserWindow.getAllWindows().length === 0)
+        window = createMainWindow(source, here, mockAi);
     });
   },
   (e: unknown) => {

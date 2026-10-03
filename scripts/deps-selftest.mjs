@@ -61,6 +61,7 @@ const illegal = [
   ["design-system-knows-no-app", { "ui/design-system/patterns/c43/x.ts": uses("../../../app/c43t.ts"), "ui/app/c43t.ts": leaf }],
   ["features-use-only-the-bridge", { "ui/features/c44/x.ts": uses("../../app/c44t.ts"), "ui/app/c44t.ts": leaf }],
   ["features-use-the-design-system", { "ui/app/c45.ts": uses("lucide-react") }],
+  ["mock-adapters-only-in-composition", { "app/main/c47.ts": uses("../../adapters/mock/c47t.ts"), "adapters/mock/c47t.ts": leaf }],
   ["test-helpers-only-in-tests", { "ui/app/c46.ts": uses("./testing/c46t.ts"), "ui/app/testing/c46t.ts": leaf }],
   ["features-use-public-primitives", { "ui/features/c41/x.ts": uses("../../design-system/patterns/_format/c41t.ts"), "ui/design-system/patterns/_format/c41t.ts": leaf }],
   ["tone-badge-only-for-status-patterns", { "ui/design-system/primitives/C39/x.ts": uses("../_badge/c39t.ts"), "ui/design-system/primitives/_badge/c39t.ts": leaf }],
@@ -95,6 +96,8 @@ const legal = {
   "ui/features/legal/lw.tsx": leaf,
   "ui/features/legal/lz.tsx": uses("./lw.tsx", "../../design-system/patterns/lpa.ts"),
   "ui/app/bridge.ts": leaf,
+  "adapters/mock/lmk.ts": uses("../../core/ports/lp.ts"),
+  "app/main/compose.ts": uses("../../adapters/mock/lmk.ts"),
   "ui/features/legal/lb.ts": uses("../../app/bridge.ts"),
 };
 

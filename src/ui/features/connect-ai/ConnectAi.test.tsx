@@ -32,6 +32,7 @@ describe("ConnectAiView", () => {
     onReplace: vi.fn(),
     onCancelReplace: vi.fn(),
     onContinue: vi.fn(),
+    onOpenConsole: vi.fn(),
   };
 
   it("no key yet: an empty password field, and Check and save waits for text", () => {
@@ -185,6 +186,83 @@ describe("ConnectAi with the bridge", () => {
     expect(await screen.findByText(/Something went wrong inside AutoAI/)).toBeTruthy();
     expect(log).toHaveBeenCalled();
     log.mockRestore();
+  });
+
+  it("no key yet: a help line opens the Anthropic Console in the browser (the allowlisted address only)", async () => {
+    const user = userEvent.setup();
+    const fake = installFakeBridge({
+      "ai:status": status(false),
+      "link:open": () =>
+        Promise.resolve<ChannelResponse<"link:open">>({ ok: true, value: { opened: true } }),
+    });
+    render(<ConnectAi onContinue={vi.fn()} />);
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Create one in the Anthropic Console (opens in your browser)",
+      }),
+    );
+    expect(fake.calls.at(-1)).toStrictEqual({
+      channel: "link:open",
+      request: { url: "https://console.anthropic.com/" },
+    });
+  });
+
+  it.each([
+    [
+      "the browser could not be opened",
+      () =>
+        Promise.resolve<ChannelResponse<"link:open">>({
+          ok: false,
+          error: { code: "LINK_NOT_OPENED", message: "x" },
+        }),
+      /Couldn't open your browser\. Go to console\.anthropic\.com/,
+    ],
+    [
+      "a broken reply",
+      () => Promise.reject(new Error("bad reply")),
+      /Something went wrong inside AutoAI/,
+    ],
+  ] as const)("the Console link when %s: says so plainly", async (_name, answer, words) => {
+    const user = userEvent.setup();
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    installFakeBridge({ "ai:status": status(false), "link:open": answer });
+    render(<ConnectAi onContinue={vi.fn()} />);
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Create one in the Anthropic Console (opens in your browser)",
+      }),
+    );
+    expect(await screen.findByText(words)).toBeTruthy();
+    log.mockRestore();
+  });
+
+  it("the Console help line shows only while a key is being asked for", () => {
+    installFakeBridge({ "ai:status": status(true) });
+    render(
+      <ConnectAiView
+        {...{
+          connection: "connected",
+          keyText: "",
+          onKeyTextChange: vi.fn(),
+          onSave: vi.fn(),
+          saving: false,
+          replacing: false,
+          onReplace: vi.fn(),
+          onCancelReplace: vi.fn(),
+          onContinue: vi.fn(),
+          onOpenConsole: vi.fn(),
+        }}
+      />,
+    );
+    expect(screen.queryByText(/Don't have a key/)).toBeNull();
+  });
+
+  it("says plainly that API usage is billed separately from a Claude subscription", () => {
+    installFakeBridge({ "ai:status": status(false) });
+    render(<ConnectAi onContinue={vi.fn()} />);
+    expect(
+      screen.getByText(/billed by Anthropic, separately from any Claude Pro or Max subscription/),
+    ).toBeTruthy();
   });
 
   it("a saved key that can't be read: says why, and asks for the key", async () => {

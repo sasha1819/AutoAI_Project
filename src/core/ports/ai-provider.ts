@@ -11,6 +11,9 @@ export type AiErrorCode =
   | "AI_OUTPUT_TRUNCATED";
 export type AiError = DomainError<AiErrorCode>;
 
+/** What a rejected key says, from any AiProvider (the real one and the dev-only mock agree word for word). */
+export const AI_KEY_REJECTED_MESSAGE = "The Anthropic API rejected the API key.";
+
 export type AiRequest = {
   readonly system: string;
   readonly user: string;

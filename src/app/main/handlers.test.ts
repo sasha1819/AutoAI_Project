@@ -20,6 +20,8 @@ const services = (over: Partial<AppServices> = {}): AppServices => ({
   saveAiKey: () => Promise.resolve(ok(undefined)),
   checkAiKey: () => Promise.resolve(ok(undefined)),
   pickFolder: () => Promise.resolve("/chosen"),
+  openLink: () => Promise.resolve(ok(undefined)),
+  mockAi: false,
   scan: () => Promise.resolve(ok(emptyScan)),
   ...over,
 });
@@ -107,6 +109,50 @@ describe("IPC handlers", () => {
       noPush,
     );
     expect(seen).toStrictEqual([null]);
+  });
+
+  it("app:info says whether mock AI mode is on", async () => {
+    expect(await createHandlers(services())["app:info"]({}, noPush)).toStrictEqual({
+      mockAi: false,
+    });
+    expect(await createHandlers(services({ mockAi: true }))["app:info"]({}, noPush)).toStrictEqual({
+      mockAi: true,
+    });
+  });
+
+  it("link:open opens the one allowlisted address", async () => {
+    const openLink = vi.fn(() => Promise.resolve(ok(undefined)));
+    const reply = await createHandlers(services({ openLink }))["link:open"](
+      { url: "https://console.anthropic.com/" },
+      noPush,
+    );
+    expect(reply).toStrictEqual(ok({ opened: true }));
+    expect(openLink).toHaveBeenCalledWith("https://console.anthropic.com/");
+  });
+
+  it.each([
+    "https://evil.example/",
+    "https://console.anthropic.com.evil.example/",
+    "https://console.anthropic.com/settings/keys",
+    "http://console.anthropic.com/",
+    "https://CONSOLE.anthropic.com/",
+    "file:///etc/passwd",
+    "javascript:alert(1)",
+    "",
+  ])("link:open refuses %j before opening anything", async (url) => {
+    const openLink = vi.fn(() => Promise.resolve(ok(undefined)));
+    await expect(
+      createHandlers(services({ openLink }))["link:open"]({ url }, noPush),
+    ).rejects.toThrow();
+    expect(openLink).not.toHaveBeenCalled();
+  });
+
+  it("link:open reports a browser that could not be opened", async () => {
+    const failed = err({ code: "LINK_NOT_OPENED", message: "no browser" } as const);
+    const reply = await createHandlers(services({ openLink: () => Promise.resolve(failed) }))[
+      "link:open"
+    ]({ url: "https://console.anthropic.com/" }, noPush);
+    expect(reply).toStrictEqual(failed);
   });
 
   it.each([

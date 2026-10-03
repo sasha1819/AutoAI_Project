@@ -21,12 +21,17 @@ const rejected = reply(401, {
   error: { type: "authentication_error", message: "invalid x-api-key" },
 });
 const push = () => undefined;
-const app = (fetch: typeof globalThis.fetch) =>
+const app = (fetch: typeof globalThis.fetch, opened: string[] = [], mockAi = false) =>
   createHandlers(
     composeApp({
       userDataDir: mkdtempSync(join(tmpdir(), "autoai-compose-")),
       safeStorage,
       pickFolder: () => Promise.resolve(null),
+      openExternal: (url) => {
+        opened.push(url);
+        return Promise.resolve();
+      },
+      mockAi,
       fetch,
     }),
   );
@@ -52,5 +57,63 @@ describe("composeApp wires the real services and adapters to the handlers", () =
     expect(status).toStrictEqual({ ok: true, value: { configured: true } });
     expect(JSON.stringify(status)).not.toContain("sk-composed-1");
     expect(await h["ai:check-key"]({}, push)).toStrictEqual({ ok: true, value: { works: true } });
+  });
+
+  it("link:open hands the allowlisted address to the system browser; a failing browser is LINK_NOT_OPENED", async () => {
+    const opened: string[] = [];
+    const h = app(accepted, opened);
+    expect(await h["link:open"]({ url: "https://console.anthropic.com/" }, push)).toStrictEqual({
+      ok: true,
+      value: { opened: true },
+    });
+    expect(opened.at(-1)).toBe("https://console.anthropic.com/");
+    const broken = createHandlers(
+      composeApp({
+        userDataDir: mkdtempSync(join(tmpdir(), "autoai-compose-")),
+        safeStorage,
+        pickFolder: () => Promise.resolve(null),
+        openExternal: () => Promise.reject(new Error("no default browser")),
+        mockAi: false,
+        fetch: accepted,
+      }),
+    );
+    const reply = await broken["link:open"]({ url: "https://console.anthropic.com/" }, push);
+    expect(reply.ok ? null : reply.error.code).toBe("LINK_NOT_OPENED");
+  });
+
+  it("mock mode: a mock-format key works, another is rejected, and the OS keychain is never touched", async () => {
+    const keychain = { ...safeStorage, used: 0 };
+    const counting = {
+      isEncryptionAvailable: () => true,
+      encryptString: (t: string) => {
+        keychain.used += 1;
+        return safeStorage.encryptString(t);
+      },
+      decryptString: (b: Buffer) => {
+        keychain.used += 1;
+        return safeStorage.decryptString(b);
+      },
+    };
+    const h = createHandlers(
+      composeApp({
+        userDataDir: mkdtempSync(join(tmpdir(), "autoai-compose-")),
+        safeStorage: counting,
+        pickFolder: () => Promise.resolve(null),
+        openExternal: () => Promise.resolve(),
+        mockAi: true,
+        // A real network call would fail this test: mock mode must not make one.
+        fetch: () => Promise.reject(new Error("mock mode reached the network")),
+      }),
+    );
+    const mockKey = ["mock", "dev", "key"].join("-");
+    const wrong = await h["ai:save-key"]({ key: ["real", "looking", "key"].join("-") }, push);
+    expect(wrong.ok ? null : wrong.error.code).toBe("AI_AUTH_FAILED");
+    expect(await h["ai:save-key"]({ key: mockKey }, push)).toStrictEqual({
+      ok: true,
+      value: { saved: true },
+    });
+    expect(await h["ai:status"]({}, push)).toStrictEqual({ ok: true, value: { configured: true } });
+    expect(await h["app:info"]({}, push)).toStrictEqual({ mockAi: true });
+    expect(keychain.used).toBe(0);
   });
 });

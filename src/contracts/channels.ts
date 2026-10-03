@@ -1,5 +1,7 @@
 import type { z } from "zod";
 import { aiCheckKey, aiSaveKey, aiStatus } from "./ai.ts";
+import { appInfo } from "./app.ts";
+import { linkOpen } from "./links.ts";
 import { projectPickFolder } from "./project.ts";
 import { ScanProgressEvent, scanRun } from "./scan.ts";
 
@@ -10,6 +12,8 @@ export const invokeChannels = {
   "ai:check-key": aiCheckKey,
   "project:pick-folder": projectPickFolder,
   "scan:run": scanRun,
+  "link:open": linkOpen,
+  "app:info": appInfo,
 } as const;
 export type InvokeChannel = keyof typeof invokeChannels;
 /** The request/reply channel names, for registering them all. */
@@ -37,6 +41,8 @@ export const parseResponse: {
   "ai:check-key": (v) => invokeChannels["ai:check-key"].response.parse(v),
   "project:pick-folder": (v) => invokeChannels["project:pick-folder"].response.parse(v),
   "scan:run": (v) => invokeChannels["scan:run"].response.parse(v),
+  "link:open": (v) => invokeChannels["link:open"].response.parse(v),
+  "app:info": (v) => invokeChannels["app:info"].response.parse(v),
 };
 /** One checker per event channel: the event, or null when it breaks its contract. */
 export const parseEvent: {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ANTHROPIC_CONSOLE } from "../../../contracts/links.ts";
 import { bridge } from "../../app/bridge.ts";
 import { SAVE_KEY_MESSAGE, STATUS_MESSAGE } from "./messages.ts";
 
@@ -19,6 +20,8 @@ export type ConnectAi = {
   readonly save: (key: string) => Promise<boolean>;
   /** Forgets the last error (the user cancelled, or opened the field again). */
   readonly clearError: () => void;
+  /** Opens the Anthropic Console in the user's browser (the one allowlisted address). */
+  readonly openConsole: () => void;
 };
 
 // A reply that breaks its contract, or no preload: a bug, not an expected failure. The screen must not hang on it,
@@ -87,5 +90,19 @@ export function useConnectAi(): ConnectAi {
     setError(undefined);
   }, []);
 
-  return { connection, notice, saving, error, save, clearError };
+  const openConsole = useCallback(() => {
+    const open = async () => {
+      try {
+        const reply = await bridge().invoke("link:open", { url: ANTHROPIC_CONSOLE });
+        if (!reply.ok)
+          setNotice("Couldn't open your browser. Go to console.anthropic.com to create a key.");
+      } catch (e) {
+        console.error(e);
+        setNotice(BROKEN);
+      }
+    };
+    void open();
+  }, []);
+
+  return { connection, notice, saving, error, save, clearError, openConsole };
 }

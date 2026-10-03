@@ -1,6 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { err, ok } from "../../core/domain/result.ts";
-import type { AiError, AiProvider } from "../../core/ports/ai-provider.ts";
+import {
+  type AiError,
+  type AiProvider,
+  AI_KEY_REJECTED_MESSAGE,
+} from "../../core/ports/ai-provider.ts";
 
 /** Cheaper Sonnet-class default so a scan costs cents; any model id can be passed instead (ADR 0002). */
 export const DEFAULT_MODEL = "claude-sonnet-5";
@@ -103,7 +107,7 @@ function translate(e: unknown, model: string): AiError {
   // AutoAI never aborts a request itself, so an abort is a bug, not an expected failure.
   if (e instanceof Anthropic.APIUserAbortError) throw e;
   if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) {
-    return { code: "AI_AUTH_FAILED", message: "The Anthropic API rejected the API key." };
+    return { code: "AI_AUTH_FAILED", message: AI_KEY_REJECTED_MESSAGE };
   }
   if (e instanceof Anthropic.RateLimitError) {
     return {

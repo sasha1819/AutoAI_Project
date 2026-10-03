@@ -6,6 +6,7 @@ import { Button } from "../../design-system/primitives/Button/index.ts";
 import { Card } from "../../design-system/primitives/Card/index.ts";
 import { ArrowRight } from "../../design-system/primitives/Icon/index.ts";
 import { Input } from "../../design-system/primitives/Input/index.ts";
+import { LinkButton } from "../../design-system/primitives/LinkButton/index.ts";
 import { Spinner } from "../../design-system/primitives/Spinner/index.ts";
 import { type Connection, useConnectAi } from "./useConnectAi.ts";
 
@@ -25,6 +26,8 @@ export type ConnectAiViewProps = {
   readonly onReplace: () => void;
   readonly onCancelReplace: () => void;
   readonly onContinue: () => void;
+  /** Opens the Anthropic Console in the browser, for someone without a key yet. */
+  readonly onOpenConsole: () => void;
 };
 
 /**
@@ -109,7 +112,7 @@ export function ConnectAiView(props: ConnectAiViewProps) {
                   onChange={(e) => {
                     onKeyTextChange(e.target.value);
                   }}
-                  hint="Create one in your Anthropic Console, under API keys."
+                  hint="Find it in your Anthropic Console, under API keys."
                   {...(error === undefined ? {} : { error })}
                 />
               </div>
@@ -120,9 +123,18 @@ export function ConnectAiView(props: ConnectAiViewProps) {
         <div role="status" className="w-full">
           {notice !== undefined && <p className="mt-3 text-sm text-text-secondary">{notice}</p>}
         </div>
-        <p className="mt-8 max-w-104 text-sm text-text-muted">
+        {asking && (
+          <p className="mt-6 text-sm text-text-secondary">
+            Don't have a key?{" "}
+            <LinkButton external onClick={props.onOpenConsole}>
+              Create one in the Anthropic Console
+            </LinkButton>
+          </p>
+        )}
+        <p className="mt-6 max-w-104 text-sm text-text-muted">
           The key is checked with Anthropic, then stored encrypted by your system's keychain. It is
-          only ever sent to Anthropic.
+          only ever sent to Anthropic. API usage is billed by Anthropic, separately from any Claude
+          Pro or Max subscription.
         </p>
         <div className="mt-8 flex gap-3">
           {asking ? (
@@ -189,6 +201,7 @@ export function ConnectAi({ onContinue }: { readonly onContinue: () => void }) {
         setReplacing(false);
       }}
       onContinue={onContinue}
+      onOpenConsole={ai.openConsole}
     />
   );
 }

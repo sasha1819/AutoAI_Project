@@ -105,3 +105,12 @@ progress. ADR 0006 deferred Electron to its own ADR; this is it.
   (Electron `Menu`, built from standard roles). The screens do not draw a title bar, menus or window buttons; mockup
   4's drawn title bar (logo, menus, search, window controls) is a recorded deviation. "Devices" and multi-window stay
   out (not MVP).
+- Outside addresses (2026-10-03, user request): they open only in the user's default browser, only through the
+  `link:open` channel, whose zod schema is a fixed allowlist (`contracts/links.ts`; today only the Anthropic Console).
+  The window refuses every new-window request (before, any `https://` pop-up was handed to the browser).
+- Mock AI mode (2026-10-03, user request, development only): on only when `AUTOAI_MOCK_AI=1` and the app is not
+  packaged (`isMockAiMode`, tested). The composition root then wires `adapters/mock` (a mock AiProvider that accepts
+  keys starting with `mock-` and rejects others the normal way, and a memory-only SecretStore, so the OS keychain is
+  never touched) behind the same ports; nothing else may import them (deps rule
+  `mock-adapters-only-in-composition`). The window title and a "MOCK AI" badge show it. Fake keys in code are
+  assembled at runtime.

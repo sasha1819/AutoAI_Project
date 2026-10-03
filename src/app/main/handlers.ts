@@ -5,6 +5,9 @@ import {
   type InvokeChannel,
   invokeChannels,
 } from "../../contracts/channels.ts";
+import type { DomainError } from "../../core/domain/domain-error.ts";
+import type { Result } from "../../core/domain/result.ts";
+import type { ExternalLink } from "../../contracts/links.ts";
 import type { aiKeyStatus, checkAiKey, saveAiKey } from "../../services/connect-ai.ts";
 import type { ScanInput, createScanRunner } from "../../services/scan-with-stored-key.ts";
 
@@ -15,6 +18,12 @@ export type AppServices = {
   readonly checkAiKey: () => ReturnType<typeof checkAiKey>;
   /** The system folder dialog; null when cancelled. */
   readonly pickFolder: (purpose: "repo" | "prds") => Promise<string | null>;
+  /** Whether the app runs with the mock AI (development only). */
+  readonly mockAi: boolean;
+  /** Opens an allowlisted address in the user's default browser. */
+  readonly openLink: (
+    url: ExternalLink,
+  ) => Promise<Result<undefined, DomainError<"LINK_NOT_OPENED">>>;
   readonly scan: (input: ScanInput) => ReturnType<ReturnType<typeof createScanRunner>["scan"]>;
 };
 
@@ -48,6 +57,16 @@ export function createHandlers(services: AppServices): Handlers {
     "project:pick-folder": async (raw) => {
       const { purpose } = invokeChannels["project:pick-folder"].request.parse(raw);
       return { path: await services.pickFolder(purpose) };
+    },
+    "app:info": (raw) => {
+      invokeChannels["app:info"].request.parse(raw);
+      return Promise.resolve({ mockAi: services.mockAi });
+    },
+    "link:open": async (raw) => {
+      // The schema is the allowlist: any address not on it throws here, before anything is opened.
+      const { url } = invokeChannels["link:open"].request.parse(raw);
+      const opened = await services.openLink(url);
+      return opened.ok ? { ok: true, value: { opened: true } } : opened;
     },
     "scan:run": async (raw, push) => {
       const input = invokeChannels["scan:run"].request.parse(raw);

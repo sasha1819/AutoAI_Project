@@ -12,6 +12,7 @@ describe("App shell", () => {
   });
 
   it("renders the app's main region with the shared providers", () => {
+    installFakeBridge({ "app:info": () => Promise.resolve({ mockAi: false }) });
     render(<App />);
     expect(screen.getByRole("main", { name: "AutoAI" })).toBeTruthy();
     // The Toast announcer (polite live region) is on the page from the start.
@@ -33,6 +34,22 @@ describe("App shell", () => {
     );
     await user.click(await screen.findByRole("button", { name: "Continue" }));
     expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Add your project" }));
+  });
+
+  it("mock AI mode: a visible MOCK AI marker on the screen; none otherwise", async () => {
+    installFakeBridge({ "app:info": () => Promise.resolve({ mockAi: true }) });
+    const { unmount } = render(<App />);
+    expect(
+      await screen.findByRole("note", {
+        name: "Mock AI mode: no real AI calls, keys kept in memory only",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText("Mock AI").className).toContain("uppercase");
+    unmount();
+    installFakeBridge({ "app:info": () => Promise.resolve({ mockAi: false }) });
+    render(<App />);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByText("Mock AI")).toBeNull();
   });
 
   it("bridge() fails loudly when the page was not opened through the preload", () => {

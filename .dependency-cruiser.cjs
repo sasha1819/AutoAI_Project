@@ -59,6 +59,8 @@ module.exports = {
       from: { path: '^src/ui/' }, to: { path: '^node_modules/electron/' } },
     { name: 'app-cli-no-ui', comment: 'nothing points into ui', severity: 'error',
       from: { path: '^src/(app|cli)/' }, to: { path: '^src/ui/' } },
+    { name: 'mock-adapters-only-in-composition', comment: 'mock mode (dev only) is wired by the app composition root alone; nothing else may reach the mock adapters', severity: 'error',
+      from: { path: '^src/', pathNot: '^src/(app/main/compose\\.ts$|adapters/mock/)' }, to: { path: '^src/adapters/mock/' } },
     { name: 'test-helpers-only-in-tests', comment: 'ui/app/testing (the fake bridge) is for tests only; tests are not cruised, so any importer seen here is production code', severity: 'error',
       from: { path: '^src/' }, to: { path: '^src/ui/app/testing/' } },
     { name: 'design-system-knows-no-app', comment: 'the design system is reusable: it knows neither screens nor the renderer root', severity: 'error',

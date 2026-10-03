@@ -5,6 +5,8 @@ import {
   createSafeStorageSecretStore,
   type SafeStorageLike,
 } from "../../adapters/keychain/safe-storage-secret-store.ts";
+import { createMemorySecretStore } from "../../adapters/mock/memory-secret-store.ts";
+import { createMockAiProvider } from "../../adapters/mock/mock-ai-provider.ts";
 import { aiKeyStatus, checkAiKey, saveAiKey } from "../../services/connect-ai.ts";
 import { createScanRunner } from "../../services/scan-with-stored-key.ts";
 import type { AppServices } from "./handlers.ts";
@@ -17,25 +19,49 @@ export function composeApp(env: {
   readonly userDataDir: string;
   readonly safeStorage: SafeStorageLike;
   readonly pickFolder: AppServices["pickFolder"];
+  /** Electron's shell.openExternal: opens a URL in the user's default browser. */
+  readonly openExternal: (url: string) => Promise<void>;
+  /**
+   * Development without a real key (main decides: AUTOAI_MOCK_AI=1 and not packaged). The mock AI and a memory-only
+   * SecretStore replace the real ones, so a mock key never reaches the OS keychain or a real one.
+   */
+  readonly mockAi: boolean;
   /** Tests only: serves the AI provider's network calls (the app uses the real network). */
   readonly fetch?: typeof globalThis.fetch;
 }): AppServices {
-  const secretStore = createSafeStorageSecretStore({
-    safeStorage: env.safeStorage,
-    file: join(env.userDataDir, "secrets", "ai-key.bin"),
-  });
+  const mockAi = env.mockAi;
+  const secretStore = mockAi
+    ? createMemorySecretStore()
+    : createSafeStorageSecretStore({
+        safeStorage: env.safeStorage,
+        file: join(env.userDataDir, "secrets", "ai-key.bin"),
+      });
   const repoReader = createFsRepoReader();
   const aiProviderFor = (apiKey: string) =>
-    createClaudeAiProvider({
-      apiKey,
-      ...(env.fetch === undefined ? {} : { fetch: env.fetch, maxRetries: 0 }),
-    });
+    mockAi
+      ? createMockAiProvider({ apiKey })
+      : createClaudeAiProvider({
+          apiKey,
+          ...(env.fetch === undefined ? {} : { fetch: env.fetch, maxRetries: 0 }),
+        });
   const scanRunner = createScanRunner({ secretStore, repoReader, aiProviderFor });
   return {
     aiStatus: () => aiKeyStatus({ secretStore }),
     saveAiKey: (key) => saveAiKey({ secretStore, aiProviderFor }, { key }),
     checkAiKey: () => checkAiKey({ secretStore, aiProviderFor }),
+    mockAi,
     pickFolder: env.pickFolder,
+    openLink: async (url) => {
+      try {
+        await env.openExternal(url);
+        return { ok: true, value: undefined };
+      } catch (e) {
+        return {
+          ok: false,
+          error: { code: "LINK_NOT_OPENED", message: e instanceof Error ? e.message : String(e) },
+        };
+      }
+    },
     scan: (input) => scanRunner.scan(input),
   };
 }

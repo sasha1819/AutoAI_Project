@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { Badge } from "../design-system/primitives/Badge/index.ts";
 import { EmptyState } from "../design-system/primitives/EmptyState/index.ts";
 import { ToastProvider } from "../design-system/primitives/Toast/index.ts";
 import { ConnectAi } from "../features/connect-ai/index.ts";
 import { WelcomeView } from "../features/welcome/index.ts";
+import { useAppInfo } from "./useAppInfo.ts";
 
 /** The onboarding steps of PRD Flow 1, in order. Screens are added here one at a time (M5). */
 type Screen = "welcome" | "connect-ai" | "add-project";
@@ -13,6 +15,7 @@ type Screen = "welcome" | "connect-ai" | "add-project";
  */
 export function App() {
   const [screen, setScreen] = useState<Screen>("welcome");
+  const { mockAi } = useAppInfo();
   const main = useRef<HTMLElement>(null);
   const first = useRef(true);
   useEffect(() => {
@@ -29,6 +32,16 @@ export function App() {
   }, [screen]);
   return (
     <ToastProvider>
+      {mockAi && (
+        // Development only: on every screen, so a mock connection is never mistaken for a real one.
+        <div
+          className="fixed top-3 right-3 z-50"
+          role="note"
+          aria-label="Mock AI mode: no real AI calls, keys kept in memory only"
+        >
+          <Badge label="Mock AI" uppercase />
+        </div>
+      )}
       <main
         ref={main}
         className="h-screen overflow-auto bg-canvas text-text-primary"
