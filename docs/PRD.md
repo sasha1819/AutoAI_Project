@@ -71,7 +71,7 @@ This PRD scopes a solo-buildable AutoAI MVP: a web-only desktop app that scans a
     Wow summary
     "Found 41 requirements, 34 testable, 3 mismatches" + suggested first test cases
     Reads the scan engine's output from the local store; two exits: "Review mismatches" → Spec vs. Code screen, "Generate first tests" → Test workspace with 3 tests pre-selected
-    Edge cases to design for: repo has no detectable PRDs (skip mismatches, still generate tests from code alone); PRDs reference features not found in the repo (flag as "requirement not yet implemented", don't treat as a mismatch); invalid/expired API key (clear inline error, no silent retry loop).
+    Edge cases to design for: repo has no detectable PRDs (skip mismatches; no tests are generated without a spec in the MVP, decided 2026-10-03: from code alone a test can only encode current behaviour, bugs included); PRDs reference features not found in the repo (flag as "requirement not yet implemented", don't treat as a mismatch); invalid/expired API key (clear inline error, no silent retry loop).
 11. Flow 2 — Scan engine
     This is the component with the real product risk, so it's worth building and testing it stand-alone (CLI, no UI) before touching Electron.
     4.1 Repo parser — not full static analysis. For MVP, extract just enough for the LLM to reason about: file tree, package.json/framework detection (React, Next.js, Express, etc.), route definitions, and the source of files that look relevant to a requirement (matched by filename/keyword heuristics, e.g. discount → cart/discounts.ts). Send relevant file contents, not the whole repo, to stay inside context limits and control API cost.

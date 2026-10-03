@@ -1,5 +1,6 @@
 # LATER (not in MVP) — do not build without asking
 
+- [ ] AI-assisted requirement extraction for unstructured PRDs. SCHEDULED (2026-10-03): BUILD-LOG M5, the task right after scan progress; ADR 0008 (proposed) first, because it adds an AI call to the scan path. smarter handling of unstructured prose PRDs (likely a future AI-assisted extraction step, not mechanical paragraph splitting). CONFIRMED, not hypothetical (2026-09-28): `docs/PRD.md` itself, a real doc-editor export with numbered lines and no `#` headings or "Area 1.2" tags, yields 0 requirements with the current parser. The fixtures include one requirement in that style so the accuracy test counts the gap.
 - [ ] Visual drag-and-drop flow canvas
 - [ ] Mobile (Appium/Maestro) and desktop targets, cross-browser
 - [ ] PR impact screen + GitHub PR comment bot
@@ -18,7 +19,6 @@
 - [ ] Drag PRD files or a folder into Add project (mockup 3's drop card; Electron `webUtils.getPathForFile`, and the dropped path must count as picked); MVP picks folders with the system dialog only (decided 2026-10-03)
 - [ ] Bedrock / Vertex / Foundry providers via the AiProvider port (new adapters behind the same port; decided 2026-10-03)
 - [ ] AutoAI-managed credits (decided 2026-10-03)
-- [ ] PRD parser: smarter handling of unstructured prose PRDs (likely a future AI-assisted extraction step, not mechanical paragraph splitting). CONFIRMED, not hypothetical (2026-09-28): `docs/PRD.md` itself, a real doc-editor export with numbered lines and no `#` headings or "Area 1.2" tags, yields 0 requirements with the current parser. The fixtures include one requirement in that style so the accuracy test counts the gap.
 - [ ] .docx PRD input (PRD 4.2) — start with markdown/plain text; docx needs a parser dependency + ADR (decided 2026-09-28)
 - [ ] Run Playwright setup projects (auth-dependent test flows). MVP runs only the user's Chromium project, so setup-project dependencies (e.g. a login step) don't run (ADR 0005, decided 2026-09-29).
 - [ ] Send the failure screenshot to the diagnosis (PRD Flow 4 step 17 lists it). MVP sends the text page snapshot instead: the AiProvider port is text-only, so images need a port change + ADR, and a screenshot cannot be redacted like text (decided 2026-09-30).
