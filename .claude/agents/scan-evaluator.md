@@ -18,6 +18,7 @@ Requirements: fixtures exist in `fixtures/`, and either a scan result file was g
    - MISSED: expected mismatch not reported (or only "needs_review"). An entry with `"parser": "not_extracted"` that is missing counts as MISSED too; say it was never extracted.
    - FALSE POSITIVE: reported as confirmed mismatch but expected says `match` or `not_implemented` (a feature that was never built is not a mismatch)
    - NOT-IMPLEMENTED: for each expected `not_implemented`, say whether it was reported as not_implemented (correct), mismatch (false positive) or not at all
+   - Severity: an expected `severity` may be a list (an accepted range, reason in `severityWhy`): any listed grade agrees. List only grades outside it.
    - Also list any reported match or mismatch without file+lines evidence ("uncited"). not_implemented findings are exempt: there is no code to cite.
 4. Report:
 

@@ -71,7 +71,8 @@
       "tag": "Account 3.1",
       "parser": "extracted",
       "type": "not_implemented",
-      "severity": "medium",
+      "severity": ["medium", "high"],
+      "severityWhy": "Either grade is right by the prompt's scale for missing features: order history is 'a feature users will look for' (medium), and accounts can fairly count as a core flow involving user data (high). Accepting both keeps the evaluator from grading a gap in the scale as a model error (user decision 2026-10-03).",
       "absentTerms": [
         "order history",
         "past orders",

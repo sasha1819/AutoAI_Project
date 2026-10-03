@@ -1,0 +1,308 @@
+{
+  "prdFiles": ["checkout.md", "shop.md"],
+  "sourceFiles": 9,
+  "requirements": [
+    {
+      "tag": "Cart 1.1",
+      "area": "Cart",
+      "text": "Adding a product that is already in the cart increases that line's quantity by one instead of adding a second line.",
+      "source": {
+        "file": "shop.md",
+        "line": 7
+      }
+    },
+    {
+      "tag": "Cart 1.2",
+      "area": "Cart",
+      "text": "Discount codes are case-insensitive: \"SAVE10\", \"save10\" and \"Save10\" all apply the same 10% discount.",
+      "source": {
+        "file": "shop.md",
+        "line": 9
+      }
+    },
+    {
+      "tag": "Cart 1.3",
+      "area": "Cart",
+      "text": "When the last item is removed, the cart shows the message \"Your cart is empty\".",
+      "source": {
+        "file": "shop.md",
+        "line": 11
+      }
+    },
+    {
+      "tag": "Shipping 2.1",
+      "area": "Shipping",
+      "text": "Shipping costs $5.00 per order. Orders whose subtotal before discounts is $50.00 or more ship free. An empty cart shows $0.00 shipping.",
+      "source": {
+        "file": "shop.md",
+        "line": 15
+      }
+    },
+    {
+      "tag": "Account 3.1",
+      "area": "Account",
+      "text": "Signed-in customers can open an \"Order history\" page that lists their past orders with the date and total of each.",
+      "source": {
+        "file": "shop.md",
+        "line": 19
+      }
+    },
+    {
+      "tag": "Checkout (AI) 1",
+      "area": "Checkout",
+      "text": "The 'Place order' button is disabled unless the cart has at least one item.",
+      "source": {
+        "file": "checkout.md",
+        "line": 6
+      },
+      "extraction": {
+        "confidence": 0.9,
+        "quote": {
+          "lines": [6, 6],
+          "snippet": "The \"Place order\" button stays disabled until the cart has at least one item and the email field contains a valid email address (name@domain.tld)."
+        }
+      }
+    },
+    {
+      "tag": "Checkout (AI) 2",
+      "area": "Checkout",
+      "text": "The 'Place order' button is disabled unless the email field contains a valid email address (name@domain.tld).",
+      "source": {
+        "file": "checkout.md",
+        "line": 6
+      },
+      "extraction": {
+        "confidence": 0.9,
+        "quote": {
+          "lines": [6, 6],
+          "snippet": "The \"Place order\" button stays disabled until the cart has at least one item and the email field contains a valid email address (name@domain.tld)."
+        }
+      }
+    },
+    {
+      "tag": "Checkout (AI) 3",
+      "area": "Checkout",
+      "text": "Clicking the enabled 'Place order' button shows the message 'Thanks! Your order is placed.'",
+      "source": {
+        "file": "checkout.md",
+        "line": 6
+      },
+      "extraction": {
+        "confidence": 0.9,
+        "quote": {
+          "lines": [6, 6],
+          "snippet": "Once it is enabled, clicking it shows \"Thanks! Your order is placed.\""
+        }
+      }
+    }
+  ],
+  "needsReview": [],
+  "extraction": {
+    "files": 1,
+    "dropped": 0
+  },
+  "findings": [
+    {
+      "requirement": {
+        "tag": "Cart 1.1",
+        "area": "Cart",
+        "text": "Adding a product that is already in the cart increases that line's quantity by one instead of adding a second line.",
+        "source": {
+          "file": "shop.md",
+          "line": 7
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "addItem in src/cart/cart.js finds an existing line by productId and increments its quantity instead of pushing a new line.",
+      "evidence": {
+        "file": "src/cart/cart.js",
+        "lines": [5, 17],
+        "snippet": "export function addItem(cart, product) {\n  const line = cart.lines.find((l) => l.productId === product.id);\n  if (line) {\n    line.quantity += 1;\n  } else {\n    cart.lines.push({\n      productId: product.id,\n      name: product.name,\n      price: product.price,\n      quantity: 1,\n    });\n  }\n}"
+      },
+      "confidence": 0.95,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Cart 1.2",
+        "area": "Cart",
+        "text": "Discount codes are case-insensitive: \"SAVE10\", \"save10\" and \"Save10\" all apply the same 10% discount.",
+        "source": {
+          "file": "shop.md",
+          "line": 9
+        }
+      },
+      "type": "mismatch",
+      "severity": "medium",
+      "explanation": "findDiscount in src/cart/discounts.js only trims whitespace and does a case-sensitive Map lookup against the single key \"SAVE10\", so inputs like \"save10\" or \"Save10\" will not match and return null instead of applying the 10% discount.",
+      "evidence": {
+        "file": "src/cart/discounts.js",
+        "lines": [1, 7],
+        "snippet": "const codes = new Map([[\"SAVE10\", 0.1]]);\n\nexport function findDiscount(input) {\n  const code = input.trim();\n  const rate = codes.get(code);\n  return rate === undefined ? null : { code, rate };\n}"
+      },
+      "confidence": 0.92,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Cart 1.3",
+        "area": "Cart",
+        "text": "When the last item is removed, the cart shows the message \"Your cart is empty\".",
+        "source": {
+          "file": "shop.md",
+          "line": 11
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "index.html defines a #cart-empty element with the text \"Your cart is empty\" and app.js toggles its hidden attribute based on isEmpty(cart), showing it when the cart becomes empty after removal.",
+      "evidence": {
+        "file": "src/app.js",
+        "lines": [36, 38],
+        "snippet": "function render() {\n  $(\"cart-empty\").hidden = !isEmpty(cart);\n  $(\"cart-lines\").replaceChildren("
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Shipping 2.1",
+        "area": "Shipping",
+        "text": "Shipping costs $5.00 per order. Orders whose subtotal before discounts is $50.00 or more ship free. An empty cart shows $0.00 shipping.",
+        "source": {
+          "file": "shop.md",
+          "line": 15
+        }
+      },
+      "type": "mismatch",
+      "severity": "medium",
+      "explanation": "In src/checkout/shipping.js, shipping is only free when subtotal is strictly greater than $50 (subtotal > FREE_SHIPPING_FROM), so an order with subtotal exactly $50.00 is charged $5.00 shipping instead of being free as required.",
+      "evidence": {
+        "file": "src/checkout/shipping.js",
+        "lines": [4, 7],
+        "snippet": "export function shippingFee(subtotal) {\n  if (subtotal === 0) return 0;\n  return subtotal > FREE_SHIPPING_FROM ? 0 : SHIPPING_FEE;\n}"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Account 3.1",
+        "area": "Account",
+        "text": "Signed-in customers can open an \"Order history\" page that lists their past orders with the date and total of each.",
+        "source": {
+          "file": "shop.md",
+          "line": 19
+        }
+      },
+      "type": "not_implemented",
+      "severity": "high",
+      "explanation": "There is no account/order history page, sign-in flow, or any code storing or listing past orders in the shown files (index.html, src/app.js, checkout files) — orders are not even persisted, just confirmed with a message.",
+      "evidence": null,
+      "confidence": 0.75,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Checkout (AI) 1",
+        "area": "Checkout",
+        "text": "The 'Place order' button is disabled unless the cart has at least one item.",
+        "source": {
+          "file": "checkout.md",
+          "line": 6
+        },
+        "extraction": {
+          "confidence": 0.9,
+          "quote": {
+            "lines": [6, 6],
+            "snippet": "The \"Place order\" button stays disabled until the cart has at least one item and the email field contains a valid email address (name@domain.tld)."
+          }
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "canPlaceOrder in src/checkout/place-order.js requires the cart to be non-empty, and app.js wires this into the disabled state of the place-order button.",
+      "evidence": {
+        "file": "src/checkout/place-order.js",
+        "lines": [3, 5],
+        "snippet": "export function canPlaceOrder(cart, email) {\n  return !isEmpty(cart) && email.trim() !== \"\";\n}"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Checkout (AI) 2",
+        "area": "Checkout",
+        "text": "The 'Place order' button is disabled unless the email field contains a valid email address (name@domain.tld).",
+        "source": {
+          "file": "checkout.md",
+          "line": 6
+        },
+        "extraction": {
+          "confidence": 0.9,
+          "quote": {
+            "lines": [6, 6],
+            "snippet": "The \"Place order\" button stays disabled until the cart has at least one item and the email field contains a valid email address (name@domain.tld)."
+          }
+        }
+      },
+      "type": "mismatch",
+      "severity": "medium",
+      "explanation": "canPlaceOrder in src/checkout/place-order.js only checks that the email field is non-empty (email.trim() !== \"\"), it does not validate the email format against name@domain.tld, so an invalid string like 'abc' would enable the button.",
+      "evidence": {
+        "file": "src/checkout/place-order.js",
+        "lines": [3, 5],
+        "snippet": "export function canPlaceOrder(cart, email) {\n  return !isEmpty(cart) && email.trim() !== \"\";\n}"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    },
+    {
+      "requirement": {
+        "tag": "Checkout (AI) 3",
+        "area": "Checkout",
+        "text": "Clicking the enabled 'Place order' button shows the message 'Thanks! Your order is placed.'",
+        "source": {
+          "file": "checkout.md",
+          "line": 6
+        },
+        "extraction": {
+          "confidence": 0.9,
+          "quote": {
+            "lines": [6, 6],
+            "snippet": "Once it is enabled, clicking it shows \"Thanks! Your order is placed.\""
+          }
+        }
+      },
+      "type": "match",
+      "severity": null,
+      "explanation": "The checkout-form submit handler in src/app.js sets the order-confirmation text to 'Thanks! Your order is placed.' when the form (with the enabled place-order button) is submitted.",
+      "evidence": {
+        "file": "src/app.js",
+        "lines": [75, 78],
+        "snippet": "$(\"checkout-form\").addEventListener(\"submit\", (event) => {\n  event.preventDefault();\n  $(\"order-confirmation\").textContent = \"Thanks! Your order is placed.\";\n});"
+      },
+      "confidence": 0.9,
+      "reviewStatus": "confirmed",
+      "reviewReasons": []
+    }
+  ],
+  "notScanned": [],
+  "warnings": [],
+  "stoppedBy": null,
+  "models": ["claude-sonnet-5"],
+  "usage": {
+    "aiCalls": 5,
+    "inputTokens": 20402,
+    "outputTokens": 2542
+  }
+}

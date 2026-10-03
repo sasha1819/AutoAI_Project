@@ -2,6 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+
+// One expected grade, or an explicit range with the reason when the scale allows more than one (severityWhy).
+const Grade = z.enum(["high", "medium", "low"]);
+const Severity = z.union([Grade, z.array(Grade).min(2)]);
 import { indexFiles, rankRelevantFiles } from "../core/rules/relevance.ts";
 import { composeCli } from "./compose.ts";
 
@@ -27,14 +31,16 @@ const Finding = z.discriminatedUnion("type", [
   z.strictObject({
     ...base,
     type: z.literal("mismatch"),
-    severity: z.enum(["high", "medium", "low"]),
+    severity: Severity,
+    severityWhy: z.string().min(1).optional(),
     evidence: Evidence,
   }),
   // Nothing to cite for a feature that was never built; instead, name what must not exist in the repo.
   z.strictObject({
     ...base,
     type: z.literal("not_implemented"),
-    severity: z.enum(["high", "medium", "low"]),
+    severity: Severity,
+    severityWhy: z.string().min(1).optional(),
     absentTerms: z.array(z.string().min(3)).min(1),
   }),
 ]);
@@ -86,6 +92,11 @@ describe("fixtures/expected-findings.json", () => {
       expect(result.value.prdFiles).toContain(f.prd.file);
       expect(extracted.map((e) => e.where)).not.toContain(at(f));
     }
+  });
+
+  it("gives the reason for every accepted severity range", () => {
+    for (const f of key.findings)
+      if ("severity" in f && Array.isArray(f.severity)) expect(f.severityWhy).toBeTruthy();
   });
 
   it("points every PRD location at a non-empty line", () => {
