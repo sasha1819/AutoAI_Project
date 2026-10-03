@@ -1,10 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { App } from "./App.tsx";
+import type { ChannelResponse } from "../../contracts/channels.ts";
 import { bridge } from "./bridge.ts";
+import { installFakeBridge, removeFakeBridge } from "./testing/fake-bridge.ts";
 
 describe("App shell", () => {
+  afterEach(() => {
+    removeFakeBridge();
+  });
+
   it("renders the app's main region with the shared providers", () => {
     render(<App />);
     expect(screen.getByRole("main", { name: "AutoAI" })).toBeTruthy();
@@ -12,16 +18,21 @@ describe("App shell", () => {
     expect(document.querySelector('[role="status"][aria-live="polite"]')).not.toBeNull();
   });
 
-  it("opens on Welcome without moving focus; Get started moves on and focuses the next screen", async () => {
+  it("opens on Welcome without moving focus; Get started moves to Connect Claude and focuses its heading", async () => {
     const user = userEvent.setup();
+    installFakeBridge({
+      "ai:status": () =>
+        Promise.resolve<ChannelResponse<"ai:status">>({ ok: true, value: { configured: true } }),
+    });
     render(<App />);
     expect(screen.getByRole("heading", { level: 1, name: "AutoAI" })).toBeTruthy();
     expect(document.activeElement).toBe(document.body);
     await user.click(screen.getByRole("button", { name: "Get started" }));
-    expect(screen.queryByRole("heading", { level: 1, name: "AutoAI" })).toBeNull();
-    const next = screen.getByRole("heading", { name: "Connect Claude" });
-    // The button that was used is gone: focus lands on the new screen's heading.
-    expect(document.activeElement).toBe(next);
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { level: 1, name: "Connect Claude" }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Continue" }));
+    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Add your project" }));
   });
 
   it("bridge() fails loudly when the page was not opened through the preload", () => {

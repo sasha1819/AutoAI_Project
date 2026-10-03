@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "../design-system/primitives/EmptyState/index.ts";
 import { ToastProvider } from "../design-system/primitives/Toast/index.ts";
+import { ConnectAi } from "../features/connect-ai/index.ts";
 import { WelcomeView } from "../features/welcome/index.ts";
 
 /** The onboarding steps of PRD Flow 1, in order. Screens are added here one at a time (M5). */
-type Screen = "welcome" | "connect-ai";
+type Screen = "welcome" | "connect-ai" | "add-project";
 
 /**
  * The app's root: providers shared by every screen, and which screen shows. When the screen changes, focus moves
@@ -33,17 +34,25 @@ export function App() {
         className="h-screen overflow-auto bg-canvas text-text-primary"
         aria-label="AutoAI"
       >
-        {screen === "welcome" ? (
+        {screen === "welcome" && (
           <WelcomeView
             onGetStarted={() => {
               setScreen("connect-ai");
             }}
           />
-        ) : (
-          // Temporary: replaced by the Connect AI screen (the next M5 step).
+        )}
+        {screen === "connect-ai" && (
+          <ConnectAi
+            onContinue={() => {
+              setScreen("add-project");
+            }}
+          />
+        )}
+        {screen === "add-project" && (
+          // Temporary: replaced by the Add project screen (the next M5 step).
           <div className="flex h-full items-center justify-center">
             <EmptyState
-              title="Connect Claude"
+              title="Add your project"
               description="This screen is the next one to be built."
             />
           </div>

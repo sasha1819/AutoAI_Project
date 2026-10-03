@@ -1,4 +1,5 @@
 import { ArrowRight } from "../../design-system/primitives/Icon/index.ts";
+import { CenteredPage } from "../../design-system/patterns/CenteredPage/index.ts";
 import { Button } from "../../design-system/primitives/Button/index.ts";
 
 export type WelcomeViewProps = {
@@ -14,26 +15,21 @@ export type WelcomeViewProps = {
  */
 export function WelcomeView({ onGetStarted }: WelcomeViewProps) {
   return (
-    <div className="flex h-full min-h-full flex-col px-6">
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <h1 className="text-display font-bold text-text-primary">AutoAI</h1>
-        <p className="mt-3 text-lg font-medium text-text-primary">
-          Test your web application without writing a line of code.
-        </p>
-        <p className="mt-7 max-w-140 text-md text-text-secondary">
-          Point AutoAI at your repository and your product requirements. It finds where the spec and
-          the code disagree, writes Playwright tests to check each one, runs them, and explains
-          failures in plain words — with your own Claude API key.
-        </p>
-        <div className="mt-9">
-          <Button size="xl" trailingIcon={ArrowRight} onClick={onGetStarted}>
-            Get started
-          </Button>
-        </div>
-      </div>
-      <p className="pb-6 text-center text-xs text-text-muted">
-        Built for QA &amp; automation engineers · powered by Claude
+    <CenteredPage footer="Built for QA & automation engineers · powered by Claude">
+      <h1 className="text-display font-bold text-text-primary">AutoAI</h1>
+      <p className="mt-3 text-lg font-medium text-text-primary">
+        Test your web application without writing a line of code.
       </p>
-    </div>
+      <p className="mt-7 max-w-140 text-md text-text-secondary">
+        Point AutoAI at your repository and your product requirements. It finds where the spec and
+        the code disagree, writes Playwright tests to check each one, runs them, and explains
+        failures in plain words — with your own Claude API key.
+      </p>
+      <div className="mt-9">
+        <Button size="xl" trailingIcon={ArrowRight} onClick={onGetStarted}>
+          Get started
+        </Button>
+      </div>
+    </CenteredPage>
   );
 }

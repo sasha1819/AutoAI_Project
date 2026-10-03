@@ -34,6 +34,8 @@ export const MarkInPanelHeader: Story = {
   ),
 };
 export const MarkLabelled: Story = { render: () => <AiMark label="From Claude" /> };
+// The 44px tile of a provider card (mockup 2).
+export const MarkLarge: Story = { render: () => <AiMark decorative size="lg" /> };
 // On every surface it sits on.
 export const OnSurfaces: Story = {
   render: () => (

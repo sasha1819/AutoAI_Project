@@ -36,6 +36,14 @@ describe("AiMark", () => {
     expect(screen.queryByRole("img")).toBeNull();
   });
 
+  it.each([
+    ["md", "size-7"],
+    ["lg", "size-11"],
+  ] as const)("size %s is a %s tile", (size, cls) => {
+    const { container } = render(<AiMark decorative size={size} />);
+    expect(container.firstElementChild?.className).toContain(cls);
+  });
+
   it("on its own: an image named by its label", () => {
     render(<AiMark label="From Claude" />);
     expect(screen.getByRole("img", { name: "From Claude" })).toBeTruthy();

@@ -22,27 +22,37 @@ export function AiChip<Label extends string>({ label }: AiChipProps<Label>) {
   );
 }
 
-export type AiMarkProps<Label extends string = string> =
-  /** Next to a heading that already says it ("Claude's diagnosis"): hidden from assistive tech. */
-  | { readonly decorative: true; readonly label?: never }
-  /** On its own: says what it marks. */
-  | { readonly label: NonEmpty<Label>; readonly decorative?: false };
+/** md 28px (AI panel headers, mockups 7 and 14) · lg 44px (the provider card, mockup 2). */
+export type AiMarkSize = "md" | "lg";
 
-/** The AI tile before an AI panel's title (mockup 7 "Claude's diagnosis", 14 "Likely cause"): 28px, 16px sparkle. */
+export type AiMarkProps<Label extends string = string> = { readonly size?: AiMarkSize } &
+  /** Next to a heading that already says it ("Claude's diagnosis"): hidden from assistive tech. */
+  (
+    | { readonly decorative: true; readonly label?: never }
+    /** On its own: says what it marks. */
+    | { readonly label: NonEmpty<Label>; readonly decorative?: false }
+  );
+
+const MARK: Record<AiMarkSize, { readonly tile: string; readonly glyph: "md" | "lg" }> = {
+  md: { tile: "size-7", glyph: "md" },
+  lg: { tile: "size-11", glyph: "lg" },
+};
+
+/** The AI tile before an AI panel's title (mockup 7 "Claude's diagnosis", 14 "Likely cause"), or in a provider card (2). */
 export function AiMark<Label extends string>(props: AiMarkProps<Label>) {
-  const tile =
-    "inline-flex size-7 shrink-0 items-center justify-center rounded-control bg-ai-tile text-ai-text";
+  const { tile: size, glyph } = MARK[props.size ?? "md"];
+  const tile = `inline-flex ${size} shrink-0 items-center justify-center rounded-control bg-ai-tile text-ai-text`;
   if (props.decorative === true) {
     return (
       <span aria-hidden="true" className={tile}>
-        <Icon glyph={Sparkles} decorative size="md" />
+        <Icon glyph={Sparkles} decorative size={glyph} />
       </span>
     );
   }
   assertAccessibleName(props.label, "AiMark");
   return (
     <span className={tile}>
-      <Icon glyph={Sparkles} label={props.label} size="md" />
+      <Icon glyph={Sparkles} label={props.label} size={glyph} />
     </span>
   );
 }

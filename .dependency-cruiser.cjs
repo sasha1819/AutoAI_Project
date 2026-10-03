@@ -59,6 +59,8 @@ module.exports = {
       from: { path: '^src/ui/' }, to: { path: '^node_modules/electron/' } },
     { name: 'app-cli-no-ui', comment: 'nothing points into ui', severity: 'error',
       from: { path: '^src/(app|cli)/' }, to: { path: '^src/ui/' } },
+    { name: 'test-helpers-only-in-tests', comment: 'ui/app/testing (the fake bridge) is for tests only; tests are not cruised, so any importer seen here is production code', severity: 'error',
+      from: { path: '^src/' }, to: { path: '^src/ui/app/testing/' } },
     { name: 'design-system-knows-no-app', comment: 'the design system is reusable: it knows neither screens nor the renderer root', severity: 'error',
       from: { path: '^src/ui/design-system' }, to: { path: '^src/ui/app/' } },
     { name: 'features-use-only-the-bridge', comment: 'a screen reaches main through ui/app/bridge.ts only, never the app root itself', severity: 'error',
